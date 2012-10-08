@@ -49,18 +49,6 @@ class ReadBitstream(object):
         byte = (byte << 8) | ord(self.s[(i >> 3) + 1])
         return (byte >> (8 - (i & 7))) & 0xff
 
-    def read_word(self):
-        i = self.i
-        if (i & 7) == 0:
-            self.i = i + 32
-            return struct.unpack(">I", self.s[i: i + 4])[0]
-        else:
-            w = (self.read_byte() << 24) | \
-                (self.read_byte() << 16) | \
-                (self.read_byte() <<  8) | \
-                self.read_byte()
-            return w
-
 class WriteBitstream(object):
 
     def __init__(self):
@@ -260,12 +248,16 @@ def unwrap_player_data(data):
         raise BL2Error("Invalid save file")
 
     data = lzo.decompress("\xf0" + data[20: ])
-    size, wsg, version, crc = struct.unpack(">I3sII", data[: 15])
-    if version != 2:
+    size, wsg, version = struct.unpack(">I3sI", data[: 11])
+    if version != 2 and version != 0x02000000:
         raise BL2Error("Unknown save version " + str(version))
 
-    bitstream = ReadBitstream(data[15: ])
-    size = bitstream.read_word()
+    if version == 2:
+        crc, size = struct.unpack(">II", data[11: 19])
+    else:
+        crc, size = struct.unpack("<II", data[11: 19])
+
+    bitstream = ReadBitstream(data[19: ])
     tree = read_huffman_tree(bitstream)
     player = huffman_decompress(tree, bitstream, size)
 
@@ -274,22 +266,27 @@ def unwrap_player_data(data):
 
     return player
 
-def wrap_player_data(player):
-    bitstream = WriteBitstream()
+def wrap_player_data(player, endian=1):
+    crc = lzo.crc32(player) & 0xffffffff
 
+    bitstream = WriteBitstream()
     tree = make_huffman_tree(player)
     write_huffman_tree(tree, bitstream)
     huffman_compress(invert_tree(tree), player, bitstream)
+    data = bitstream.getvalue() + "\x00\x00\x00\x00"
 
-    data = struct.pack(">I", len(player)) + bitstream.getvalue() + "\x00\x00\x00\x00"
-    crc = lzo.crc32(player) & 0xffffffff
-    data = struct.pack(">I3sII", len(data) + 11, "WSG", 2, crc) + data
-    data = lzo.compress(data)[1: ]
+    header = struct.pack(">I3s", len(data) + 15, "WSG")
+    if endian == 1:
+        header = header + struct.pack(">III", 2, crc, len(player))
+    else:
+        header = header + struct.pack("<III", 2, crc, len(player))
+
+    data = lzo.compress(header + data)[1: ]
 
     return hashlib.sha1(data).digest() + data
 
 
-def modify_save(data, changes):
+def modify_save(data, changes, endian=1):
     player = read_protobuf(unwrap_player_data(data))
 
     if changes.has_key("level"):
@@ -310,7 +307,7 @@ def modify_save(data, changes):
             values[1] = int(changes["eridium"])
         player[6][0] = [0, values]
 
-    return wrap_player_data(write_protobuf(player))
+    return wrap_player_data(write_protobuf(player), endian)
 
 def apply_crude_parsing(player, rules):
     for key in rules.split(","):
@@ -343,11 +340,16 @@ def main():
         help="read or write save game data in JSON format, rather than raw protobufs"
     )
     p.add_option(
-        "-m", "--modify",
+        "-l", "--little-endian",
+        action="store_true",
+        help="change the output format to little endian, to write PC-compatible save files"
+    )
+    p.add_option(
+        "-m", "--modify", metavar="MODIFICATIONS",
         help="comma separated list of modifications to make, eg money=99999999,eridium=99"
     )
     p.add_option(
-        "-p", "--parse",
+        "-p", "--parse", metavar="FIELDNUMS",
         help="perform further protobuf parsing on the specified comma separated list of keys"
     )
     options, args = p.parse_args()
@@ -362,12 +364,18 @@ def main():
     else:
         output = open(args[1], "w")
 
-    if options.modify:
+    if options.little_endian:
+        endian = 0
+    else:
+        endian = 1
+
+    if options.modify is not None:
         changes = {}
-        for m in options.modify.split(","):
-            k, v = m.split("=", 1)
-            changes[k] = v
-        output.write(modify_save(input.read(), changes))
+        if options.modify:
+            for m in options.modify.split(","):
+                k, v = m.split("=", 1)
+                changes[k] = v
+        output.write(modify_save(input.read(), changes, endian))
     elif options.decode:
         savegame = input.read()
         player = unwrap_player_data(savegame)
@@ -381,7 +389,7 @@ def main():
         player = input.read()
         if options.json:
             player = write_protobuf(json.loads(player, encoding="latin1"))
-        savegame = wrap_player_data(player)
+        savegame = wrap_player_data(player, endian)
         output.write(savegame)
 
 if __name__ == "__main__":
