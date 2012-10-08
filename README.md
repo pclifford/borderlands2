@@ -31,3 +31,12 @@ listed fields:
 Create a new save file from the JSON data:
 
     ./savefile.py -j < player.json > your-new-save-game.sav
+
+Modify save file data by changing one or more of "level", "skillpoints",
+"money", or "eridium":
+
+    ./savefile.py -m eridium=99 < old.sav > new.sav
+
+Or many changes at once, separated by commas:
+
+    ./savefile.py -m level=1,skillpoints=42,money=1234,eridium=9 < old.sav > new.sav

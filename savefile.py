@@ -289,6 +289,29 @@ def wrap_player_data(player):
     return hashlib.sha1(data).digest() + data
 
 
+def modify_save(data, changes):
+    player = read_protobuf(unwrap_player_data(data))
+
+    if changes.has_key("level"):
+        player[2] = [[0, int(changes["level"])]]
+
+    if changes.has_key("skillpoints"):
+        player[4] = [[0, int(changes["skillpoints"])]]
+
+    if changes.has_key("money") or changes.has_key("eridium"):
+        raw = player[6][0][1]
+        b = StringIO(raw)
+        values = []
+        while b.tell() < len(raw):
+            values.append(read_protobuf_value(b, 0))
+        if changes.has_key("money"):
+            values[0] = int(changes["money"])
+        if changes.has_key("eridium"):
+            values[1] = int(changes["eridium"])
+        player[6][0] = [0, values]
+
+    return wrap_player_data(write_protobuf(player))
+
 def apply_crude_parsing(player, rules):
     for key in rules.split(","):
         if ":" in key:
@@ -320,6 +343,10 @@ def main():
         help="read or write save game data in JSON format, rather than raw protobufs"
     )
     p.add_option(
+        "-m", "--modify",
+        help="comma separated list of modifications to make, eg money=99999999,eridium=99"
+    )
+    p.add_option(
         "-p", "--parse",
         help="perform further protobuf parsing on the specified comma separated list of keys"
     )
@@ -335,7 +362,13 @@ def main():
     else:
         output = open(args[1], "w")
 
-    if options.decode:
+    if options.modify:
+        changes = {}
+        for m in options.modify.split(","):
+            k, v = m.split("=", 1)
+            changes[k] = v
+        output.write(modify_save(input.read(), changes))
+    elif options.decode:
         savegame = input.read()
         player = unwrap_player_data(savegame)
         if options.json:
