@@ -357,12 +357,12 @@ def main():
     if len(args) < 1 or args[0] == "-":
         input = sys.stdin
     else:
-        input = open(args[0], "r")
+        input = open(args[0], "rb")
 
     if len(args) < 2 or args[1] == "-":
         output = sys.stdout
     else:
-        output = open(args[1], "w")
+        output = open(args[1], "wb")
 
     if options.little_endian:
         endian = 0
