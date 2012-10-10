@@ -159,6 +159,83 @@ def huffman_compress(encoding, data, bitstream):
         bitstream.write_bits(code, nbits)
 
 
+def rotate_data_right(data, steps):
+    steps = steps % len(data)
+    return data[-steps: ] + data[: -steps]
+
+def rotate_data_left(data, steps):
+    steps = steps % len(data)
+    return data[steps: ] + data[: steps]
+
+def xor_data(data, seed):
+    key = seed & 0xffffffff
+    output = ""
+    for c in data:
+        key = (key * 279470273) % 4294967291
+        output += chr((ord(c) ^ key) & 0xff)
+    return output
+
+def encode_raw_item(is_weapon, item, seed):
+    header = struct.pack(">Bi", (is_weapon << 7) | 7, seed)
+    padding = "\xff" * (33 - len(item))
+    h = lzo.crc32(header + "\xff\xff" + item + padding) & 0xffffffff
+    checksum = struct.pack(">H", ((h >> 16) ^ h) & 0xffff)
+    data = xor_data(rotate_data_left(checksum + item, seed & 31), seed >> 5)
+    return header + data
+
+def decode_raw_item(data):
+    version_type, seed = struct.unpack(">Bi", data[: 5])
+    is_weapon = version_type >> 7
+    raw = rotate_data_right(xor_data(data[5: ], seed >> 5), seed & 31)
+    return is_weapon, raw[2: ], seed
+
+def read_item_bits(s, sizes):
+    i = 0
+    values = []
+    end = len(s) * 8
+    for size in sizes:
+        j = i + size
+        if j > end:
+            values.append(None)
+            continue
+        value = 0
+        for b in s[j >> 3: (i >> 3) - 1: -1]:
+            value = (value << 8) | ord(b)
+        values.append((value >> (i & 7)) &~ (0xff << size))
+        i = j
+    return values
+
+def write_item_bits(values, sizes):
+    i = 0
+    bytes = [0] * ((sum(sizes) + 7) >> 3)
+    for value, size in zip(values, sizes):
+        if value is None:
+            break
+        j = i >> 3
+        value = value << (i & 7)
+        while value != 0:
+            bytes[j] |= value & 0xff
+            value = value >> 8
+            j += 1
+        i = i + size
+    return "".join(map(chr, bytes[: (i + 7) >> 3]))
+
+def decode_item(data):
+    is_weapon, item, seed = decode_raw_item(data)
+    if is_weapon:
+        sizes = (8, 13, 20, 11, 7, 7, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17)
+    else:
+        sizes = (8, 17, 20, 11, 7, 7, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16)
+    return is_weapon, read_item_bits(item, sizes), seed
+
+def encode_item(is_weapon, values, seed):
+    if is_weapon:
+        sizes = (8, 13, 20, 11, 7, 7, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17)
+    else:
+        sizes = (8, 17, 20, 11, 7, 7, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16)
+    return encode_raw_item(is_weapon, write_item_bits(values, sizes), seed)
+
+
 def read_varint(f):
     value = 0
     offset = 0
@@ -307,6 +384,19 @@ def modify_save(data, changes, endian=1):
             values[1] = int(changes["eridium"])
         player[6][0] = [0, values]
 
+    if changes.has_key("itemlevels"):
+        if changes["itemlevels"]:
+            level = int(changes["itemlevels"])
+        else:
+            level = player[2][0][1]
+        for field_number in (53, 54):
+            for field in player[field_number]:
+                field_data = read_protobuf(field[1])
+                is_weapon, item, seed = decode_item(field_data[1][0][1])
+                item = item[: 4] + [level, level] + item[6: ]
+                field_data[1][0][1] = encode_item(is_weapon, item, seed)
+                field[1] = write_protobuf(field_data)
+
     return wrap_player_data(write_protobuf(player), endian)
 
 def apply_crude_parsing(player, rules):
@@ -373,7 +463,7 @@ def main():
         changes = {}
         if options.modify:
             for m in options.modify.split(","):
-                k, v = m.split("=", 1)
+                k, v = (m.split("=", 1) + [None])[: 2]
                 changes[k] = v
         output.write(modify_save(input.read(), changes, endian))
     elif options.decode:
