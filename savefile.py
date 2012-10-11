@@ -190,7 +190,8 @@ def decode_raw_item(data):
     return is_weapon, raw[2: ], seed
 
 def read_item_bits(s, sizes):
-    i = 0
+    i = 8
+    s = " " + s
     values = []
     end = len(s) * 8
     for size in sizes:
