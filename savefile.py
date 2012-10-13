@@ -625,6 +625,19 @@ def modify_save(data, changes, endian=1):
                 field_data[1][0][1] = wrap_item(is_weapon, item, key)
                 field[1] = write_protobuf(field_data)
 
+    if changes.has_key("backpack"):
+        size = int(changes["backpack"])
+        if size > 777:
+            sdus = 255
+        else:
+            sdus = int(math.ceil((size - 12) / 3.0))
+            size = 12 + (sdus * 3)
+        slots = read_protobuf(player[13][0][1])
+        slots[1][0][1] = size
+        player[13][0][1] = write_protobuf(slots)
+        s = player[36][0][1]
+        player[36][0][1] = s[: 7] + chr(sdus) + s[8: ]
+
     return wrap_player_data(write_protobuf(player), endian)
 
 def apply_crude_parsing(player, rules):

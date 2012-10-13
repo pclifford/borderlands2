@@ -13,7 +13,7 @@ Note the following before trying to use it:
 ## How do I modify values in a save file?
 
 Modify save file data by changing one or more of "level", "skillpoints",
-"money", "eridium", or "itemlevels":
+"money", "eridium", "backpack", or "itemlevels":
 
     python savefile.py -m eridium=99 old.sav new.sav
 
@@ -24,6 +24,11 @@ Set the levels of all your items and weapons to match your character's level:
 Or to a specific level:
 
     python savefile.py -m itemlevels=20 old.sav new.sav
+
+Set the size of your character's backpack, and the corresponding number of
+purchased backpack SDUs:
+
+    python savefile.py -m backpack=27 old.sav new.sav
 
 Or many changes at once, separated by commas:
 
