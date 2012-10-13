@@ -8,8 +8,7 @@ Note the following before trying to use it:
 * It has no graphical interface and is not easy to use
 * It does not provide any mechanisms for creating items or weapons
 * It is a proof of concept and will corrupt your save files if used improperly
-* It requires a working Python 2 interpreter (2.6 or later) and the Python LZO
-  bindings.
+* It requires a working Python 2 interpreter (2.6 or later, not 3)
 
 ## How do I modify values in a save file?
 

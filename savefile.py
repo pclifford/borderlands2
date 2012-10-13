@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import binascii
 from bisect import insort
 from cStringIO import StringIO
 import hashlib
@@ -7,8 +8,6 @@ import json
 import optparse
 import struct
 import sys
-
-import lzo
 
 
 class BL2Error(Exception): pass
@@ -216,7 +215,7 @@ def wrap_item(is_weapon, values, key):
     item = pack_item_values(is_weapon, values)
     header = struct.pack(">Bi", (is_weapon << 7) | 7, key)
     padding = "\xff" * (33 - len(item))
-    h = lzo.crc32(header + "\xff\xff" + item + padding) & 0xffffffff
+    h = binascii.crc32(header + "\xff\xff" + item + padding) & 0xffffffff
     checksum = struct.pack(">H", ((h >> 16) ^ h) & 0xffff)
     body = xor_data(rotate_data_left(checksum + item, key & 31), key >> 5)
     return header + body
@@ -316,7 +315,7 @@ def unwrap_player_data(data):
     if data[: 20] != hashlib.sha1(data[20: ]).digest():
         raise BL2Error("Invalid save file")
 
-    data = lzo.decompress("\xf0" + data[20: ])
+    data = lzo1x_decompress("\xf0" + data[20: ])
     size, wsg, version = struct.unpack(">I3sI", data[: 11])
     if version != 2 and version != 0x02000000:
         raise BL2Error("Unknown save version " + str(version))
@@ -330,13 +329,13 @@ def unwrap_player_data(data):
     tree = read_huffman_tree(bitstream)
     player = huffman_decompress(tree, bitstream, size)
 
-    if (lzo.crc32(player) & 0xffffffff) != crc:
+    if (binascii.crc32(player) & 0xffffffff) != crc:
         raise BL2Error("CRC check failed")
 
     return player
 
 def wrap_player_data(player, endian=1):
-    crc = lzo.crc32(player) & 0xffffffff
+    crc = binascii.crc32(player) & 0xffffffff
 
     bitstream = WriteBitstream()
     tree = make_huffman_tree(player)
@@ -350,9 +349,240 @@ def wrap_player_data(player, endian=1):
     else:
         header = header + struct.pack("<III", 2, crc, len(player))
 
-    data = lzo.compress(header + data)[1: ]
+    data = lzo1x_1_compress(header + data)[1: ]
 
     return hashlib.sha1(data).digest() + data
+
+
+def expand_zeroes(src, ip, extra):
+    start = ip
+    while src[ip] == 0:
+        ip = ip + 1
+    v = ((ip - start) * 255) + src[ip]
+    return v + extra, ip + 1
+
+def copy_earlier(b, offset, n):
+    i = len(b) - offset
+    end = i + n
+    while i < end:
+        chunk = b[i: i + n]
+        i = i + len(chunk)
+        n = n - len(chunk)
+        b.extend(chunk)
+
+def lzo1x_decompress(s):
+    dst = bytearray()
+    src = bytearray("\xff" + s[5: ])
+    ip = 1
+
+    skip = 0
+    if src[ip] > 17:
+        t = src[ip] - 17; ip += 1
+        if t < 4:
+            skip = 3
+        else:
+            dst.extend(src[ip: ip + t]); ip += t
+            skip = 1
+
+    while 1:
+        if not (skip & 1):
+            t = src[ip]; ip += 1
+            if t >= 16:
+                skip = 7
+            else:
+                if t == 0:
+                    t, ip = expand_zeroes(src, ip, 15)
+                dst.extend(src[ip: ip + t + 3]); ip += t + 3
+        if not (skip & 2):
+            # first_literal_run
+            t = src[ip]; ip += 1
+            if t < 16:
+                copy_earlier(dst, 1 + 0x0800 + (t >> 2) + (src[ip] << 2), 3); ip += 1
+        if not (skip & 4) and t < 16:
+            # match_done
+            # match_next
+            t = src[ip - 2] & 3
+            if t == 0:
+                continue
+            dst.extend(src[ip: ip + t]); ip += t
+            t = src[ip]; ip += 1
+
+        skip = 0
+        while 1:
+            if t >= 64:
+                copy_earlier(dst, 1 + ((t >> 2) & 7) + (src[ip] << 3), (t >> 5) + 1); ip += 1
+            elif t >= 32:
+                t &= 31
+                if t == 0:
+                    t, ip = expand_zeroes(src, ip, 31)
+                copy_earlier(dst, 1 + ((src[ip] | (src[ip + 1] << 8)) >> 2), t + 2); ip += 2
+            elif t >= 16:
+                offset = (t & 8) << 11
+                t &= 7
+                if t == 0:
+                    t, ip = expand_zeroes(src, ip, 7)
+                offset += (src[ip] | (src[ip + 1] << 8)) >> 2; ip += 2
+                if offset == 0:
+                    return str(dst)
+                copy_earlier(dst, offset + 0x4000, t + 2)
+            else:
+                copy_earlier(dst, 1 + (t >> 2) + (src[ip] << 2), 2); ip += 1
+
+            t = src[ip - 2] & 3
+            if t == 0:
+                break
+            dst.extend(src[ip: ip + t]); ip += t
+            t = src[ip]; ip += 1
+
+def read_xor32(src, p1, p2):
+    v1 = src[p1] | (src[p1 + 1] << 8) | (src[p1 + 2] << 16) | (src[p1 + 3] << 24)
+    v2 = src[p2] | (src[p2 + 1] << 8) | (src[p2 + 2] << 16) | (src[p2 + 3] << 24)
+    return v1 ^ v2
+
+clz_table = (
+    32, 0, 1, 26, 2, 23, 27, 0, 3, 16, 24, 30, 28, 11, 0, 13, 4,
+    7, 17, 0, 25, 22, 31, 15, 29, 10, 12, 6, 0, 21, 14, 9, 5,
+    20, 8, 19, 18
+)
+
+def lzo1x_1_compress_core(src, dst, ti, ip_start, ip_len):
+    dict_entries = [0] * 16384
+
+    in_end = ip_start + ip_len
+    ip_end = ip_start + ip_len - 20
+
+    ip = ip_start
+    ii = ip_start
+
+    ip += (4 - ti) if ti < 4 else 0
+    ip += 1 + ((ip - ii) >> 5)
+    while 1:
+        while 1:
+            if ip >= ip_end:
+                return in_end - (ii - ti)
+            dv = src[ip: ip + 4]
+            dindex = dv[0] | (dv[1] << 8) | (dv[2] << 16) | (dv[3] << 24)
+            dindex = ((0x1824429d * dindex) >> 18) & 0x3fff
+            m_pos = ip_start + dict_entries[dindex]
+            dict_entries[dindex] = (ip - ip_start) & 0xffff
+            if dv == src[m_pos: m_pos + 4]:
+                break
+            ip += 1 + ((ip - ii) >> 5)
+
+        ii -= ti; ti = 0
+        t = ip - ii
+        if t != 0:
+            if t <= 3:
+                dst[-2] |= t
+                dst.extend(src[ii: ii + t])
+            elif t <= 16:
+                dst.append(t - 3)
+                dst.extend(src[ii: ii + t])
+            else:
+                if t <= 18:
+                    dst.append(t - 3)
+                else:
+                    tt = t - 18
+                    dst.append(0)
+                    n, tt = divmod(tt, 255)
+                    dst.extend("\x00" * n)
+                    dst.append(tt)
+                dst.extend(src[ii: ii + t])
+                ii += t
+
+        m_len = 4
+        v = read_xor32(src, ip + m_len, m_pos + m_len)
+        if v == 0:
+            while 1:
+                m_len += 4
+                v = read_xor32(src, ip + m_len, m_pos + m_len)
+                if ip + m_len >= ip_end:
+                    break
+                elif v != 0:
+                    m_len += clz_table[(v & -v) % 37] >> 3
+                    break
+        else:
+            m_len += clz_table[(v & -v) % 37] >> 3
+
+        m_off = ip - m_pos
+        ip += m_len
+        ii = ip
+        if m_len <= 8 and m_off <= 0x0800:
+            m_off -= 1
+            dst.append(((m_len - 1) << 5) | ((m_off & 7) << 2))
+            dst.append(m_off >> 3)
+        elif m_off <= 0x4000:
+            m_off -= 1
+            if m_len <= 33:
+                dst.append(32 | (m_len - 2))
+            else:
+                m_len -= 33
+                dst.append(32)
+                n, m_len = divmod(m_len, 255)
+                dst.extend("\x00" * n)
+                dst.append(m_len)
+            dst.append((m_off << 2) & 0xff)
+            dst.append((m_off >> 6) & 0xff)
+        else:
+            m_off -= 0x4000
+            if m_len <= 9:
+                dst.append(0xff & (16 | ((m_off >> 11) & 8) | (m_len - 2)))
+            else:
+                m_len -= 9
+                dst.append(0xff & (16 | ((m_off >> 11) & 8)))
+                n, m_len = divmod(m_len, 255)
+                dst.extend("\x00" * n)
+                dst.append(m_len)
+            dst.append((m_off << 2) & 0xff)
+            dst.append((m_off >> 6) & 0xff)
+
+def lzo1x_1_compress(s):
+    src = bytearray(s)
+    dst = bytearray()
+
+    ip = 0
+    l = len(s)
+    t = 0
+
+    dst.append(240)
+    dst.append((l >> 24) & 0xff)
+    dst.append((l >> 16) & 0xff)
+    dst.append((l >>  8) & 0xff)
+    dst.append( l        & 0xff)
+
+    while l > 20:
+        ll = l if l <= 49152 else 49152
+        ll_end = ip + ll
+        if (ll_end + ((t + ll) >> 5)) <= ll_end or (ll_end + ((t + ll) >> 5)) <= ip + ll:
+            break
+
+        t = lzo1x_1_compress_core(src, dst, t, ip, ll)
+        ip += ll
+        l -= ll
+    t += l
+
+    if t > 0:
+        ii = len(s) - t
+
+        if len(dst) == 0 and t <= 238:
+            dst.append(17 + t)
+        elif t <= 3:
+            dst[-2] |= t
+        elif t <= 18:
+            dst.append(t - 3)
+        else:
+            tt = t - 18
+            dst.append(0)
+            n, tt = divmod(tt, 255)
+            dst.extend("\x00" * n)
+            dst.append(tt)
+        dst.extend(src[ii: ii + t])
+
+    dst.append(16 | 1)
+    dst.append(0)
+    dst.append(0)
+
+    return str(dst)
 
 
 def modify_save(data, changes, endian=1):
