@@ -5,6 +5,7 @@ from bisect import insort
 from cStringIO import StringIO
 import hashlib
 import json
+import math
 import optparse
 import struct
 import sys
@@ -589,6 +590,11 @@ def modify_save(data, changes, endian=1):
     player = read_protobuf(unwrap_player_data(data))
 
     if changes.has_key("level"):
+        level = int(changes["level"])
+        lower = int(math.ceil(60 * ((level ** 2.8) - 1)))
+        upper = int(math.ceil(60 * (((level + 1) ** 2.8) - 1)))
+        if player[3][0][1] not in range(lower, upper):
+            player[3][0][1] = lower
         player[2] = [[0, int(changes["level"])]]
 
     if changes.has_key("skillpoints"):
