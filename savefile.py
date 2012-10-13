@@ -638,6 +638,23 @@ def modify_save(data, changes, endian=1):
         s = player[36][0][1]
         player[36][0][1] = s[: 7] + chr(sdus) + s[8: ]
 
+    if changes.has_key("unlocks"):
+        unlocked, notifications = [], []
+        if player.has_key(23):
+            unlocked = map(ord, player[23][0][1])
+        if player.has_key(24):
+            notifications = map(ord, player[24][0][1])
+        unlocks = changes["unlocks"].split(":")
+        if "slaughterdome" in unlocks:
+            if 1 not in unlocked:
+                unlocked.append(1)
+            if 1 not in notifications:
+                notifications.append(1)
+        if unlocked:
+            player[23] = [[2, "".join(map(chr, unlocked))]]
+        if notifications:
+            player[24] = [[2, "".join(map(chr, notifications))]]
+
     return wrap_player_data(write_protobuf(player), endian)
 
 def apply_crude_parsing(player, rules):
