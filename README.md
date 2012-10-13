@@ -53,7 +53,7 @@ format:
 
 ## How do I just extract the player data?
 
-Extract the raw protobuf data from a save file:
+Extract the raw protocol buffer data from a save file:
 
     python savefile.py -d your-save-game.sav player.p
 
@@ -61,14 +61,14 @@ Extract the data in JSON format (encoded to allow round-tripping):
 
     python savefile.py -d -j your-save-game.sav player.json
 
-Extract the data in JSON format, applying further protobuf decoding to the
-listed fields to show information such as money and eridium:
+Extract the data in JSON format, applying further protocol buffer decoding to
+the listed fields to show information such as money and eridium:
 
     python savefile.py -d -j -p 6:0,8,11,13,18,19,29,30,34,38,53,54 your-save-game.sav player.json
 
 ## How do I write the player data back to a new save file?
 
-Create a new save file from protobuf data:
+Create a new save file from protocol buffer data:
 
     python savefile.py player.p your-new-save-game.sav
 
