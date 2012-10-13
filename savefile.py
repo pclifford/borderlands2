@@ -313,6 +313,9 @@ def parse_zigzag(i):
 
 
 def unwrap_player_data(data):
+    if data[: 4] == "CON ":
+        raise BL2Error("You need to use a program like Horizon or Modio to extract the SaveGame.sav file first")
+
     if data[: 20] != hashlib.sha1(data[20: ]).digest():
         raise BL2Error("Invalid save file")
 
