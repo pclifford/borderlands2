@@ -271,6 +271,13 @@ def read_protobuf_value(b, wire_type):
         raise BL2Error("Unsupported wire type " + str(wire_type))
     return value
 
+def read_repeated_protobuf_value(data, wire_type):
+    b = StringIO(data)
+    values = []
+    while b.tell() < len(data):
+        values.append(read_protobuf_value(b, wire_type))
+    return values
+
 def write_protobuf(data):
     b = StringIO()
     # If the data came from a JSON file the keys will all be strings
@@ -298,6 +305,8 @@ def write_protobuf_value(b, wire_type, value):
     elif wire_type == 2:
         if type(value) is unicode:
             value = value.encode("latin1")
+        elif type(value) is list:
+            value = "".join(map(chr, value))
         write_varint(b, len(value))
         b.write(value)
     elif wire_type == 5:
@@ -310,6 +319,268 @@ def parse_zigzag(i):
         return -1 ^ (i >> 1)
     else:
         return i >> 1
+
+
+def apply_structure(pbdata, s):
+    fields = {}
+    raw = {}
+    for k, data in pbdata.items():
+        mapping = s.get(k)
+        if mapping is None:
+            raw[k] = data
+            continue
+        elif type(mapping) is str:
+            fields[mapping] = data[0][1]
+            continue
+        key, repeated, child_s = mapping
+        if child_s is None:
+            values = [d[1] for d in data]
+            fields[key] = values if repeated else values[0]
+        elif type(child_s) is int:
+            if repeated:
+                fields[key] = read_repeated_protobuf_value(data[0][1], child_s)
+            else:
+                fields[key] = data[0][1]
+        elif type(child_s) is tuple:
+            values = [child_s[0](d[1]) for d in data]
+            fields[key] = values if repeated else values[0]
+        elif type(child_s) is dict:
+            values = [apply_structure(read_protobuf(d[1]), child_s) for d in data]
+            fields[key] = values if repeated else values[0]
+        else:
+            raise Exception("Invalid mapping %r for %r: %r" % (mapping, k, data))
+    if len(raw) != 0:
+        fields["_raw"] = {}
+        for k, values in raw.items():
+            safe_values = []
+            for (wire_type, v) in values:
+                if wire_type == 2:
+                    v = [ord(c) for c in v]
+                safe_values.append([wire_type, v])
+            fields["_raw"][k] = safe_values
+    return fields
+
+def remove_structure(data, inv):
+    pbdata = {}
+    pbdata.update(data.get("_raw", {}))
+    for k, value in data.items():
+        if k == "_raw":
+            continue
+        mapping = inv.get(k)
+        if mapping is None:
+            raise BL2Error("Unknown key %r in data" % (k, ))
+        elif type(mapping) is int:
+            pbdata[mapping] = [[guess_wire_type(value), value]]
+            continue
+        key, repeated, child_inv = mapping
+        if child_inv is None:
+            value = [value] if not repeated else value
+            pbdata[key] = [[guess_wire_type(v), v] for v in value]
+        elif type(child_inv) is int:
+            if repeated:
+                b = StringIO()
+                for v in value:
+                    write_protobuf_value(b, child_inv, v)
+                pbdata[key] = [[2, b.getvalue()]]
+            else:
+                pbdata[key] = [[child_inv, value]]
+        elif type(child_inv) is tuple:
+            value = [value] if not repeated else value
+            values = []
+            for v in map(child_inv[1], value):
+                if type(v) is list:
+                    values.append(v)
+                else:
+                    values.append([guess_wire_type(v), v])
+            pbdata[key] = values
+        elif type(child_inv) is dict:
+            value = [value] if not repeated else value
+            values = []
+            for d in [remove_structure(v, child_inv) for v in value]:
+                values.append([2, write_protobuf(d)])
+            pbdata[key] = values
+        else:
+            raise Exception("Invalid mapping %r for %r: %r" % (mapping, k, value))
+    return pbdata
+
+def guess_wire_type(value):
+    return 2 if isinstance(value, basestring) else 0
+
+def invert_structure(structure):
+    inv = {}
+    for k, v in structure.items():
+        if type(v) is tuple:
+            if type(v[2]) is dict:
+                inv[v[0]] = (k, v[1], invert_structure(v[2]))
+            else:
+                inv[v[0]] = (k, ) + v[1: ]
+        else:
+            inv[v] = k
+    return inv
+
+def unwrap_bytes(value):
+    return [ord(d) for d in value]
+
+def wrap_bytes(value):
+    return "".join(map(chr, value))
+
+def unwrap_float(v):
+    return struct.unpack("<f", struct.pack("<I", v))[0]
+
+def wrap_float(v):
+    return [5, struct.unpack("<I", struct.pack("<f", v))[0]]
+
+black_market_keys = (
+    "rifle", "pistol", "launcher", "shotgun", "smg",
+    "sniper", "grenade", "backpack", "bank"
+)
+
+def unwrap_black_market(value):
+    return dict(zip(black_market_keys, [ord(d) for d in value]))
+
+def wrap_black_market(value):
+    return "".join([chr(value.get(k)) for k in black_market_keys[: len(value)]])
+
+item_header_sizes = (
+    (("type", 8), ("balance", 10), ("manufacturer", 7)),
+    (("type", 6), ("balance", 10), ("manufacturer", 7))
+)
+
+def unwrap_item_info(value):
+    is_weapon, item, key = unwrap_item(value)
+    data = {
+        "is_weapon": is_weapon,
+        "key": key,
+        "set": item[0],
+        "level": [item[4], item[5]]
+    }
+    for i, (k, bits) in enumerate(item_header_sizes[is_weapon]):
+        lib = item[1 + i] >> bits
+        asset = item[1 + i] &~ (lib << bits)
+        data[k] = {"lib": lib, "asset": asset}
+    bits = 10 + is_weapon
+    parts = []
+    for value in item[6: ]:
+        if value is None:
+            parts.append(None)
+        else:
+            lib = value >> bits
+            asset = value &~ (lib << bits)
+            parts.append({"lib": lib, "asset": asset})
+    data["parts"] = parts
+    return data
+
+def wrap_item_info(value):
+    item = [value["set"]]
+    for key, bits in item_header_sizes[value["is_weapon"]]:
+        v = value[key]
+        item.append((v["lib"] << bits) | v["asset"])
+    item.extend(value["level"])
+    bits = 10 + value["is_weapon"]
+    for v in value["parts"]:
+        if v is None:
+            item.append(None)
+        else:
+            item.append((v["lib"] << bits) | v["asset"])
+    return wrap_item(value["is_weapon"], item, value["key"])
+
+save_structure = {
+    1: "class",
+    2: "level",
+    3: "experience",
+    4: "skill_points",
+    6: ("currency", True, 0),
+    8: ("skills", True, {
+            1: "name",
+            2: "level",
+            3: "unknown3",
+            4: "unknown4"
+        }),
+    11: ("resources", True, {
+            1: "resource",
+            2: "pool",
+            3: ("amount", False, (unwrap_float, wrap_float)),
+            4: "level"
+        }),
+    13: ("sizes", False, {
+            1: "inventory",
+            2: "weapon_slots",
+            3: "weapon_slots_shown"
+        }),
+    15: ("stats", False, (unwrap_bytes, wrap_bytes)),
+    16: ("active_fast_travel", True, None),
+    17: "last_fast_travel",
+    18: ("missions", True, {
+            1: "playthrough",
+            2: "active",
+            3: ("data", True, {
+                1: "name",
+                2: "unknown2",
+                3: "unknown3",
+                4: "unknown4",
+                5: ("unknown5", False, (unwrap_bytes, wrap_bytes)),
+                6: "unknown6",
+                7: ("unknown7", False, (unwrap_bytes, wrap_bytes)),
+                8: "unknown8",
+                9: "unknown9",
+                10: "unknown10",
+                11: "unknown11",
+            }),
+        }),
+    19: ("appearance", False, {
+            1: "name",
+            2: ("color1", False, {1: "a", 2: "r", 3: "g", 4: "b"}),
+            3: ("color2", False, {1: "a", 2: "r", 3: "g", 4: "b"}),
+            4: ("color3", False, {1: "a", 2: "r", 3: "g", 4: "b"}),
+        }),
+    21: "mission_number",
+    23: ("unlocks", False, (unwrap_bytes, wrap_bytes)),
+    24: ("unlock_notifications", False, (unwrap_bytes, wrap_bytes)),
+    25: "time_played",
+    26: "save_timestamp",
+    29: ("game_stages", True, {
+            1: "name",
+            2: "unknown2",
+            3: "unknown3",
+            4: "unknown4",
+            5: "unknown5",
+        }),
+    30: ("areas", True, {
+            1: "name",
+            2: "unknown2"
+        }),
+    34: ("id", False, {
+            1: ("a", False, 5),
+            2: ("b", False, 5),
+            3: ("c", False, 5),
+            4: ("d", False, 5),
+        }),
+    35: ("wearing", True, None),
+    36: ("black_market", False, (unwrap_black_market, wrap_black_market)),
+    37: "active_mission",
+    38: ("challenges", True, {
+            1: "name",
+            2: "unknown2",
+            3: "unknown3"
+        }),
+    41: ("bank", True, {
+            1: ("data", False, (unwrap_item_info, wrap_item_info)),
+        }),
+    46: ("explored_areas", True, None),
+    53: ("items", True, {
+            1: ("data", False, (unwrap_item_info, wrap_item_info)),
+            2: "unknown2",
+            3: "is_equipped",
+            4: "star"
+        }),
+    54: ("weapons", True, {
+            1: ("data", False, (unwrap_item_info, wrap_item_info)),
+            2: "slot",
+            3: "star",
+            4: "unknown4",
+        }),
+    56: "bank_size",
+}
 
 
 def unwrap_player_data(data):
@@ -660,23 +931,6 @@ def modify_save(data, changes, endian=1):
 
     return wrap_player_data(write_protobuf(player), endian)
 
-def apply_crude_parsing(player, rules):
-    for key in rules.split(","):
-        if ":" in key:
-            key, field_type = key.split(":", 1)
-            field_type = int(field_type)
-            for element in player.get(int(key), []):
-                element[0] = field_type
-                b = StringIO(element[1])
-                end_position = len(element[1])
-                value = []
-                while b.tell() < end_position:
-                    value.append(read_protobuf_value(b, field_type))
-                element[1] = value
-        else:
-            for element in player.get(int(key), []):
-                element[1] = read_protobuf(element[1])
-
 def main():
     usage = "usage: %prog [options] [source file] [destination file]"
     p = optparse.OptionParser()
@@ -700,8 +954,9 @@ def main():
         help="comma separated list of modifications to make, eg money=99999999,eridium=99"
     )
     p.add_option(
-        "-p", "--parse", metavar="FIELDNUMS",
-        help="perform further protobuf parsing on the specified comma separated list of keys"
+        "-p", "--parse",
+        action="store_true",
+        help="parse the protocol buffer data further and generate more readable JSON"
     )
     options, args = p.parse_args()
 
@@ -731,17 +986,29 @@ def main():
         savegame = input.read()
         player = unwrap_player_data(savegame)
         if options.json:
-            player = read_protobuf(player)
+            data = read_protobuf(player)
             if options.parse:
-                apply_crude_parsing(player, options.parse)
-            player = json.dumps(player, encoding="latin1", sort_keys=True, indent=4)
+                data = apply_structure(data, save_structure)
+            player = json.dumps(data, encoding="latin1", sort_keys=True, separators=(',',':'))
         output.write(player)
     else:
         player = input.read()
         if options.json:
-            player = write_protobuf(json.loads(player, encoding="latin1"))
+            data = json.loads(player, encoding="latin1")
+            if not data.has_key("1"):
+                data = remove_structure(data, invert_structure(save_structure))
+            player = write_protobuf(data)
         savegame = wrap_player_data(player, endian)
         output.write(savegame)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except:
+        print >>sys.stderr, (
+            "Something went wrong, but please ensure you have the latest "
+            "version from https://github.com/pclifford/borderlands2 before "
+            "reporting a bug.  Information useful for a report follows:"
+        )
+        print >>sys.stderr, repr(sys.argv)
+        raise

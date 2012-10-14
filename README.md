@@ -66,14 +66,23 @@ Extract the raw protocol buffer data from a save file:
 
     python savefile.py -d your-save-game.sav player.p
 
-Extract the data in JSON format (encoded to allow round-tripping):
+Extract the data in JSON format (encoded purely to preserve all the raw
+information -- not very readable):
 
     python savefile.py -d -j your-save-game.sav player.json
 
-Extract the data in JSON format, applying further protocol buffer decoding to
-the listed fields to show information such as money and eridium:
+Extract the data in JSON format, applying further parsing to make the data as
+readable as possible:
 
-    python savefile.py -d -j -p 6:0,8,11,13,18,19,29,30,34,38,53,54 your-save-game.sav player.json
+    python savefile.py -d -j -p your-save-game.sav player.json
+
+It may help to copy and paste the contents of the .json file into a site like
+http://www.jsoneditoronline.org/ in order to view or modify the contents, to
+ensure that the necessary JSON formatting is preserved.
+
+Note that if you modify any of the data you extract in this way there is a very
+high probability that you will corrupt your save file.  Please make sure you
+have a backup first.
 
 ## How do I write the player data back to a new save file?
 
