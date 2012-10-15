@@ -287,7 +287,7 @@ def write_protobuf(data):
             if type(value) is dict:
                 value = write_protobuf(value)
                 wire_type = 2
-            elif type(value) in (list, tuple):
+            elif type(value) in (list, tuple) and wire_type != 2:
                 sub_b = StringIO()
                 for v in value:
                     write_protobuf_value(sub_b, wire_type, v)
