@@ -943,6 +943,55 @@ def modify_save(data, changes, endian=1):
 
     return wrap_player_data(write_protobuf(player), endian)
 
+def export_items(data, output):
+    player = read_protobuf(unwrap_player_data(data))
+    for i, name in ((41, "Bank"), (53, "Items"), (54, "Weapons")):
+        content = player.get(i)
+        if content is None:
+            continue
+        print >>output, "; " + name
+        for field in content:
+            raw = read_protobuf(field[1])[1][0][1]
+            code = "BL2(" + raw.encode("base64").strip() + ")"
+            print >>output, code
+
+def import_items(data, codelist, endian=1):
+    player = read_protobuf(unwrap_player_data(data))
+
+    to_bank = False
+    for line in codelist.splitlines():
+        line = line.strip()
+        if line.startswith(";"):
+            name = line[1: ].strip().lower()
+            if name == "bank":
+                to_bank = True
+            elif name in ("items", "weapons"):
+                to_bank = False
+            continue
+        elif line[: 4] + line[-1: ] != "BL2()":
+            continue
+
+        code = line[4: -1]
+        try:
+            raw = code.decode("base64")
+        except binascii.Error:
+            continue
+
+        if to_bank:
+            field = 41
+            entry = {1: [[2, raw]]}
+        elif (ord(raw[0]) & 0x80) == 0:
+            field = 53
+            entry = {1: [[2, raw]], 2: [[0, 1]], 3: [[0, 0]], 4: [[0, 1]]}
+        else:
+            field = 53
+            entry = {1: [[2, raw]], 2: [[0, 0]], 3: [[0, 1]]}
+
+        player.setdefault(field, []).append([2, write_protobuf(entry)])
+
+    return wrap_player_data(write_protobuf(player), endian)
+
+
 def parse_args():
     usage = "usage: %prog [options] [source file] [destination file]"
     p = optparse.OptionParser()
@@ -950,6 +999,14 @@ def parse_args():
         "-d", "--decode",
         action="store_true",
         help="read from a save game, rather than creating one"
+    )
+    p.add_option(
+        "-e", "--export-items", metavar="FILENAME",
+        help="save out codes for all bank and inventory items"
+    )
+    p.add_option(
+        "-i", "--import-items", metavar="FILENAME",
+        help="read in codes for items and add them to the bank and inventory"
     )
     p.add_option(
         "-j", "--json",
@@ -999,6 +1056,12 @@ def main(options, args):
                 k, v = (m.split("=", 1) + [None])[: 2]
                 changes[k] = v
         output.write(modify_save(input.read(), changes, endian))
+    elif options.export_items:
+        output = open(options.export_items, "w")
+        export_items(input.read(), output)
+    elif options.import_items:
+        itemlist = open(options.import_items, "r")
+        output.write(import_items(input.read(), itemlist.read(), endian))
     elif options.decode:
         savegame = input.read()
         player = unwrap_player_data(savegame)

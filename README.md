@@ -72,6 +72,36 @@ format:
 
     python savefile.py -m "" --little-endian console.sav pc.sav
 
+## How do I take a copy of all my character's items?
+
+All items stored and held in the character's bank or inventory can be exported
+to a text file as a list of codes, in a format compatible with Gibbed's save
+editor:
+
+    python savefile.py -e items.txt your-save-game.sav
+
+## How do I import those items back into a character?
+
+A text file of codes generated as above, or assembled by hand, can be imported
+into a character like so:
+
+    python savefile.py -i items.txt old.sav new.sav
+
+(Don't forget to add --little-endian if you're creating a save file for the PC
+version.)
+
+By default all items will be inserted into the inventory, but this can be
+changed with a line containing "; Bank" to indicate that all following items
+should go into the bank, or one of either "; Weapons" or "; Items" to indicate
+that all following items should go into the inventory.  For example, importing
+a file containing the following will put a Vault Hunter's Relic into the
+inventory and a Righteous Infinity pistol into the bank:
+
+    ; Bank
+    BL2(h0Hd1Z+jY/s2Qy++Zu8Ba9qXoOmjwJ6NhrlsOmhNMX+oJo5CfQns)
+    ; Items
+    BL2(B2vuv4tz1zSQCf2pqLJCS5XD/tKN4FXpjRJLnn1v85U=)
+
 ## How do I just extract the player data?
 
 Extract the raw protocol buffer data from a save file:
