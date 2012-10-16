@@ -931,7 +931,7 @@ def modify_save(data, changes, endian=1):
 
     return wrap_player_data(write_protobuf(player), endian)
 
-def main():
+def parse_args():
     usage = "usage: %prog [options] [source file] [destination file]"
     p = optparse.OptionParser()
     p.add_option(
@@ -958,7 +958,12 @@ def main():
         action="store_true",
         help="parse the protocol buffer data further and generate more readable JSON"
     )
-    options, args = p.parse_args()
+    return p.parse_args()
+
+def main(options, args):
+    if len(args) >= 2 and args[0] != "-" and args[0] == args[1]:
+        print >>sys.stderr, "Cannot overwrite the save file, please use a different filename for the new save"
+        return
 
     if len(args) < 1 or args[0] == "-":
         input = sys.stdin
@@ -1002,8 +1007,9 @@ def main():
         output.write(savegame)
 
 if __name__ == "__main__":
+    options, args = parse_args()
     try:
-        main()
+        main(options, args)
     except:
         print >>sys.stderr, (
             "Something went wrong, but please ensure you have the latest "
