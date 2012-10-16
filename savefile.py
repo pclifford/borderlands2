@@ -490,6 +490,7 @@ save_structure = {
     3: "experience",
     4: "skill_points",
     6: ("currency", True, 0),
+    7: "playthroughs_completed",
     8: ("skills", True, {
             1: "name",
             2: "level",
@@ -515,7 +516,7 @@ save_structure = {
             2: "active",
             3: ("data", True, {
                 1: "name",
-                2: "unknown2",
+                2: "status",
                 3: "unknown3",
                 4: "unknown4",
                 5: ("unknown5", False, (unwrap_bytes, wrap_bytes)),
@@ -524,7 +525,7 @@ save_structure = {
                 8: "unknown8",
                 9: "unknown9",
                 10: "unknown10",
-                11: "unknown11",
+                11: "level",
             }),
         }),
     19: ("appearance", False, {
@@ -912,6 +913,14 @@ def modify_save(data, changes, endian=1):
         s = player[36][0][1]
         player[36][0][1] = s[: 7] + chr(sdus) + s[8: ]
 
+    if changes.get("gunslots", "0") in "234":
+        n = int(changes["gunslots"])
+        slots = read_protobuf(player[13][0][1])
+        slots[2][0][1] = n
+        if slots[3][0][1] > n - 2:
+            slots[3][0][1] = n - 2
+        player[13][0][1] = write_protobuf(slots)
+
     if changes.has_key("unlocks"):
         unlocked, notifications = [], []
         if player.has_key(23):
@@ -928,6 +937,9 @@ def modify_save(data, changes, endian=1):
             player[23] = [[2, "".join(map(chr, unlocked))]]
         if notifications:
             player[24] = [[2, "".join(map(chr, notifications))]]
+        if "truevaulthunter" in unlocks:
+            if player[7][0][1] < 1:
+                player[7][0][1] = 1
 
     return wrap_player_data(write_protobuf(player), endian)
 
