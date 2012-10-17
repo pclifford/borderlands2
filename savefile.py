@@ -1069,7 +1069,7 @@ def main(options, args):
             data = read_protobuf(player)
             if options.parse:
                 data = apply_structure(data, save_structure)
-            player = json.dumps(data, encoding="latin1", sort_keys=True, separators=(',',':'))
+            player = json.dumps(data, encoding="latin1", sort_keys=True, indent=4)
         output.write(player)
     else:
         player = input.read()
