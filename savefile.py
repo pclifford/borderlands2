@@ -866,8 +866,8 @@ def modify_save(data, changes, endian=1):
 
     if changes.has_key("level"):
         level = int(changes["level"])
-        lower = int(math.ceil(60 * ((level ** 2.8) - 1)))
-        upper = int(math.ceil(60 * (((level + 1) ** 2.8) - 1)))
+        lower = int(60 * (level ** 2.8) - 59.2)
+        upper = int(60 * ((level + 1) ** 2.8) - 59.2)
         if player[3][0][1] not in range(lower, upper):
             player[3][0][1] = lower
         player[2] = [[0, int(changes["level"])]]
