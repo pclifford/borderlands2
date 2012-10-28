@@ -568,6 +568,7 @@ save_structure = {
             1: ("data", False, (unwrap_item_info, wrap_item_info)),
         }),
     46: ("explored_areas", True, None),
+    49: "active_playthrough",
     53: ("items", True, {
             1: ("data", False, (unwrap_item_info, wrap_item_info)),
             2: "unknown2",
@@ -580,6 +581,7 @@ save_structure = {
             3: "star",
             4: "unknown4",
         }),
+    55: "stats_bonuses_disabled",
     56: "bank_size",
 }
 
