@@ -917,6 +917,19 @@ def modify_save(data, changes, endian=1):
         s = player[36][0][1]
         player[36][0][1] = s[: 7] + chr(sdus) + s[8: ]
 
+    if changes.has_key("bank"):
+        size = int(changes["bank"])
+        sdus = int(min(255, math.ceil((size - 6) / 2.0)))
+        size = 6 + (sdus * 2)
+        if player.has_key(56):
+            player[56][0][1] = size
+        else:
+            player[56] = [[0, size]]
+        s = player[36][0][1]
+        if len(s) < 9:
+            s = s + (9 - len(s)) * "\x00"
+        player[36][0][1] = s[: 8] + chr(sdus) + s[9: ]
+
     if changes.get("gunslots", "0") in "234":
         n = int(changes["gunslots"])
         slots = read_protobuf(player[13][0][1])

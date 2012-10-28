@@ -13,7 +13,7 @@ Note the following before trying to use it:
 ## How do I modify values in a save file?
 
 Modify save file data by changing one or more of "level", "skillpoints",
-"money", "eridium", "seraph", "gunslots", "backpack", "unlocks", or
+"money", "eridium", "seraph", "gunslots", "backpack", "bank", "unlocks", or
 "itemlevels":
 
     python savefile.py -m eridium=99 old.sav new.sav
@@ -34,6 +34,11 @@ Set the size of your character's backpack, and the corresponding number of
 purchased backpack SDUs:
 
     python savefile.py -m backpack=27 old.sav new.sav
+
+Set the size of your character's bank, and the corresponding number of
+purchased bank SDUs:
+
+    python savefile.py -m bank=16 old.sav new.sav
 
 Unlock the Creature Slaughter Dome (Natural Selection Annex):
 
