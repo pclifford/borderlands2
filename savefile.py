@@ -650,42 +650,35 @@ def copy_earlier(b, offset, n):
 
 def lzo1x_decompress(s):
     dst = bytearray()
-    src = bytearray("\xff" + s[5: ])
-    ip = 1
+    src = bytearray(s)
+    ip = 5
 
-    skip = 0
+    skip = False
     if src[ip] > 17:
         t = src[ip] - 17; ip += 1
-        if t < 4:
-            skip = 3
-        else:
-            dst.extend(src[ip: ip + t]); ip += t
-            skip = 1
+        dst.extend(src[ip: ip + t]); ip += t
+        skip = True
 
     while 1:
-        if not (skip & 1):
-            t = src[ip]; ip += 1
-            if t >= 16:
-                skip = 7
-            else:
-                if t == 0:
-                    t, ip = expand_zeroes(src, ip, 15)
-                dst.extend(src[ip: ip + t + 3]); ip += t + 3
-        if not (skip & 2):
-            # first_literal_run
+        t = src[ip]; ip += 1
+
+        if skip is False and t < 16:
+            if t == 0:
+                t, ip = expand_zeroes(src, ip, 15)
+            dst.extend(src[ip: ip + t + 3]); ip += t + 3
             t = src[ip]; ip += 1
             if t < 16:
+                # first_literal_run
                 copy_earlier(dst, 1 + 0x0800 + (t >> 2) + (src[ip] << 2), 3); ip += 1
-        if not (skip & 4) and t < 16:
-            # match_done
-            # match_next
-            t = src[ip - 2] & 3
-            if t == 0:
-                continue
-            dst.extend(src[ip: ip + t]); ip += t
-            t = src[ip]; ip += 1
+                # match_done
+                # match_next
+                t = t & 3
+                if t == 0:
+                    continue
+                dst.extend(src[ip: ip + t]); ip += t
+                t = src[ip]; ip += 1
 
-        skip = 0
+        skip = False
         while 1:
             if t >= 64:
                 copy_earlier(dst, 1 + ((t >> 2) & 7) + (src[ip] << 3), (t >> 5) + 1); ip += 1
