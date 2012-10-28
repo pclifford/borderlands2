@@ -13,7 +13,8 @@ Note the following before trying to use it:
 ## How do I modify values in a save file?
 
 Modify save file data by changing one or more of "level", "skillpoints",
-"money", "eridium", "gunslots", "backpack", "unlocks", or "itemlevels":
+"money", "eridium", "seraph", "gunslots", "backpack", "unlocks", or
+"itemlevels":
 
     python savefile.py -m eridium=99 old.sav new.sav
 
@@ -48,7 +49,7 @@ Unlock both at once:
 
 Or many changes at once, separated by commas:
 
-    python savefile.py -m level=7,skillpoints=42,money=1234,eridium=9,itemlevels old.sav new.sav
+    python savefile.py -m level=7,skillpoints=42,money=1234,eridium=12,seraph=120,itemlevels old.sav new.sav
 
 Add --little-endian to write the save file in a format that should be readable
 by the PC version (the default is to write the data in big-endian format, for
