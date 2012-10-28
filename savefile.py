@@ -683,23 +683,25 @@ def lzo1x_decompress(s):
             if t >= 64:
                 copy_earlier(dst, 1 + ((t >> 2) & 7) + (src[ip] << 3), (t >> 5) + 1); ip += 1
             elif t >= 32:
-                t &= 31
-                if t == 0:
-                    t, ip = expand_zeroes(src, ip, 31)
-                copy_earlier(dst, 1 + ((src[ip] | (src[ip + 1] << 8)) >> 2), t + 2); ip += 2
+                count = t & 31
+                if count == 0:
+                    count, ip = expand_zeroes(src, ip, 31)
+                t = src[ip]
+                copy_earlier(dst, 1 + ((t | (src[ip + 1] << 8)) >> 2), count + 2); ip += 2
             elif t >= 16:
                 offset = (t & 8) << 11
-                t &= 7
-                if t == 0:
-                    t, ip = expand_zeroes(src, ip, 7)
-                offset += (src[ip] | (src[ip + 1] << 8)) >> 2; ip += 2
+                count = t & 7
+                if count == 0:
+                    count, ip = expand_zeroes(src, ip, 7)
+                t = src[ip]
+                offset += (t | (src[ip + 1] << 8)) >> 2; ip += 2
                 if offset == 0:
                     return str(dst)
-                copy_earlier(dst, offset + 0x4000, t + 2)
+                copy_earlier(dst, offset + 0x4000, count + 2)
             else:
                 copy_earlier(dst, 1 + (t >> 2) + (src[ip] << 2), 2); ip += 1
 
-            t = src[ip - 2] & 3
+            t = t & 3
             if t == 0:
                 break
             dst.extend(src[ip: ip + t]); ip += t
