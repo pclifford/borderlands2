@@ -837,7 +837,7 @@ def lzo1x_1_compress(s):
     if t > 0:
         ii = len(s) - t
 
-        if len(dst) == 0 and t <= 238:
+        if len(dst) == 5 and t <= 238:
             dst.append(17 + t)
         elif t <= 3:
             dst[-2] |= t
