@@ -7,6 +7,7 @@ import hashlib
 import json
 import math
 import optparse
+import random
 import struct
 import sys
 
@@ -226,6 +227,16 @@ def unwrap_item(data):
     is_weapon = version_type >> 7
     raw = rotate_data_right(xor_data(data[5: ], key >> 5), key & 31)
     return is_weapon, unpack_item_values(is_weapon, raw[2: ]), key
+
+def replace_raw_item_key(data, key):
+    old_key = struct.unpack(">i", data[1: 5])[0]
+    item = rotate_data_right(xor_data(data[5: ], old_key >> 5), old_key & 31)[2: ]
+    header = data[0] + struct.pack(">i", key)
+    padding = "\xff" * (33 - len(item))
+    h = binascii.crc32(header + "\xff\xff" + item + padding) & 0xffffffff
+    checksum = struct.pack(">H", ((h >> 16) ^ h) & 0xffff)
+    body = xor_data(rotate_data_left(checksum + item, key & 31), key >> 5)
+    return header + body
 
 
 def read_varint(f):
@@ -964,6 +975,7 @@ def export_items(data, output):
         print >>output, "; " + name
         for field in content:
             raw = read_protobuf(field[1])[1][0][1]
+            raw = replace_raw_item_key(raw, 0)
             code = "BL2(" + raw.encode("base64").strip() + ")"
             print >>output, code
 
@@ -989,6 +1001,8 @@ def import_items(data, codelist, endian=1):
         except binascii.Error:
             continue
 
+        key = random.randrange(0x100000000) - 0x80000000
+        raw = replace_raw_item_key(raw, key)
         if to_bank:
             field = 41
             entry = {1: [[2, raw]]}
