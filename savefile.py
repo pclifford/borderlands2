@@ -528,8 +528,8 @@ save_structure = {
             3: ("data", True, {
                 1: "name",
                 2: "status",
-                3: "unknown3",
-                4: "unknown4",
+                3: "is_from_dlc",
+                4: "dlc_id",
                 5: ("unknown5", False, (unwrap_bytes, wrap_bytes)),
                 6: "unknown6",
                 7: ("unknown7", False, (unwrap_bytes, wrap_bytes)),
@@ -545,6 +545,7 @@ save_structure = {
             3: ("color2", False, {1: "a", 2: "r", 3: "g", 4: "b"}),
             4: ("color3", False, {1: "a", 2: "r", 3: "g", 4: "b"}),
         }),
+    20: "save_game_id",
     21: "mission_number",
     23: ("unlocks", False, (unwrap_bytes, wrap_bytes)),
     24: ("unlock_notifications", False, (unwrap_bytes, wrap_bytes)),
@@ -552,10 +553,10 @@ save_structure = {
     26: "save_timestamp",
     29: ("game_stages", True, {
             1: "name",
-            2: "unknown2",
-            3: "unknown3",
-            4: "unknown4",
-            5: "unknown5",
+            2: "level",
+            3: "is_from_dlc",
+            4: "dlc_id",
+            5: "playthrough",
         }),
     30: ("areas", True, {
             1: "name",
@@ -572,11 +573,17 @@ save_structure = {
     37: "active_mission",
     38: ("challenges", True, {
             1: "name",
-            2: "unknown2",
-            3: "unknown3"
+            2: "is_from_dlc",
+            3: "dlc_id"
         }),
     41: ("bank", True, {
             1: ("data", False, (unwrap_item_info, wrap_item_info)),
+        }),
+    43: ("lockouts", True, {
+            1: "name",
+            2: "time",
+            3: "is_from_dlc",
+            4: "dlc_id"
         }),
     46: ("explored_areas", True, None),
     49: "active_playthrough",
