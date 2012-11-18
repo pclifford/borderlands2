@@ -325,6 +325,12 @@ def write_protobuf_value(b, wire_type, value):
     else:
         raise BL2Error("Unsupported wire type " + str(wire_type))
 
+def write_repeated_protobuf_value(data, wire_type):
+    b = StringIO()
+    for value in data:
+        write_protobuf_value(b, wire_type, value)
+    return b.getvalue()
+
 def parse_zigzag(i):
     if i & 1:
         return -1 ^ (i >> 1)
@@ -447,10 +453,12 @@ black_market_keys = (
 )
 
 def unwrap_black_market(value):
-    return dict(zip(black_market_keys, [ord(d) for d in value]))
+    sdus = read_repeated_protobuf_value(value, 0)
+    return dict(zip(black_market_keys, sdus))
 
 def wrap_black_market(value):
-    return "".join([chr(value.get(k)) for k in black_market_keys[: len(value)]])
+    sdus = [value[k] for k in black_market_keys[: len(value)]]
+    return write_repeated_protobuf_value(sdus, 0)
 
 item_header_sizes = (
     (("type", 8), ("balance", 10), ("manufacturer", 7)),
@@ -919,16 +927,13 @@ def modify_save(data, changes, endian=1):
 
     if changes.has_key("backpack"):
         size = int(changes["backpack"])
-        if size > 777:
-            sdus = 255
-        else:
-            sdus = int(math.ceil((size - 12) / 3.0))
-            size = 12 + (sdus * 3)
+        sdus = int(math.ceil((size - 12) / 3.0))
+        size = 12 + (sdus * 3)
         slots = read_protobuf(player[13][0][1])
         slots[1][0][1] = size
         player[13][0][1] = write_protobuf(slots)
-        s = player[36][0][1]
-        player[36][0][1] = s[: 7] + chr(sdus) + s[8: ]
+        s = read_repeated_protobuf_value(player[36][0][1], 0)
+        player[36][0][1] = write_repeated_protobuf_value(s[: 7] + [sdus] + s[8: ], 0)
 
     if changes.has_key("bank"):
         size = int(changes["bank"])
@@ -938,10 +943,10 @@ def modify_save(data, changes, endian=1):
             player[56][0][1] = size
         else:
             player[56] = [[0, size]]
-        s = player[36][0][1]
+        s = read_repeated_protobuf_value(player[36][0][1], 0)
         if len(s) < 9:
-            s = s + (9 - len(s)) * "\x00"
-        player[36][0][1] = s[: 8] + chr(sdus) + s[9: ]
+            s = s + (9 - len(s)) * [0]
+        player[36][0][1] = write_repeated_protobuf_value(s[: 8] + [sdus] + s[9: ], 0)
 
     if changes.get("gunslots", "0") in "234":
         n = int(changes["gunslots"])
