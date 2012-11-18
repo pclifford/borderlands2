@@ -178,6 +178,9 @@ def pack_item_values(is_weapon, values):
             value = value >> 8
             j = j + 1
         i = i + size
+    if (i & 7) != 0:
+        value = 0xff << (i & 7)
+        bytes[i >> 3] |= (value & 0xff)
     return "".join(map(chr, bytes[: (i + 7) >> 3]))
 
 def unpack_item_values(is_weapon, data):
