@@ -682,32 +682,18 @@ def lzo1x_decompress(s):
     src = bytearray(s)
     ip = 5
 
-    skip = False
-    if src[ip] > 17:
-        t = src[ip] - 17; ip += 1
+    t = src[ip]; ip += 1
+    if t > 17:
+        t = t - 17
         dst.extend(src[ip: ip + t]); ip += t
-        skip = True
-
-    while 1:
+        t = src[ip]; ip += 1
+    elif t < 16:
+        if t == 0:
+            t, ip = expand_zeroes(src, ip, 15)
+        dst.extend(src[ip: ip + t + 3]); ip += t + 3
         t = src[ip]; ip += 1
 
-        if skip is False and t < 16:
-            if t == 0:
-                t, ip = expand_zeroes(src, ip, 15)
-            dst.extend(src[ip: ip + t + 3]); ip += t + 3
-            t = src[ip]; ip += 1
-            if t < 16:
-                # first_literal_run
-                copy_earlier(dst, 1 + 0x0800 + (t >> 2) + (src[ip] << 2), 3); ip += 1
-                # match_done
-                # match_next
-                t = t & 3
-                if t == 0:
-                    continue
-                dst.extend(src[ip: ip + t]); ip += t
-                t = src[ip]; ip += 1
-
-        skip = False
+    while 1:
         while 1:
             if t >= 64:
                 copy_earlier(dst, 1 + ((t >> 2) & 7) + (src[ip] << 3), (t >> 5) + 1); ip += 1
@@ -735,6 +721,23 @@ def lzo1x_decompress(s):
                 break
             dst.extend(src[ip: ip + t]); ip += t
             t = src[ip]; ip += 1
+
+        while 1:
+            t = src[ip]; ip += 1
+            if t < 16:
+                if t == 0:
+                    t, ip = expand_zeroes(src, ip, 15)
+                dst.extend(src[ip: ip + t + 3]); ip += t + 3
+                t = src[ip]; ip += 1
+            if t < 16:
+                copy_earlier(dst, 1 + 0x0800 + (t >> 2) + (src[ip] << 2), 3); ip += 1
+                t = t & 3
+                if t == 0:
+                    continue
+                dst.extend(src[ip: ip + t]); ip += t
+                t = src[ip]; ip += 1
+            break
+
 
 def read_xor32(src, p1, p2):
     v1 = src[p1] | (src[p1 + 1] << 8) | (src[p1 + 2] << 16) | (src[p1 + 3] << 24)
@@ -852,12 +855,8 @@ def lzo1x_1_compress(s):
     dst.append((l >>  8) & 0xff)
     dst.append( l        & 0xff)
 
-    while l > 20:
-        ll = l if l <= 49152 else 49152
-        ll_end = ip + ll
-        if (ll_end + ((t + ll) >> 5)) <= ll_end or (ll_end + ((t + ll) >> 5)) <= ip + ll:
-            break
-
+    while l > 20 and t + l > 31:
+        ll = min(49152, l)
         t = lzo1x_1_compress_core(src, dst, t, ip, ll)
         ip += ll
         l -= ll
