@@ -923,9 +923,10 @@ def modify_save(data, changes, endian=1):
             for field in player[field_number]:
                 field_data = read_protobuf(field[1])
                 is_weapon, item, key = unwrap_item(field_data[1][0][1])
-                item = item[: 4] + [level, level] + item[6: ]
-                field_data[1][0][1] = wrap_item(is_weapon, item, key)
-                field[1] = write_protobuf(field_data)
+                if item[4] > 1:
+                    item = item[: 4] + [level, level] + item[6: ]
+                    field_data[1][0][1] = wrap_item(is_weapon, item, key)
+                    field[1] = write_protobuf(field_data)
 
     if changes.has_key("backpack"):
         size = int(changes["backpack"])

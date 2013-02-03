@@ -18,7 +18,8 @@ Modify save file data by changing one or more of "level", "skillpoints",
 
     python savefile.py -m eridium=99 old.sav new.sav
 
-Set the levels of all your items and weapons to match your character's level:
+Set the levels of all your items and weapons (except those at level 1, which
+are left alone) to match your character's level:
 
     python savefile.py -m itemlevels old.sav new.sav
 
