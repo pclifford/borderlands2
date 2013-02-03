@@ -13,8 +13,8 @@ Note the following before trying to use it:
 ## How do I modify values in a save file?
 
 Modify save file data by changing one or more of "level", "skillpoints",
-"money", "eridium", "seraph", "gunslots", "backpack", "bank", "unlocks", or
-"itemlevels":
+"money", "eridium", "seraph", "tokens", "gunslots", "backpack", "bank",
+"unlocks", or "itemlevels":
 
     python savefile.py -m eridium=99 old.sav new.sav
 

@@ -900,7 +900,7 @@ def modify_save(data, changes, endian=1):
     if changes.has_key("skillpoints"):
         player[4] = [[0, int(changes["skillpoints"])]]
 
-    if True in map(changes.has_key, ("money", "eridium", "seraph")):
+    if any(map(changes.has_key, ("money", "eridium", "seraph", "tokens"))):
         raw = player[6][0][1]
         b = StringIO(raw)
         values = []
@@ -912,6 +912,8 @@ def modify_save(data, changes, endian=1):
             values[1] = int(changes["eridium"])
         if changes.has_key("seraph"):
             values[2] = int(changes["seraph"])
+        if changes.has_key("tokens"):
+            values[4] = int(changes["tokens"])
         player[6][0] = [0, values]
 
     if changes.has_key("itemlevels"):
