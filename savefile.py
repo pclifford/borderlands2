@@ -463,6 +463,812 @@ def wrap_black_market(value):
     sdus = [value[k] for k in black_market_keys[: len(value)]]
     return write_repeated_protobuf_value(sdus, 0)
 
+# Challenge categories
+challenge_cat_dlc3 = "Hammerlock's Hunt"
+challenge_cat_dlc2 = "Campaign of Carnage"
+challenge_cat_dlc4 = "Dragon Keep"
+challenge_cat_dlc1 = "Pirate's Booty"
+challenge_cat_enemies = "Enemies"
+challenge_cat_elemental = "Elemental"
+challenge_cat_loot = "Loot"
+challenge_cat_money = "Money and Trading"
+challenge_cat_vehicle = "Vehicle"
+challenge_cat_health = "Health and Recovery"
+challenge_cat_grenades = "Grenades"
+challenge_cat_shields = "Shields"
+challenge_cat_rockets = "Rocket Launcher"
+challenge_cat_sniper = "Sniper Rifle"
+challenge_cat_ar = "Assault Rifle"
+challenge_cat_smg = "SMG"
+challenge_cat_shotgun = "Shotgun"
+challenge_cat_pistol = "Pistol"
+challenge_cat_melee = "Melee"
+challenge_cat_combat = "General Combat"
+challenge_cat_misc = "Miscellaneous"
+
+class Challenge(object):
+    """
+    A simple little object to hold information about our non-level-specific
+    challenges.  This is *mostly* just a glorified dict.
+    """
+
+    def __init__(self, position, identifier, cat, name, description, levels, bonus=None):
+        self.position = position
+        self.identifier = identifier
+        self.cat = cat
+        self.name = name
+        self.description = description
+        self.levels = levels
+        self.bonus = bonus
+
+    def get_max(self):
+        """
+        Returns the point value for the challenge JUST before its maximum level.
+        """
+        return self.levels[-1] - 1
+
+    def get_bonus(self):
+        """
+        Returns the point value for the challenge JUST before getting the challenge's
+        bonus reward, if any.  Will return None if no bonus is present for the
+        challenge.
+        """
+        if self.bonus:
+            return self.levels[self.bonus-1] - 1
+        else:
+            return None
+
+
+challenges = {}
+
+# Hammerlock DLC Challenges
+challenges[305] = Challenge(305, 1752, challenge_cat_dlc3,
+    "Savage Bloody Savage",
+    "Kill savages",
+    (20, 50, 100, 250, 500))
+challenges[303] = Challenge(303, 1750, challenge_cat_dlc3,
+    "Harder They Fall",
+    "Kill drifters",
+    (5, 15, 30, 40, 50))
+challenges[304] = Challenge(304, 1751, challenge_cat_dlc3,
+    "Fan Boy",
+    "Kill Fan Boats",
+    (5, 10, 15, 20, 30))
+challenges[306] = Challenge(306, 1753, challenge_cat_dlc3,
+    "Voracidous the Invincible",
+    "Defeat Voracidous the Invincible",
+    (1, 3, 5, 10, 15))
+challenges[307] = Challenge(307, 1952, challenge_cat_dlc3,
+    "Boroking Around",
+    "kill boroks",
+    (10, 20, 50, 80, 120))
+challenges[308] = Challenge(308, 1953, challenge_cat_dlc3,
+    "Stinging Sensation",
+    "Kill scaylions",
+    (10, 20, 50, 80, 120))
+
+# Torgue DLC Challenges
+challenges[310] = Challenge(310, 1756, challenge_cat_dlc2,
+    "Bikes Destroyed",
+    "Destroy Bikes",
+    (10, 20, 30, 50, 80))
+challenges[311] = Challenge(311, 1757, challenge_cat_dlc2,
+    "Bikers Killed",
+    "Bikers Killed",
+    (50, 100, 150, 200, 250))
+challenges[316] = Challenge(316, 1950, challenge_cat_dlc2,
+    "Torgue Tokens Acquired",
+    "Acquire Torgue Tokens",
+    (100, 250, 500, 750, 1000))
+challenges[315] = Challenge(315, 1949, challenge_cat_dlc2,
+    "Torgue Items Purchased",
+    "Purchase Torgue Items with Tokens",
+    (2, 5, 8, 12, 15))
+challenges[312] = Challenge(312, 1758, challenge_cat_dlc2,
+    "Battles Completed",
+    "Complete All Battles",
+    (1, 4, 8, 12))
+challenges[313] = Challenge(313, 1759, challenge_cat_dlc2,
+    "Pete The Invincible Defeated",
+    "Defeat Pete the Invincible",
+    (1, 3, 5, 10, 15))
+
+# Tiny Tina DLC Challenges
+challenges[318] = Challenge(318, 1954, challenge_cat_dlc4,
+    "Scot-Free",
+    "Kill dwarves",
+    (50, 100, 150, 200, 250))
+challenges[320] = Challenge(320, 1768, challenge_cat_dlc4,
+    "Rock Out With Your Rock Out",
+    "Kill golems",
+    (10, 25, 50, 80, 120))
+challenges[321] = Challenge(321, 1769, challenge_cat_dlc4,
+    "Knighty Knight",
+    "Kill knights",
+    (10, 25, 75, 120, 175))
+challenges[323] = Challenge(323, 1771, challenge_cat_dlc4,
+    "Orcs Should Perish",
+    "Kill orcs",
+    (50, 100, 150, 200, 250))
+challenges[324] = Challenge(324, 1772, challenge_cat_dlc4,
+    "Bone Breaker",
+    "Kill skeletons",
+    (50, 100, 150, 200, 250))
+challenges[325] = Challenge(325, 1773, challenge_cat_dlc4,
+    "Ew Ew Ew Ew",
+    "Kill spiders",
+    (25, 50, 100, 150, 200))
+challenges[326] = Challenge(326, 1774, challenge_cat_dlc4,
+    "Cheerful Green Giants",
+    "Kill treants",
+    (10, 20, 50, 80, 120))
+challenges[327] = Challenge(327, 1775, challenge_cat_dlc4,
+    "Magical Massacre",
+    "Kill wizards",
+    (10, 20, 50, 80, 120))
+challenges[317] = Challenge(317, 1754, challenge_cat_dlc4,
+    "Fus Roh Die",
+    "Kill dragons",
+    (10, 20, 50, 80, 110))
+challenges[322] = Challenge(322, 1770, challenge_cat_dlc4,
+    "Can't Fool Me",
+    "Kill mimics",
+    (5, 15, 30, 50, 75))
+
+# Captain Scarlett DLC Challenges
+challenges[298] = Challenge(298, 1743, challenge_cat_dlc1,
+    "In The Pink",
+    "Collect Seraph Crystals",
+    (80, 160, 240, 320, 400))
+challenges[299] = Challenge(299, 1755, challenge_cat_dlc1,
+    "Shady Dealings",
+    "Purchase Items With Seraph Crystals",
+    (1, 3, 5, 10, 15))
+challenges[294] = Challenge(294, 1745, challenge_cat_dlc1,
+    "Worm Killer",
+    "Kill Sand Worms",
+    (10, 20, 30, 50, 80))
+challenges[295] = Challenge(295, 1746, challenge_cat_dlc1,
+    "Land Lubber",
+    "Kill Pirates",
+    (50, 100, 150, 200, 250))
+challenges[296] = Challenge(296, 1747, challenge_cat_dlc1,
+    "Hovernator",
+    "Destroy Pirate Hovercrafts",
+    (5, 10, 15, 20, 30))
+challenges[297] = Challenge(297, 1748, challenge_cat_dlc1,
+    "Pirate Booty",
+    "Open Pirate Chests",
+    (25, 75, 150, 250, 375))
+challenges[292] = Challenge(292, 1742, challenge_cat_dlc1,
+    "Hyperius the Not-So-Invincible",
+    "Divide Hyperius by zero",
+    (1, 3, 5, 10, 15))
+challenges[293] = Challenge(293, 1744, challenge_cat_dlc1,
+    "Master Worm Food",
+    "Feed Master Gee to his worms",
+    (1, 3, 5, 10, 15))
+
+# Enemies
+challenges[24] = Challenge(24, 1632, challenge_cat_enemies,
+    "Skags to Riches",
+    "Kill skags",
+    (10, 25, 75, 150, 300))
+challenges[84] = Challenge(84, 1675, challenge_cat_enemies,
+    "Constructor Destructor",
+    "Kill constructors",
+    (5, 12, 20, 30, 50))
+challenges[80] = Challenge(80, 1655, challenge_cat_enemies,
+    "Load and Lock",
+    "Kill loaders",
+    (20, 100, 500, 1000, 1500),
+    bonus=3)
+challenges[76] = Challenge(76, 1651, challenge_cat_enemies,
+    "Bully the Bullies",
+    "Kill bullymongs",
+    (25, 50, 150, 300, 750))
+challenges[77] = Challenge(77, 1652, challenge_cat_enemies,
+    "Crystals are a Girl's Best Friend",
+    "Kill crystalisks",
+    (10, 25, 50, 80, 120))
+challenges[78] = Challenge(78, 1653, challenge_cat_enemies,
+    "WHY SO MUCH HURT?!",
+    "Kill goliaths",
+    (10, 25, 50, 80, 120))
+challenges[79] = Challenge(79, 1654, challenge_cat_enemies,
+    "Paingineering",
+    "Kill Hyperion personnel",
+    (10, 25, 75, 150, 300))
+challenges[83] = Challenge(83, 1658, challenge_cat_enemies,
+    "Just a Moment of Your Time...",
+    "Kill surveyors",
+    (10, 25, 75, 150, 300))
+challenges[87] = Challenge(87, 1694, challenge_cat_enemies,
+    "You (No)Mad, Bro?",
+    "Kill nomads",
+    (10, 25, 75, 150, 300))
+challenges[88] = Challenge(88, 1695, challenge_cat_enemies,
+    "Mama's Boys",
+    "Kill psychos",
+    (50, 100, 150, 300, 500))
+challenges[89] = Challenge(89, 1696, challenge_cat_enemies,
+    "You Dirty Rat",
+    "Kill rats.  Yes, really.",
+    (10, 25, 75, 150, 300))
+challenges[93] = Challenge(93, 1791, challenge_cat_enemies,
+    "Pest Control",
+    "Kill spiderants",
+    (10, 25, 75, 150, 300))
+challenges[94] = Challenge(94, 1792, challenge_cat_enemies,
+    "You're One Ugly Mother...",
+    "Kill stalkers",
+    (10, 25, 75, 150, 300))
+challenges[95] = Challenge(95, 1793, challenge_cat_enemies,
+    "Tentacle Obsession",
+    "Kill threshers",
+    (10, 25, 75, 150, 300))
+challenges[86] = Challenge(86, 1693, challenge_cat_enemies,
+    "Marauder? I Hardly Know 'Er",
+    "Kill marauders",
+    (20, 100, 500, 1000, 1500),
+    bonus=3)
+challenges[96] = Challenge(96, 1794, challenge_cat_enemies,
+    "Another Bug Hunt",
+    "Kill varkids",
+    (10, 25, 75, 150, 300))
+challenges[97] = Challenge(97, 1795, challenge_cat_enemies,
+    "Die in the Friendly Skies",
+    "Kill buzzards",
+    (10, 25, 45, 70, 100))
+challenges[98] = Challenge(98, 1796, challenge_cat_enemies,
+    "Little Person, Big Pain",
+    "Kill midgets",
+    (10, 25, 75, 150, 300))
+challenges[249] = Challenge(249, 1895, challenge_cat_enemies,
+    "Hurly Burly",
+    "Shoot bullymong-tossed projectiles out of midair",
+    (10, 25, 50, 125, 250))
+challenges[250] = Challenge(250, 1896, challenge_cat_enemies,
+    "Short-Chained",
+    "Shoot chains to release midgets from shields",
+    (1, 5, 15, 30, 50))
+challenges[99] = Challenge(99, 1934, challenge_cat_enemies,
+    "Cruising for a Bruising",
+    "Kill bruisers",
+    (10, 25, 75, 150, 300))
+challenges[91] = Challenge(91, 1732, challenge_cat_enemies,
+    "Pod Pew Pew",
+    "Kill varkid pods before they hatch",
+    (10, 25, 45, 70, 100))
+
+# Elemental
+challenges[225] = Challenge(225, 1873, challenge_cat_elemental,
+    "Cowering Inferno",
+    "Ignite enemies",
+    (25, 100, 400, 1000, 2000))
+challenges[40] = Challenge(40, 1642, challenge_cat_elemental,
+    "Acid Trip",
+    "Kill enemies with corrode damage",
+    (20, 75, 250, 600, 1000))
+challenges[43] = Challenge(43, 1645, challenge_cat_elemental,
+    "Boom.",
+    "Kill enemies with explosive damage",
+    (20, 75, 250, 600, 1000),
+    bonus=3)
+challenges[229] = Challenge(229, 1877, challenge_cat_elemental,
+    "I Just Want to Set the World on Fire",
+    "Deal burn damage",
+    (2500, 20000, 100000, 500000, 1000000),
+    bonus=5)
+challenges[230] = Challenge(230, 1878, challenge_cat_elemental,
+    "Corroderate",
+    "Deal corrode damage",
+    (2500, 20000, 100000, 500000, 1000000))
+challenges[231] = Challenge(231, 1879, challenge_cat_elemental,
+    'Say "Watt" Again',
+    "Deal electrocute damage",
+    (5000, 20000, 100000, 500000, 1000000))
+challenges[232] = Challenge(232, 1880, challenge_cat_elemental,
+    "Slag-Licked",
+    "Deal bonus damage to Slagged enemies",
+    (5000, 25000, 150000, 1000000, 5000000),
+    bonus=3)
+
+# Loot
+challenges[251] = Challenge(251, 1898, challenge_cat_loot,
+    "Another Man's Treasure",
+    "Loot or purchase white items",
+    (50, 125, 250, 400, 600))
+challenges[252] = Challenge(252, 1899, challenge_cat_loot,
+    "It's Not Easy Looting Green",
+    "Loot or purchase green items",
+    (20, 50, 75, 125, 200),
+    bonus=3)
+challenges[253] = Challenge(253, 1900, challenge_cat_loot,
+    "I Like My Treasure Rare",
+    "Loot or purchase blue items",
+    (5, 12, 20, 30, 45))
+challenges[254] = Challenge(254, 1901, challenge_cat_loot,
+    "Purple Reign",
+    "Loot or purchase purple items",
+    (2, 4, 7, 12, 20))
+challenges[255] = Challenge(255, 1902, challenge_cat_loot,
+    "Nothing Rhymes with Orange",
+    "Loot or purchase orange items",
+    (1, 3, 6, 10, 15),
+    bonus=5)
+challenges[108] = Challenge(108, 1669, challenge_cat_loot,
+    "The Call of Booty",
+    "Open treasure chests",
+    (5, 25, 50, 125, 250))
+challenges[109] = Challenge(109, 1670, challenge_cat_loot,
+    "Open Pandora's Boxes",
+    "Open lootable chests, lockers, and other objects",
+    (50, 250, 750, 1500, 2500),
+    bonus=3)
+challenges[8] = Challenge(8, 1630, challenge_cat_loot,
+    "Gun Runner",
+    "Pick up or purchase weapons",
+    (10, 25, 150, 300, 750))
+
+# Money
+challenges[118] = Challenge(118, 1858, challenge_cat_money,
+    "For the Hoard!",
+    "Save a lot of money",
+    (10000, 50000, 250000, 1000000, 3000000),
+    bonus=3)
+challenges[119] = Challenge(119, 1859, challenge_cat_money,
+    "Dolla Dolla Bills, Y'all",
+    "Collect dollars from cash drops",
+    (5000, 25000, 125000, 500000, 1000000))
+challenges[112] = Challenge(112, 1678, challenge_cat_money,
+    "Wholesale",
+    "Sell items to vending machines",
+    (10, 25, 150, 300, 750))
+challenges[113] = Challenge(113, 1860, challenge_cat_money,
+    "Limited-Time Offer",
+    "Buy Items of the Day",
+    (1, 5, 15, 30, 50))
+challenges[111] = Challenge(111, 1810, challenge_cat_money,
+    "Whaddaya Buyin'?",
+    "Purchase items with Eridium",
+    (2, 5, 9, 14, 20),
+    bonus=4)
+challenges[214] = Challenge(214, 1805, challenge_cat_money,
+    "Psst, Hey Buddy...",
+    "Trade with other players",
+    (1, 5, 15, 30, 50))
+
+# Vehicle
+challenges[37] = Challenge(37, 1640, challenge_cat_vehicle,
+    "Hit-and-Fun",
+    "Kill enemies by ramming them with a vehicle",
+    (5, 10, 50, 100, 200))
+challenges[275] = Challenge(275, 1920, challenge_cat_vehicle,
+    "Blue Sparks",
+    "Kill enemies by power-sliding over them in a vehicle",
+    (5, 15, 30, 50, 75),
+    bonus=3)
+challenges[38] = Challenge(38, 1641, challenge_cat_vehicle,
+    "Turret Syndrome",
+    "Kill enemies using a turret or vehicle-mounted weapon",
+    (10, 25, 150, 300, 750))
+challenges[277] = Challenge(277, 1922, challenge_cat_vehicle,
+    "...One Van Leaves",
+    "Kill vehicles while in a vehicle",
+    (5, 10, 50, 100, 200))
+challenges[274] = Challenge(274, 1919, challenge_cat_vehicle,
+    "Passive Aggressive",
+    "Kill enemies while riding as a passenger (not a gunner) in a vehicle",
+    (1, 10, 50, 100, 200))
+
+# Health
+challenges[270] = Challenge(270, 1917, challenge_cat_health,
+    "Heal Plz",
+    "Recover health",
+    (1000, 25000, 150000, 1000000, 5000000))
+challenges[200] = Challenge(200, 1865, challenge_cat_health,
+    "I'll Just Help Myself",
+    "Get Second Winds by killing an enemy",
+    (5, 10, 50, 100, 200))
+challenges[201] = Challenge(201, 1866, challenge_cat_health,
+    "Badass Bingo",
+    "Get Second Winds by killing a badass enemy",
+    (1, 5, 15, 30, 50),
+    bonus=5)
+challenges[204] = Challenge(204, 1868, challenge_cat_health,
+    "This is No Time for Lazy!",
+    "Revive a co-op partner",
+    (5, 10, 50, 100, 200),
+    bonus=5)
+challenges[198] = Challenge(198, 1834, challenge_cat_health,
+    "Death, Wind, and Fire",
+    "Get Second Winds by killing enemies with a burn DoT (damage over time)",
+    (1, 5, 15, 30, 50))
+challenges[197] = Challenge(197, 1833, challenge_cat_health,
+    "Green Meanie",
+    "Get Second Winds by killing enemies with a corrosive DoT (damage over time)",
+    (1, 5, 15, 30, 50))
+challenges[199] = Challenge(199, 1835, challenge_cat_health,
+    "I'm Back! Shocked?",
+    "Get Second Winds by killing enemies with an electrocute DoT (damage over time)",
+    (1, 5, 15, 30, 50))
+
+# Grenades
+challenges[31] = Challenge(31, 1639, challenge_cat_grenades,
+    "Pull the Pin",
+    "Kill enemies with grenades",
+    (10, 25, 150, 300, 750),
+    bonus=3)
+challenges[238] = Challenge(238, 1886, challenge_cat_grenades,
+    "Singled Out",
+    "Kill enemies with Singularity grenades",
+    (10, 25, 75, 150, 300))
+challenges[237] = Challenge(237, 1885, challenge_cat_grenades,
+    "EXPLOOOOOSIONS!",
+    "Kill enemies with Mirv grenades",
+    (10, 25, 75, 150, 300),
+    bonus=3)
+challenges[235] = Challenge(235, 1883, challenge_cat_grenades,
+    "Chemical Sprayer",
+    "Kill enemies with Area-of-Effect grenades",
+    (10, 25, 75, 150, 300))
+challenges[236] = Challenge(236, 1884, challenge_cat_grenades,
+    "Whoa, Black Betty",
+    "Kill enemies with Bouncing Betty grenades",
+    (10, 25, 75, 150, 300))
+challenges[239] = Challenge(239, 1918, challenge_cat_grenades,
+    "Health Vampire",
+    "Kill enemies with Transfusion grenades",
+    (10, 25, 75, 150, 300))
+
+# Shields
+challenges[243] = Challenge(243, 1889, challenge_cat_shields,
+    "Super Novas",
+    "Kill enemies with a Nova shield burst",
+    (5, 10, 50, 100, 200),
+    bonus=3)
+challenges[244] = Challenge(244, 1890, challenge_cat_shields,
+    "Roid Rage",
+    'Kill enemies while buffed by a "Maylay" shield',
+    (5, 10, 50, 100, 200))
+challenges[245] = Challenge(245, 1891, challenge_cat_shields,
+    "Game of Thorns",
+    "Kill enemies with reflected damage from a Spike shield",
+    (5, 10, 50, 100, 200))
+challenges[246] = Challenge(246, 1892, challenge_cat_shields,
+    "Amp It Up",
+    "Kill enemies while buffed by an Amplify shield",
+    (5, 10, 50, 100, 200))
+challenges[222] = Challenge(222, 1930, challenge_cat_shields,
+    "Ammo Eater",
+    "Absorb enemy ammo with an Absorption shield",
+    (20, 75, 250, 600, 1000),
+    bonus=5)
+
+# Rocket Launchers
+challenges[32] = Challenge(32, 1762, challenge_cat_rockets,
+    "Rocket and Roll",
+    "Kill enemies with rocket launchers",
+    (10, 50, 100, 250, 500),
+    bonus=3)
+challenges[192] = Challenge(192, 1828, challenge_cat_rockets,
+    "Gone with the Second Wind",
+    "Get Second Winds with rocket launchers",
+    (2, 5, 15, 30, 50))
+challenges[224] = Challenge(224, 1870, challenge_cat_rockets,
+    "Splish Splash",
+    "Kill enemies with rocket launcher splash damage",
+    (5, 10, 50, 100, 200))
+challenges[223] = Challenge(223, 1869, challenge_cat_rockets,
+    "Catch-a-Rocket!",
+    "Kill enemies with direct hits from rocket launchers",
+    (5, 10, 50, 100, 200),
+    bonus=5)
+challenges[54] = Challenge(54, 1871, challenge_cat_rockets,
+    "Shield Basher",
+    "Kill shielded enemies with one rocket each",
+    (5, 15, 35, 75, 125))
+challenges[52] = Challenge(52, 1808, challenge_cat_rockets,
+    "Sky Rockets in Flight...",
+    "Kill enemies from long range with rocket launchers",
+    (25, 100, 400, 1000, 2000))
+
+# Sniper Rifles
+challenges[28] = Challenge(28, 1636, challenge_cat_sniper,
+    "Longshot",
+    "Kill enemies with sniper rifles",
+    (20, 100, 500, 2500, 5000),
+    bonus=3)
+challenges[178] = Challenge(178, 1666, challenge_cat_sniper,
+    "Longshot Headshot",
+    "Get critical hits with sniper rifles",
+    (25, 100, 400, 1000, 2000))
+challenges[188] = Challenge(188, 1824, challenge_cat_sniper,
+    "Leaf on the Second Wind",
+    "Get Second Winds with sniper rifles",
+    (2, 5, 15, 30, 50))
+challenges[59] = Challenge(59, 1844, challenge_cat_sniper,
+    "Snipe Hunting",
+    "Kill enemies with critical hits using sniper rifles",
+    (10, 25, 75, 150, 300))
+challenges[47] = Challenge(47, 1798, challenge_cat_sniper,
+    "No Scope, No Problem",
+    "Kill enemies with sniper rifles without using ironsights",
+    (5, 10, 50, 100, 200))
+challenges[233] = Challenge(233, 1881, challenge_cat_sniper,
+    "Surprise!",
+    "Kill unaware enemies with sniper rifles",
+    (5, 10, 50, 100, 200))
+challenges[55] = Challenge(55, 1872, challenge_cat_sniper,
+    "Eviscerated",
+    "Kill shielded enemies with one shot using sniper rifles",
+    (5, 15, 35, 75, 125),
+    bonus=5)
+
+# Assault Rifles
+challenges[29] = Challenge(29, 1637, challenge_cat_ar,
+    "Aggravated Assault",
+    "Kill enemies with assault rifles",
+    (25, 100, 400, 1000, 2000),
+    bonus=3)
+challenges[179] = Challenge(179, 1667, challenge_cat_ar,
+    "This Is My Rifle...",
+    "Get critical hits with assault rifles",
+    (25, 100, 400, 1000, 2000))
+challenges[189] = Challenge(189, 1825, challenge_cat_ar,
+    "From My Cold, Dead Hands",
+    "Get Second Winds with assault rifles",
+    (5, 15, 30, 50, 75))
+challenges[60] = Challenge(60, 1845, challenge_cat_ar,
+    "... This Is My Gun",
+    "Kill enemies with critical hits using assault rifles",
+    (10, 25, 75, 150, 300))
+challenges[46] = Challenge(46, 1797, challenge_cat_ar,
+    "Crouching Tiger, Hidden Assault Rifle",
+    "Kill enemies with assault rifles while crouched",
+    (25, 75, 400, 1600, 3200),
+    bonus=5)
+
+# SMGs
+challenges[27] = Challenge(27, 1635, challenge_cat_smg,
+    "Hail of Bullets",
+    "Kill enemies with SMGs",
+    (25, 100, 400, 1000, 2000),
+    bonus=3)
+challenges[177] = Challenge(177, 1665, challenge_cat_smg,
+    "Constructive Criticism",
+    "Get critical hits with SMGs",
+    (25, 100, 400, 1000, 2000))
+challenges[58] = Challenge(58, 1843, challenge_cat_smg,
+    "High Rate of Ire",
+    "Kill enemies with critical hits using SMGs",
+    (10, 25, 75, 150, 300))
+challenges[187] = Challenge(187, 1823, challenge_cat_smg,
+    "More Like Submachine FUN",
+    "Get Second Winds with SMGs",
+    (2, 5, 15, 30, 50))
+
+# Shotguns
+challenges[26] = Challenge(26, 1634, challenge_cat_shotgun,
+    "Shotgun!",
+    "Kill enemies with shotguns",
+    (25, 100, 400, 1000, 2000),
+    bonus=3)
+challenges[176] = Challenge(176, 1664, challenge_cat_shotgun,
+    "Faceful of Buckshot",
+    "Get critical hits with shotguns",
+    (50, 250, 1000, 2500, 5000))
+challenges[186] = Challenge(186, 1822, challenge_cat_shotgun,
+    "Lock, Stock, and...",
+    "Get Second Winds with shotguns",
+    (2, 5, 15, 30, 50))
+challenges[50] = Challenge(50, 1806, challenge_cat_shotgun,
+    "Open Wide!",
+    "Kill enemies from point-blank range with shotguns",
+    (10, 25, 150, 300, 750))
+challenges[51] = Challenge(51, 1807, challenge_cat_shotgun,
+    "Shotgun Sniper",
+    "Kill enemies from long range with shotguns",
+    (10, 25, 75, 150, 300))
+challenges[57] = Challenge(57, 1842, challenge_cat_shotgun,
+    "Shotgun Surgeon",
+    "Kill enemies with critical hits using shotguns",
+    (10, 50, 100, 250, 500))
+
+# Pistols
+challenges[25] = Challenge(25, 1633, challenge_cat_pistol,
+    "The Killer",
+    "Kill enemies with pistols",
+    (25, 100, 400, 1000, 2000),
+    bonus=3)
+challenges[175] = Challenge(175, 1663, challenge_cat_pistol,
+    "Deadeye",
+    "Get critical hits with pistols",
+    (25, 100, 400, 1000, 2000))
+challenges[185] = Challenge(185, 1821, challenge_cat_pistol,
+    "Hard Boiled",
+    "Get Second Winds with pistols",
+    (2, 5, 15, 30, 50))
+challenges[56] = Challenge(56, 1841, challenge_cat_pistol,
+    "Pistolero",
+    "Kill enemies with critical hits using pistols",
+    (10, 25, 75, 150, 300))
+challenges[49] = Challenge(49, 1800, challenge_cat_pistol,
+    "Quickdraw",
+    "Kill enemies shortly after entering ironsights with a pistol",
+    (10, 25, 150, 300, 750),
+    bonus=5)
+
+# Melee
+challenges[75] = Challenge(75, 1650, challenge_cat_melee,
+    "Fisticuffs!",
+    "Kill enemies with melee attacks",
+    (25, 100, 400, 1000, 2000),
+    bonus=3)
+challenges[247] = Challenge(247, 1893, challenge_cat_melee,
+    "A Squall of Violence",
+    "Kill enemies with melee attacks using bladed guns",
+    (20, 75, 250, 600, 1000))
+
+# General Combat
+challenges[0] = Challenge(0, 1621, challenge_cat_combat,
+    "Knee-Deep in Brass",
+    "Fire a lot of rounds",
+    (1000, 5000, 10000, 25000, 50000),
+    bonus=5)
+challenges[90] = Challenge(90, 1702, challenge_cat_combat,
+    "...To Pay the Bills",
+    "Kill enemies while using your Action Skill",
+    (20, 75, 250, 600, 1000),
+    bonus=5)
+challenges[269] = Challenge(269, 1916, challenge_cat_combat,
+    "...I Got to Boogie",
+    "Kill enemies at night",
+    (10, 25, 150, 300, 750))
+challenges[268] = Challenge(268, 1915, challenge_cat_combat,
+    "Afternoon Delight",
+    "Kill enemies during the day",
+    (50, 250, 1000, 2500, 5000))
+challenges[261] = Challenge(261, 1908, challenge_cat_combat,
+    "Boomerbang",
+    "Kill enemies with Tediore reloads",
+    (5, 10, 50, 100, 200),
+    bonus=5)
+challenges[262] = Challenge(262, 1909, challenge_cat_combat,
+    "Gun Slinger",
+    "Deal damage with Tediore reloads",
+    (5000, 20000, 100000, 500000, 1000000))
+challenges[265] = Challenge(265, 1912, challenge_cat_combat,
+    "Not Full of Monkeys",
+    "Kill enemies with stationary barrels",
+    (10, 25, 45, 70, 100),
+    bonus=3)
+challenges[44] = Challenge(44, 1646, challenge_cat_combat,
+    "Critical Acclaim",
+    "Kill enemies with critical hits. And rainbows.",
+    (20, 100, 500, 1000, 1500))
+
+# Miscellaneous
+challenges[104] = Challenge(104, 1659, challenge_cat_misc,
+    "Haters Gonna Hate",
+    "Win duels",
+    (1, 5, 15, 30, 50))
+challenges[211] = Challenge(211, 1804, challenge_cat_misc,
+    "Sidejacked",
+    "Complete side missions",
+    (5, 15, 30, 55, 90))
+challenges[210] = Challenge(210, 1803, challenge_cat_misc,
+    "Compl33tionist",
+    "Complete optional mission objectives",
+    (10, 25, 45, 70, 100))
+challenges[173] = Challenge(173, 1698, challenge_cat_misc,
+    "Yo Dawg I Herd You Like Challenges",
+    "Complete many, many challenges",
+    (5, 25, 50, 100, 200))
+challenges[100] = Challenge(100, 1940, challenge_cat_misc,
+    "JEEEEENKINSSSSSS!!!",
+    "Find and eliminate Jimmy Jenkins",
+    (1, 3, 6, 10, 15),
+    bonus=5)
+
+def unwrap_challenges(data):
+    """
+    Unwraps our challenge data.  The first ten bytes are a header:
+
+        int32: Unknown, is always "4" on my savegames, though.
+        int32: Size in bytes of all the challenges, plus two more bytes
+               for the next short
+        short: Number of challenges
+
+    Each challenge takes up a total of 12 bytes, so num_challenges*12
+    should always equal size_in_bytes-2.
+
+    The structure of each challenge is:
+
+        byte: unknown, possibly at least part of an ID, but not unique
+              on its own
+        byte: unknown, but is always (on my saves, anyway) 6 or 7.
+        byte: unknown, but is always 1.
+        int32: total value of the challenge, across all resets
+        byte: unknown, but is always 1
+        int32: previous, pre-challenge-reset value.  Will always be 0
+               until challenges have been reset at least once.
+
+    The first two bytes of each challenge can be taken together, and if so, can
+    serve as a unique identifier for the challenge.  I decided to read them in
+    that way, as a short value.  I wasn't able to glean any pattern to whether
+    a 6 or a 7 shows up in the second byte.
+
+    Once your challenges have been reset in-game, the previous value is copied
+    into that second int32, but the total value itself remains unchanged, so at
+    that point you need to subtract previous_value from total_value to find the
+    actual current state of the challenge (that procedure is obviously true
+    prior to any resets, too, since previous_value is just zero in that case).
+
+    It's also worth mentioning that challenge data keeps accumulating even
+    after the challenge itself is completed, so the number displayed in-game
+    for completed challenges is no longer accurate.
+
+    """
+    
+    # TODO: This assumes little-endian!
+
+    global challenges
+
+    (unknown, size_in_bytes, num_challenges) = struct.unpack('<IIH', data[:10])
+    mydict = {'unknown': unknown}
+
+    # Sanity check on size reported
+    if (size_in_bytes + 8) != len(data):
+        raise BL2Error('Challenge data reported as %d bytes, but %d bytes found' % (
+            size_in_bytes, len(data)-8))
+    
+    # Sanity check on number of challenges reported
+    if (num_challenges * 12) != (size_in_bytes - 2):
+        raise BL2Error('%d challenges reported, but %d bytes of data found' % (
+            num_challenges, size_in_bytes - 2))
+
+    # Now read them in
+    mydict['challenges'] = []
+    for challenge in range(num_challenges):
+        idx = 10+(challenge*12)
+        mydict['challenges'].append(dict(zip(
+            ['id', 'first_one', 'total_value', 'second_one', 'previous_value'],
+            struct.unpack('<HBIBI', data[idx:idx+12]))))
+
+        if challenge in challenges:
+            info = challenges[challenge]
+            mydict['challenges'][-1]['_category'] = info.cat
+            mydict['challenges'][-1]['_name'] = info.name
+            mydict['challenges'][-1]['_description'] = info.description
+
+    # Return
+    return mydict
+
+def wrap_challenges(data):
+    """
+    Re-wrap our challenge data.  See the notes above in unwrap_challenges for
+    details on the structure.
+
+    Note that we are trusting that the correct number of challenges are present
+    in our data structure and setting size_in_bytes and num_challenges to match.
+    Change the number of challenges at your own risk!
+    """
+    
+    # TODO: This assumes little-endian!
+
+    parts = []
+    parts.append(struct.pack('<IIH', data['unknown'], (len(data['challenges'])*12)+2, len(data['challenges'])))
+    save_challenges = data['challenges']
+    for challenge in save_challenges:
+        parts.append(struct.pack('<HBIBI', challenge['id'],
+            challenge['first_one'],
+            challenge['total_value'],
+            challenge['second_one'],
+            challenge['previous_value']))
+    return ''.join(parts)
+
 item_header_sizes = (
     (("type", 8), ("balance", 10), ("manufacturer", 7)),
     (("type", 6), ("balance", 10), ("manufacturer", 7))
@@ -530,7 +1336,7 @@ save_structure = {
             2: "weapon_slots",
             3: "weapon_slots_shown"
         }),
-    15: ("stats", False, (unwrap_bytes, wrap_bytes)),
+    15: ("stats", False, (unwrap_challenges, wrap_challenges)),
     16: ("active_fast_travel", True, None),
     17: "last_fast_travel",
     18: ("missions", True, {
@@ -980,6 +1786,21 @@ def modify_save(data, changes, endian=1):
         if "truevaulthunter" in unlocks:
             if player[7][0][1] < 1:
                 player[7][0][1] = 1
+
+    if changes.has_key("challenges"):
+        data = unwrap_challenges(player[15][0][1])
+        # You can specify "max" and "bonus" at the same time, which will then put
+        # everything at its max value, and then potentially lower the ones which
+        # have bonuses.
+        if "max" in changes["challenges"]:
+            for idx, save_challenge in enumerate(data['challenges']):
+                if idx in challenges:
+                    save_challenge['total_value'] = save_challenge['previous_value'] + challenges[idx].get_max()
+        if "bonus" in changes["challenges"]:
+            for idx, save_challenge in enumerate(data['challenges']):
+                if idx in challenges and challenges[idx].bonus:
+                    save_challenge['total_value'] = save_challenge['previous_value'] + challenges[idx].get_bonus()
+        player[15][0][1] = wrap_challenges(data)
 
     return wrap_player_data(write_protobuf(player), endian)
 
