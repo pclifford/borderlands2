@@ -1839,15 +1839,16 @@ def modify_save(data, changes, endian=1):
                 player[7][0][1] = 1
         if "challenges" in unlocks:
             challenge_unlocks = [apply_structure(read_protobuf(d[1]), save_structure[38][2]) for d in player[38]]
+            inverted_structure = invert_structure(save_structure[38][2])
             seen_challenges = {}
             for unlock in challenge_unlocks:
                 seen_challenges[unlock['name']] = True
             for unlock in unlockable_challenge_strings:
                 if unlock not in seen_challenges:
-                    challenge_unlocks.append(dict([('dlc_id', 0), ('is_from_dlc', 0), ('name', unlock)]))
-            inverted_structure = invert_structure(save_structure[38][2])
-            data = [write_protobuf(remove_structure(d, inverted_structure)) for d in challenge_unlocks]
-            player[38] = [[2, d] for d in data]
+                    player[38].append([2, write_protobuf(remove_structure(dict([
+                        ('dlc_id', 0),
+                        ('is_from_dlc', 0),
+                        ('name', unlock)]), inverted_structure))])
 
     if changes.has_key("challenges"):
         data = unwrap_challenges(player[15][0][1])
