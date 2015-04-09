@@ -94,6 +94,10 @@ provides those bonuses:
 
     python savefile.py -m challenges=bonus old.sav new.sav
 
+To zero out all non-location-specific challenges:
+
+    python savefile.py -m challenges=zero old.sav new.sav
+
 Or many changes at once, separated by commas:
 
     python savefile.py -m level=7,skillpoints=42,money=1234,eridium=12,seraph=120,itemlevels old.sav new.sav

@@ -1807,17 +1807,24 @@ def modify_save(data, changes, endian=1):
 
     if changes.has_key("challenges"):
         data = unwrap_challenges(player[15][0][1])
-        # You can specify "max" and "bonus" at the same time, which will then put
-        # everything at its max value, and then potentially lower the ones which
-        # have bonuses.
-        if "max" in changes["challenges"]:
-            for save_challenge in data['challenges']:
-                if save_challenge['id'] in challenges:
+        # You can specify multiple options at once.  Specifying "max" and
+        # "bonus" at the same time, for instance, will put everything at its
+        # max value, and then potentially lower the ones which have bonuses.
+        do_zero = "zero" in changes["challenges"]
+        do_max = "max" in changes["challenges"]
+        do_bonus = "bonus" in changes["challenges"]
+
+        # Loop through
+        for save_challenge in data['challenges']:
+            if save_challenge['id'] in challenges:
+                if do_zero:
+                    save_challenge['total_value'] = save_challenge['previous_value']
+                if do_max:
                     save_challenge['total_value'] = save_challenge['previous_value'] + challenges[save_challenge['id']].get_max()
-        if "bonus" in changes["challenges"]:
-            for save_challenge in data['challenges']:
-                if save_challenge['id'] in challenges and challenges[save_challenge['id']].bonus:
+                if do_bonus and challenges[save_challenge['id']].bonus:
                     save_challenge['total_value'] = save_challenge['previous_value'] + challenges[save_challenge['id']].get_bonus()
+
+        # Re-wrap the data
         player[15][0][1] = wrap_challenges(data)
 
     return wrap_player_data(write_protobuf(player), endian)
