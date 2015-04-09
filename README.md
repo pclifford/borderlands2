@@ -85,7 +85,12 @@ Unlock both at once:
 
     python savefile.py -m unlocks=slaughterdome:truevaulthunter old.sav new.sav
 
-Set all your non-level-specific challenges to one under their maximum value:
+Unlock all non-level-specific challenges:
+
+    python savefile.py -m unlocks=challenges old.sav new.sav
+
+Set all your non-level-specific challenges to one under their maximum value (you'll
+probably want to unlock all challenges at the same time, if you do this):
 
     python savefile.py -m challenges=max old.sav new.sav
 

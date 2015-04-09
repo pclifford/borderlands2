@@ -463,6 +463,39 @@ def wrap_black_market(value):
     sdus = [value[k] for k in black_market_keys[: len(value)]]
     return write_repeated_protobuf_value(sdus, 0)
 
+# Unlockable challenge strings (for the challenges which only show up
+# after entering certain areas, or after completing specific other
+# challenges, etc)
+unlockable_challenge_strings = ["GD_Challenges.enemies.Enemies_KillVarkidPods",
+        "GD_Challenges.enemies.Enemies_KillSpiderants",
+        "GD_Challenges.enemies.Enemies_KillGyros",
+        "GD_Challenges.enemies.Enemies_KillVarkid",
+        "GD_Challenges.enemies.Enemies_KillSkags",
+        "GD_Challenges.enemies.Enemies_KillCrystalisks",
+        "GD_Challenges.enemies.Enemies_KillStalkers",
+        "GD_Challenges.enemies.Enemies_KillThreshers",
+        "GD_Challenges.Player.Player_SecondWindFromCorrosive",
+        "GD_Challenges.Player.Player_SecondWindFromFire",
+        "GD_Challenges.Player.Player_SecondWindFromShock",
+        "GD_Challenges.Weapons.Launcher_KillsSplashDamage",
+        "GD_Challenges.Weapons.Launcher_KillsFullShieldEnemy",
+        "GD_Challenges.Weapons.Launcher_KillsDirectHit",
+        "GD_Challenges.Weapons.Launcher_KillsLongRange",
+        "GD_Challenges.Weapons.SniperRifle_KillsFullShieldEnemy",
+        "GD_Challenges.Weapons.SniperRifle_KillsFromHip",
+        "GD_Challenges.Weapons.SniperRifle_KillsUnaware",
+        "GD_Challenges.Weapons.Sniper_CriticalHitKills",
+        "GD_Challenges.Weapons.SMG_CriticalHitKills",
+        "GD_Challenges.Weapons.AssaultRifle_KillsCrouched",
+        "GD_Challenges.Weapons.AssaultRifle_CriticalHitKills",
+        "GD_Challenges.Weapons.Shotgun_KillsLongRange",
+        "GD_Challenges.Weapons.Shotgun_KillsPointBlank",
+        "GD_Challenges.Weapons.Shotgun_CriticalHitKills",
+        "GD_Challenges.Weapons.Pistol_KillsQuickshot",
+        "GD_Challenges.Weapons.Pistol_CriticalHitKills",
+        "GD_Challenges.Melee.Melee_KillsBladed",
+        ]
+
 # Challenge categories
 challenge_cat_dlc3 = "Hammerlock's Hunt"
 challenge_cat_dlc2 = "Campaign of Carnage"
@@ -1804,6 +1837,17 @@ def modify_save(data, changes, endian=1):
         if "truevaulthunter" in unlocks:
             if player[7][0][1] < 1:
                 player[7][0][1] = 1
+        if "challenges" in unlocks:
+            challenge_unlocks = [apply_structure(read_protobuf(d[1]), save_structure[38][2]) for d in player[38]]
+            seen_challenges = {}
+            for unlock in challenge_unlocks:
+                seen_challenges[unlock['name']] = True
+            for unlock in unlockable_challenge_strings:
+                if unlock not in seen_challenges:
+                    challenge_unlocks.append(dict([('dlc_id', 0), ('is_from_dlc', 0), ('name', unlock)]))
+            inverted_structure = invert_structure(save_structure[38][2])
+            data = [write_protobuf(remove_structure(d, inverted_structure)) for d in challenge_unlocks]
+            player[38] = [[2, d] for d in data]
 
     if changes.has_key("challenges"):
         data = unwrap_challenges(player[15][0][1])
