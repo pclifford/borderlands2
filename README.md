@@ -7,7 +7,10 @@ would be a much simpler way of doing so), or if someone wanted to set up
 their character to more easily unlock all the various skins/heads that you
 get while working your way through the challenges (though I believe the
 aforementioned profile.dat editor can unlock all those, too, and you could
-also get those via some editing in Gibbed if that's your thing).
+also get those via some editing in Gibbed if that's your thing).  The one
+thing that could be easily done via my changes which I don't think can
+be easily done elsewhere would be to reset all your challenge statuses to
+zero, which might possibly be of use to someone.
 
 So: it's a bit silly, but here it is regardless.
 
