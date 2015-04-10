@@ -2143,6 +2143,17 @@ def modify_save(data, changes, endian=1):
         # Re-wrap the data
         player[15][0][1] = wrap_challenges(data)
 
+    if changes.has_key("name") and len(changes["name"]) > 0:
+        data = apply_structure(read_protobuf(player[19][0][1]), save_structure[19][2])
+        data["name"] = changes["name"]
+        player[19][0][1] = write_protobuf(remove_structure(data, invert_structure(save_structure[19][2])))
+
+    if changes.has_key("save_game_id") and len(changes["save_game_id"]) > 0:
+        try:
+            player[20][0][1] = int(changes["save_game_id"])
+        except ValueError:
+            raise BL2Error("'%s' is not a numeric save_game_id" % (changes["save_game_id"]))
+
     return wrap_player_data(write_protobuf(player), endian)
 
 def export_items(data, output):

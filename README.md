@@ -103,6 +103,15 @@ To zero out all non-location-specific challenges:
 
     python savefile.py -m challenges=zero old.sav new.sav
 
+To change the character's name:
+
+    python savefile.py -m "name=Mrs. Henderson" old.sav new.sav
+
+To change the character's save slot (I believe this is overridden by the game itself,
+rather than used from this save file, but I always go ahead and updte it anyway):
+
+    python savefile.py -m save_game_id=12 old.sav new.sav
+
 Or many changes at once, separated by commas:
 
     python savefile.py -m level=7,skillpoints=42,money=1234,eridium=12,seraph=120,itemlevels old.sav new.sav
