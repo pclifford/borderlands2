@@ -2138,7 +2138,9 @@ def modify_save(data, changes, endian=1):
                 if do_max:
                     save_challenge['total_value'] = save_challenge['previous_value'] + challenges[save_challenge['id']].get_max()
                 if do_bonus and challenges[save_challenge['id']].bonus:
-                    save_challenge['total_value'] = save_challenge['previous_value'] + challenges[save_challenge['id']].get_bonus()
+                    bonus_value = save_challenge['previous_value'] + challenges[save_challenge['id']].get_bonus()
+                    if do_max or do_zero or save_challenge['total_value'] < bonus_value:
+                        save_challenge['total_value'] = bonus_value
 
         # Re-wrap the data
         player[15][0][1] = wrap_challenges(data)
