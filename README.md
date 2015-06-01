@@ -71,6 +71,10 @@ purchased backpack SDUs:
 
     python savefile.py -m backpack=27 old.sav new.sav
 
+Or to set the backpack to the maximum size achievable in-game (which is 39):
+
+    python savefile.py -m backpack old.sav new.sav
+
 Set the size of your character's bank, and the corresponding number of
 purchased bank SDUs:
 

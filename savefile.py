@@ -2059,7 +2059,10 @@ def modify_save(data, changes, endian=1):
                     field[1] = write_protobuf(field_data)
 
     if changes.has_key("backpack"):
-        size = int(changes["backpack"])
+        if changes["backpack"]:
+            size = int(changes["backpack"])
+        else:
+            size = 39
         sdus = int(math.ceil((size - 12) / 3.0))
         size = 12 + (sdus * 3)
         slots = read_protobuf(player[13][0][1])
