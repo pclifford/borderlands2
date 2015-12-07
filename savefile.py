@@ -21,7 +21,7 @@ class Config(argparse.Namespace):
     json = False
     bigendian = False
     parse = False
-    verbose = False
+    verbose = True
 
     # Given by the user, strings
     export_items = None
