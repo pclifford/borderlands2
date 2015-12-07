@@ -40,7 +40,7 @@ class Config(argparse.Namespace):
     backpack = None
     bank = None
     gunslots = None
-    unlocks = {}
+    unlock = {}
     challenges = {}
     
     # Config options interpreted from the above
@@ -68,7 +68,7 @@ class Config(argparse.Namespace):
                 self.gunslots]:
             if var is not None:
                 self.changes = True
-        for var in [self.unlocks, self.challenges]:
+        for var in [self.unlock, self.challenges]:
             if len(var) > 0:
                 self.changes = True
 
@@ -2094,13 +2094,13 @@ class App(object):
                 slots[3][0][1] = n - 2
             player[13][0][1] = self.write_protobuf(slots)
 
-        if len(config.unlocks) > 0:
+        if len(config.unlock) > 0:
             unlocked, notifications = [], []
             if player.has_key(23):
                 unlocked = map(ord, player[23][0][1])
             if player.has_key(24):
                 notifications = map(ord, player[24][0][1])
-            if 'slaughterdome' in config.unlocks:
+            if 'slaughterdome' in config.unlock:
                 self.debug('Unlocking Creature Slaughterdome')
                 if 1 not in unlocked:
                     unlocked.append(1)
@@ -2110,11 +2110,11 @@ class App(object):
                 player[23] = [[2, "".join(map(chr, unlocked))]]
             if notifications:
                 player[24] = [[2, "".join(map(chr, notifications))]]
-            if 'truevaulthunter' in config.unlocks:
+            if 'truevaulthunter' in config.unlock:
                 self.debug('Unlocking TVHM')
                 if player[7][0][1] < 1:
                     player[7][0][1] = 1
-            if 'challenges' in config.unlocks:
+            if 'challenges' in config.unlock:
                 self.debug('Unlocking all non-level-specific challenges')
                 challenge_unlocks = [self.apply_structure(self.read_protobuf(d[1]), save_structure[38][2]) for d in player[38]]
                 inverted_structure = self.invert_structure(save_structure[38][2])
@@ -2330,7 +2330,7 @@ class App(object):
                 help='Set number of gun slots open',
                 )
 
-        parser.add_argument('--unlocks',
+        parser.add_argument('--unlock',
                 action=DictAction,
                 choices=['slaughterdome', 'truevaulthunter', 'challenges'],
                 default={},
