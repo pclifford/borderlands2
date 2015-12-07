@@ -2568,7 +2568,7 @@ if __name__ == "__main__":
         app.run()
     except Exception, e:
         print >>sys.stderr, "Something went wrong, but please ensure you have the latest "
-        print >>sys.stderr, "version from https://github.com/pclifford/borderlands2 before "
+        print >>sys.stderr, "version from https://github.com/apocalyptech/borderlands2 before "
         print >>sys.stderr, "reporting a bug.  Information useful for a report follows:"
         print >>sys.stderr
         print >>sys.stderr, repr(sys.argv)
