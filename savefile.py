@@ -46,8 +46,6 @@ class Config(argparse.Namespace):
     challenges = {}
     
     # Config options interpreted from the above
-    input_file = None
-    output_file = None
     endian = '<'
     changes = False
 
