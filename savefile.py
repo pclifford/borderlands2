@@ -2110,7 +2110,7 @@ class App(object):
                 player[23] = [[2, "".join(map(chr, unlocked))]]
             if notifications:
                 player[24] = [[2, "".join(map(chr, notifications))]]
-            if 'truevaulthunter' in config.unlock:
+            if 'tvhm' in config.unlock:
                 self.debug('Unlocking TVHM')
                 if player[7][0][1] < 1:
                     player[7][0][1] = 1
@@ -2332,7 +2332,7 @@ class App(object):
 
         parser.add_argument('--unlock',
                 action=DictAction,
-                choices=['slaughterdome', 'truevaulthunter', 'challenges'],
+                choices=['slaughterdome', 'tvhm', 'challenges'],
                 default={},
                 help='Game features to unlock',
                 )
