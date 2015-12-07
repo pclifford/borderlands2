@@ -1530,7 +1530,7 @@ class App(object):
             key, repeated, child_inv = mapping
             if child_inv is None:
                 value = [value] if not repeated else value
-                pbdata[key] = [[guess_wire_type(v), v] for v in value]
+                pbdata[key] = [[self.guess_wire_type(v), v] for v in value]
             elif type(child_inv) is int:
                 if repeated:
                     b = StringIO()
@@ -1546,7 +1546,7 @@ class App(object):
                     if type(v) is list:
                         values.append(v)
                     else:
-                        values.append([guess_wire_type(v), v])
+                        values.append([self.guess_wire_type(v), v])
                 pbdata[key] = values
             elif type(child_inv) is dict:
                 value = [value] if not repeated else value
@@ -2511,6 +2511,7 @@ class App(object):
             self.debug('Interpreting JSON data')
             data = json.loads(save_data, encoding='latin1')
             if not data.has_key('1'):
+                # This means the file had been output as 'parsed'
                 data = self.remove_structure(data, self.invert_structure(self.save_structure))
             save_data = self.wrap_player_data(self.write_protobuf(data))
 
