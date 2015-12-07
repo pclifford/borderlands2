@@ -22,9 +22,24 @@ class Config(object):
     # Given by the user, strings
     export_items = None
     import_items = None
-    modify = None
     input_filename = '-'
     output_filename = '-'
+
+    # Former 'modify' options
+    name = None
+    save_game_id = None
+    level = None
+    skillpoints = None
+    money = None
+    eridium = None
+    seraph = None
+    torgue = None
+    itemlevels = None
+    backpack = None
+    bank = None
+    gunslots = None
+    unlocks = []
+    challenges = []
     
     # Config options interpreted from the above
     input_file = None
@@ -2240,6 +2255,8 @@ def parse_args(argv):
     parser = argparse.ArgumentParser(description='Modify Borderlands 2 Save Files',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+    # Optional args
+
     parser.add_argument('-d', '--decode',
             help='read from a save game, rather than creating one',
             action='store_true',
@@ -2265,14 +2282,97 @@ def parse_args(argv):
             help='change the output format to big-endian, to write PS/xbox save files',
             )
 
-    parser.add_argument('-m', '--modify',
-            help='comma-separated list of modifications to make, eg money=999999999,eridium=99',
-            )
-
     parser.add_argument('-p', '--parse',
             action='store_true',
             help='parse the protocol buffer data further and generate more readable JSON',
             )
+
+    # More optional args - used to be the "modify" option
+
+    #parser.add_argument('-m', '--modify',
+    #        help='comma-separated list of modifications to make, eg money=999999999,eridium=99',
+    #        )
+
+    parser.add_argument('--name',
+            help='Set the name of the character',
+            )
+
+    parser.add_argument('--save-game-id',
+            dest='save_game_id',
+            type=int,
+            help='Set the save game slot ID of the character (probably not actually needed ever)',
+            )
+
+    parser.add_argument('--level',
+            type=int,
+            help='Set the character to this level',
+            )
+
+    parser.add_argument('--skillpoints',
+            type=int,
+            help='Skill Points to add to character (probably does not work right now)',
+            )
+
+    parser.add_argument('--money',
+            type=int,
+            help='Money to set for character',
+            )
+
+    parser.add_argument('--eridium',
+            type=int,
+            help='Eridium to set for character',
+            )
+
+    parser.add_argument('--seraph',
+            type=int,
+            help='Seraph tokens to set for character',
+            )
+
+    parser.add_argument('--torgue',
+            type=int,
+            help='Torgue tokens to set for character',
+            )
+
+    parser.add_argument('--itemlevels',
+            type=int,
+            nargs='?',
+            const=0,
+            help='Set item levels (default to the current player level)',
+            )
+
+    parser.add_argument('--backpack',
+            type=int,
+            nargs='?',
+            const=39,
+            help='Set size of backpack (defaults to 39)',
+            )
+
+    parser.add_argument('--bank',
+            type=int,
+            help='Set size of bank',
+            )
+
+    parser.add_argument('--gunslots',
+            type=int,
+            choices=[2,3,4],
+            help='Set number of gun slots open',
+            )
+
+    parser.add_argument('--unlocks',
+            action='append',
+            choices=['slaughterdome', 'truevaulthunter', 'challenges'],
+            default=[],
+            help='Game features to unlock',
+            )
+
+    parser.add_argument('--challenges',
+            action='append',
+            choices=['zero', 'max', 'bonus'],
+            default=[],
+            help='Levels to set on challenge data',
+            )
+
+    # Positional args
 
     parser.add_argument('input_filename',
             default='-',
@@ -2314,7 +2414,7 @@ def parse_args(argv):
             config.output_file = open(config.output_filename, 'wb')
         except IOError(e):
             parser.error('Cannot open output file %s: %s' % (config.output_filename, e))
-    
+
     # Return
     return config
 
