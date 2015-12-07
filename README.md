@@ -202,10 +202,13 @@ To unlock TVHM:
 
     python savefile.py --unlock tvhm old.sav new.sav
 
-#### Slaughterdome
+#### Creature Slaughterdome
 
-**NOTE:** This actually probably does not work, need to test it.  Regardless,
-the Creature Slaughterdome might be unlockable with:
+**NOTE:** I'm unsure whether or not this would actually work on a system
+without the Creature Slaughterdome explicitly enabled, but it's possible maybe
+it does?
+
+The Creature Slaughterdome might be unlockable with:
 
     python savefile.py --unlock slaughterdome old.sav new.sav
 
