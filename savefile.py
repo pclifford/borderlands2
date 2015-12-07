@@ -18,13 +18,13 @@ class Config(argparse.Namespace):
 
     # Given by the user, booleans
     decode = False
+    export_items = False
     json = False
     bigendian = False
     parse = False
     verbose = True
 
     # Given by the user, strings
-    export_items = None
     import_items = None
     input_filename = '-'
     output_filename = '-'
@@ -2246,12 +2246,13 @@ class App(object):
         output_group = parser.add_mutually_exclusive_group()
 
         output_group.add_argument('-d', '--decode',
-                help='read from a save game, rather than creating one',
                 action='store_true',
+                help='output a decoded save game (as opposed to a "real" savegame)',
                 )
 
         output_group.add_argument('-e', '--export-items',
                 dest='export_items',
+                action='store_true',
                 help='save out codes for all bank and inventory items',
                 )
 
@@ -2506,20 +2507,11 @@ class App(object):
         if self.config.verbose:
             print >>sys.stderr, output
 
-    def open_output_file(self):
-        """
-        Opens our output filename.  Returns the open filehandle
-        """
-
-        if self.config.output_filename == '-':
-            self.debug('Using STDOUT for output file')
-            output_file = sys.stdout
-        else:
-            self.debug('Opening %s for output file' % (self.config.output_filename))
-            output_file = open(self.config.output_filename, 'wb')
-        return output_file
-
     def run(self):
+        """
+        Main routine - loads data, does things to it, and then writes
+        out a file.
+        """
 
         config = self.config
 
@@ -2548,12 +2540,18 @@ class App(object):
             self.debug('Performing requested changes')
             save_data = self.modify_save(save_data)
 
+        # Open our output file
+        if config.output_filename == '-':
+            self.debug('Using STDOUT for output file')
+            output_file = sys.stdout
+        else:
+            self.debug('Opening %s for output file' % (config.output_filename))
+            output_file = open(config.output_filename, 'wb')
+
         # Now output based on what we've been told to do
         if config.export_items:
-            self.debug('Exporting items to %s' % (config.export_items))
-            output_file = open(config.export_items, 'w')
+            self.debug('Exporting items')
             self.export_items(save_data, output_file)
-            output_file.close()
         elif config.decode:
             self.debug('Decoding savegame file')
             player = self.unwrap_player_data(save_data)
@@ -2564,10 +2562,8 @@ class App(object):
                     self.debug('Parsing protobuf data for even more human-readable output')
                     data = self.apply_structure(data, self.save_structure)
                 player = json.dumps(data, encoding="latin1", sort_keys=True, indent=4)
-            output_file = self.open_output_file()
-            self.debug('Writing to %s' % (config.output_filename))
+            self.debug('Writing decoded savegame file')
             output_file.write(player)
-            output_file.close()
         else:
             self.debug('Writing to new savegame')
             if config.json:
@@ -2577,10 +2573,15 @@ class App(object):
                     data = self.remove_structure(data, self.invert_structure(self.save_structure))
                 save_data = self.write_protobuf(data)
             savegame = self.wrap_player_data(save_data)
-            output_file = self.open_output_file()
-            self.debug('Writing to %s' % (config.output_filename))
+            self.debug('Writing savegame file')
             output_file.write(savegame)
+
+        # Close the output file
+        if config.output_filename != '-':
             output_file.close()
+
+        # ... aaand we're done.
+        self.debug('Done!')
 
 if __name__ == "__main__":
     app = App(sys.argv[1:])
