@@ -2263,9 +2263,10 @@ class App(object):
                 help='parse the protocol buffer data further and generate more readable JSON',
                 )
 
-        parser.add_argument('-v', '--verbose',
-                action='store_true',
-                help='verbose output (will go to stderr)',
+        parser.add_argument('-q', '--quiet',
+                dest='verbose',
+                action='store_false',
+                help='quiet output (should generate no output unless there are errors)',
                 )
 
         # More optional args - used to be the "modify" option
