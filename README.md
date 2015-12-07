@@ -1,3 +1,13 @@
+# NOTE, December 6 2015 - Work-in-progress, probably busted.
+
+There've been a bunch of changes checked in starting December 6, 2015,
+which have probably resulted in various bits of this getting broken.
+I should've really been working in a branch or whatever, but I wasn't.
+Grab it as of this commit if you'd like a version much more likely to
+work properly, in the meantime:
+
+https://github.com/apocalyptech/borderlands2/tree/7aaca8b363b32f67573de1984ae069a62870726a
+
 # WARNING ABOUT THIS FORK
 
 I've forked this over from pclifford/borderlands2 primarily to add in some
