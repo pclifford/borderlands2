@@ -48,8 +48,15 @@ class Config(argparse.Namespace):
     # Config options interpreted from the above
     input_file = None
     output_file = None
-    endian = 0
+    endian = '<'
     changes = False
+
+    def __init__(self, debug_func):
+        """
+        Pass in debug_func to specify the function to be called for
+        verbose output.
+        """
+        self.debug = debug_func
 
     def finish(self, parser):
         """
@@ -60,9 +67,9 @@ class Config(argparse.Namespace):
 
         # Endianness
         if self.bigendian:
-            self.endian = 1
+            self.endian = '>' 
         else:
-            self.endian = 0
+            self.endian = '<'
 
         # Set our "changes" boolean
         for var in [self.name, self.save_game_id, self.level,
@@ -90,26 +97,22 @@ class Config(argparse.Namespace):
 
         # Input first
         if self.input_filename == '-':
-            if self.verbose:
-                App.debug('Using STDIN for input file')
+            self.debug('Using STDIN for input file')
             self.input_file = sys.stdin
         else:
             try:
-                if self.verbose:
-                    App.debug('Opening %s for input file' % (self.input_filename))
+                self.debug('Opening %s for input file' % (self.input_filename))
                 self.input_file = open(self.input_filename, 'rb')
             except IOError, e:
                parser.error('Cannot open input file %s: %s' % (self.input_filename, e))
 
         # Now output
         if self.output_filename == '-':
-            if self.verbose:
-                App.debug('Using STDOUT for output file')
+            self.debug('Using STDOUT for output file')
             self.output_file = sys.stdout
         else:
             try:
-                if self.verbose:
-                    App.debug('Opening %s for output file' % (self.output_filename))
+                self.debug('Opening %s for output file' % (self.output_filename))
                 self.output_file = open(self.output_filename, 'wb')
             except IOError(e):
                 parser.error('Cannot open output file %s: %s' % (self.output_filename, e))
@@ -1671,11 +1674,9 @@ class App(object):
 
         """
         
-        # TODO: This assumes little-endian!
-
         challenges = self.challenges
 
-        (unknown, size_in_bytes, num_challenges) = struct.unpack('<IIH', data[:10])
+        (unknown, size_in_bytes, num_challenges) = struct.unpack('%sIIH' % (self.config.endian), data[:10])
         mydict = {'unknown': unknown}
 
         # Sanity check on size reported
@@ -1694,7 +1695,7 @@ class App(object):
             idx = 10+(challenge*12)
             challenge_dict = dict(zip(
                 ['id', 'first_one', 'total_value', 'second_one', 'previous_value'],
-                struct.unpack('<HBIBI', data[idx:idx+12])))
+                struct.unpack('%sHBIBI' % (self.config.endian), data[idx:idx+12])))
             mydict['challenges'].append(challenge_dict)
 
             if challenge_dict['id'] in challenges:
@@ -1717,13 +1718,11 @@ class App(object):
         Change the number of challenges at your own risk!
         """
         
-        # TODO: This assumes little-endian!
-
         parts = []
-        parts.append(struct.pack('<IIH', data['unknown'], (len(data['challenges'])*12)+2, len(data['challenges'])))
+        parts.append(struct.pack('%sIIH' % (self.config.endian), data['unknown'], (len(data['challenges'])*12)+2, len(data['challenges'])))
         save_challenges = data['challenges']
         for challenge in save_challenges:
-            parts.append(struct.pack('<HBIBI', challenge['id'],
+            parts.append(struct.pack('%sHBIBI' % (self.config.endian), challenge['id'],
                 challenge['first_one'],
                 challenge['total_value'],
                 challenge['second_one'],
@@ -1770,6 +1769,13 @@ class App(object):
 
 
     def unwrap_player_data(self, data):
+        """
+        The endianness on the few struct calls here appears to actually be
+        hardcoded regardless of platform, so we're perhaps just leaving
+        them, rather than using self.config.endian as we're doing elsewhere.
+        I suspect this might actually be wrong, though, and just happens to
+        work.
+        """
         if data[: 4] == "CON ":
             raise BL2Error("You need to use a program like Horizon or Modio to extract the SaveGame.sav file first")
 
@@ -1795,7 +1801,12 @@ class App(object):
 
         return player
 
-    def wrap_player_data(self, player, endian=1):
+    def wrap_player_data(self, player):
+        """
+        There's one call in here which had a hard-coded endian, as with
+        unwrap_player_data above, so we're leaving that hardcoded for now.
+        I suspect that it's wrong to be doing so, though.
+        """
         crc = binascii.crc32(player) & 0xffffffff
 
         bitstream = WriteBitstream()
@@ -1805,10 +1816,7 @@ class App(object):
         data = bitstream.getvalue() + "\x00\x00\x00\x00"
 
         header = struct.pack(">I3s", len(data) + 15, "WSG")
-        if endian == 1:
-            header = header + struct.pack(">III", 2, crc, len(player))
-        else:
-            header = header + struct.pack("<III", 2, crc, len(player))
+        header = header + struct.pack("%sIII" % (self.config.endian), 2, crc, len(player))
 
         data = self.lzo1x_1_compress(header + data)[1: ]
 
@@ -2037,19 +2045,16 @@ class App(object):
         save_structure = self.save_structure
 
         if config.level is not None:
-            if config.verbose:
-                App.debug('Updating to level %d' % (config.level))
+            self.debug('Updating to level %d' % (config.level))
             lower = int(60 * (config.level ** 2.8) - 59.2)
             upper = int(60 * ((config.level + 1) ** 2.8) - 59.2)
             if player[3][0][1] not in range(lower, upper):
                 player[3][0][1] = lower
-                if config.verbose:
-                    App.debug(' - Also updating XP to %d' % (lower))
+                self.debug(' - Also updating XP to %d' % (lower))
             player[2] = [[0, config.level]]
 
         if config.skillpoints is not None:
-            if config.verbose:
-                App.debug('Updating avilable skill points to %d' % (config.skillpoints))
+            self.debug('Updating avilable skill points to %d' % (config.skillpoints))
             player[4] = [[0, config.skillpoints]]
 
         if any([x is not None for x in [config.money, config.eridium, config.seraph, config.torgue]]):
@@ -2059,32 +2064,26 @@ class App(object):
             while b.tell() < len(raw):
                 values.append(self.read_protobuf_value(b, 0))
             if config.money is not None:
-                if config.verbose:
-                    App.debug('Setting available money to %d' % (config.money))
+                self.debug('Setting available money to %d' % (config.money))
                 values[0] = config.money
             if config.eridium is not None:
-                if config.verbose:
-                    App.debug('Setting available eridium to %d' % (config.eridium))
+                self.debug('Setting available eridium to %d' % (config.eridium))
                 values[1] = config.eridium
             if config.seraph is not None:
-                if config.verbose:
-                    App.debug('Setting available Seraph Tokens to %d' % (config.seraph))
+                self.debug('Setting available Seraph Tokens to %d' % (config.seraph))
                 values[2] = config.seraph
             if config.torgue is not None:
-                if config.verbose:
-                    App.debug('Setting available Torgue Tokens to %d' % (config.torgue))
+                self.debug('Setting available Torgue Tokens to %d' % (config.torgue))
                 values[4] = config.torgue
             player[6][0] = [0, values]
 
         if config.itemlevels is not None:
             if config.itemlevels > 0:
-                if config.verbose:
-                    App.debug('Setting all items to level %d' % (config.itemlevels))
+                self.debug('Setting all items to level %d' % (config.itemlevels))
                 level = config.itemlevels
             else:
                 level = player[2][0][1]
-                if config.verbose:
-                    App.debug('Setting all items to character level (%d)' % (level))
+                self.debug('Setting all items to character level (%d)' % (level))
             for field_number in (53, 54):
                 for field in player[field_number]:
                     field_data = self.read_protobuf(field[1])
@@ -2095,15 +2094,13 @@ class App(object):
                         field[1] = self.write_protobuf(field_data)
 
         if config.backpack is not None:
-            if config.verbose:
-                App.debug('Setting backpack size to %d' % (config.backpack))
+            self.debug('Setting backpack size to %d' % (config.backpack))
             size = config.backpack
             sdus = int(math.ceil((size - 12) / 3.0))
-            if config.verbose:
-                App.debug(' - Setting SDU size to %d' % (sdus))
+            self.debug(' - Setting SDU size to %d' % (sdus))
             new_size = 12 + (sdus * 3)
-            if size != new_size and config.verbose:
-                App.debug(' - Resetting backpack size to %d to match SDU count' % (new_size))
+            if size != new_size:
+                self.debug(' - Resetting backpack size to %d to match SDU count' % (new_size))
             slots = self.read_protobuf(player[13][0][1])
             slots[1][0][1] = new_size
             player[13][0][1] = self.write_protobuf(slots)
@@ -2111,15 +2108,13 @@ class App(object):
             player[36][0][1] = self.write_repeated_protobuf_value(s[: 7] + [sdus] + s[8: ], 0)
 
         if config.bank is not None:
-            if config.verbose:
-                App.debug('Setting bank size to %d' % (config.bank))
+            self.debug('Setting bank size to %d' % (config.bank))
             size = config.bank
             sdus = int(min(255, math.ceil((size - 6) / 2.0)))
-            if config.verbose:
-                App.debug(' - Setting SDU size to %d' % (sdus))
+            self.debug(' - Setting SDU size to %d' % (sdus))
             new_size = 6 + (sdus * 2)
-            if size != new_size and config.verbose:
-                App.debug(' - Resetting bank size to %d to match SDU count' % (new_size))
+            if size != new_size:
+                self.debug(' - Resetting bank size to %d to match SDU count' % (new_size))
             if player.has_key(56):
                 player[56][0][1] = new_size
             else:
@@ -2130,8 +2125,7 @@ class App(object):
             player[36][0][1] = self.write_repeated_protobuf_value(s[: 8] + [sdus] + s[9: ], 0)
 
         if config.gunslots is not None:
-            if config.verbose:
-                App.debug('Setting available gun slots to %d' % (config.gunslots))
+            self.debug('Setting available gun slots to %d' % (config.gunslots))
             n = config.gunslots
             slots = self.read_protobuf(player[13][0][1])
             slots[2][0][1] = n
@@ -2146,8 +2140,7 @@ class App(object):
             if player.has_key(24):
                 notifications = map(ord, player[24][0][1])
             if 'slaughterdome' in config.unlocks:
-                if config.verbose:
-                    App.debug('Unlocking Creature Slaughterdome')
+                self.debug('Unlocking Creature Slaughterdome')
                 if 1 not in unlocked:
                     unlocked.append(1)
                 if 1 not in notifications:
@@ -2157,13 +2150,11 @@ class App(object):
             if notifications:
                 player[24] = [[2, "".join(map(chr, notifications))]]
             if 'truevaulthunter' in config.unlocks:
-                if config.verbose:
-                    App.debug('Unlocking TVHM')
+                self.debug('Unlocking TVHM')
                 if player[7][0][1] < 1:
                     player[7][0][1] = 1
             if 'challenges' in config.unlocks:
-                if config.verbose:
-                    App.debug('Unlocking all non-level-specific challenges')
+                self.debug('Unlocking all non-level-specific challenges')
                 challenge_unlocks = [self.apply_structure(self.read_protobuf(d[1]), save_structure[38][2]) for d in player[38]]
                 inverted_structure = self.invert_structure(save_structure[38][2])
                 seen_challenges = {}
@@ -2184,9 +2175,9 @@ class App(object):
             do_zero = 'zero' in config.challenges
             do_max = 'max' in config.challenges
             do_bonus = 'bonus' in config.challenges
-            if config.verbose:
-                # TODO: sensible messages here
-                App.debug('Working with challenge data')
+
+            # TODO: sensible messages here
+            self.debug('Working with challenge data')
 
             # Loop through
             for save_challenge in data['challenges']:
@@ -2204,18 +2195,16 @@ class App(object):
             player[15][0][1] = self.wrap_challenges(data)
 
         if config.name is not None and len(config.name) > 0:
-            if config.verbose:
-                App.debug('Setting character name to "%s"' % (config.name))
+            self.debug('Setting character name to "%s"' % (config.name))
             data = self.apply_structure(self.read_protobuf(player[19][0][1]), save_structure[19][2])
             data['name'] = config.name
             player[19][0][1] = self.write_protobuf(self.remove_structure(data, self.invert_structure(save_structure[19][2])))
 
         if config.save_game_id is not None and config.save_game_id > 0:
-            if config.verbose:
-                App.debug('Setting save slot ID to %d' % (config.save_game_id))
+            self.debug('Setting save slot ID to %d' % (config.save_game_id))
             player[20][0][1] = config.save_game_id
 
-        return self.wrap_player_data(self.write_protobuf(player), config.endian)
+        return self.wrap_player_data(self.write_protobuf(player))
 
     def export_items(self, data, output):
         player = self.read_protobuf(self.unwrap_player_data(data))
@@ -2230,7 +2219,7 @@ class App(object):
                 code = "BL2(" + raw.encode("base64").strip() + ")"
                 print >>output, code
 
-    def import_items(self, data, codelist, endian=1):
+    def import_items(self, data, codelist):
         player = self.read_protobuf(self.unwrap_player_data(data))
 
         to_bank = False
@@ -2266,12 +2255,12 @@ class App(object):
 
             player.setdefault(field, []).append([2, self.write_protobuf(entry)])
 
-        return self.wrap_player_data(self.write_protobuf(player), endian)
+        return self.wrap_player_data(self.write_protobuf(player))
 
     def parse_args(self, argv):
 
         # Set up our config object
-        self.config = Config()
+        self.config = Config(self.debug)
         config = self.config
 
         parser = argparse.ArgumentParser(description='Modify Borderlands 2 Save Files',
@@ -2536,27 +2525,26 @@ class App(object):
             56: "bank_size",
         }
 
-    @staticmethod
-    def debug(output):
+    def debug(self, output):
         """
         Stupid little function to send some output to STDERR.
         """
-        print >>sys.stderr, output
+        if self.config.verbose:
+            print >>sys.stderr, output
 
     def run(self):
 
         config = self.config
 
         if config.changes:
-            if config.verbose:
-                App.debug('Performing requested changes')
+            self.debug('Performing requested changes')
             config.output_file.write(self.modify_save(config.input_file.read(), config))
         elif config.export_items:
             config.output_file = open(config.export_items, "w")
             self.export_items(config.input_file.read(), config.output_file)
         elif config.import_items:
             itemlist = open(config.import_items, "r")
-            config.output_file.write(self.import_items(config.input_file.read(), itemlist.read(), config.endian))
+            config.output_file.write(self.import_items(config.input_file.read(), itemlist.read()))
         elif config.decode:
             savegame = config.input_file.read()
             player = self.unwrap_player_data(savegame)
@@ -2573,7 +2561,7 @@ class App(object):
                 if not data.has_key("1"):
                     data = self.remove_structure(data, self.invert_structure(self.save_structure))
                 player = self.write_protobuf(data)
-            savegame = self.wrap_player_data(player, endian)
+            savegame = self.wrap_player_data(player)
             config.output_file.write(savegame)
 
 if __name__ == "__main__":
