@@ -2010,12 +2010,12 @@ class App(object):
         config = self.config
 
         if config.level is not None:
-            self.debug('Updating to level %d' % (config.level))
+            self.debug(' - Updating to level %d' % (config.level))
             lower = int(60 * (config.level ** 2.8) - 59.2)
             upper = int(60 * ((config.level + 1) ** 2.8) - 59.2)
             if player[3][0][1] not in range(lower, upper):
                 player[3][0][1] = lower
-                self.debug(' - Also updating XP to %d' % (lower))
+                self.debug('   - Also updating XP to %d' % (lower))
             player[2] = [[0, config.level]]
 
         if any([x is not None for x in [config.money, config.eridium, config.seraph, config.torgue]]):
@@ -2025,26 +2025,26 @@ class App(object):
             while b.tell() < len(raw):
                 values.append(self.read_protobuf_value(b, 0))
             if config.money is not None:
-                self.debug('Setting available money to %d' % (config.money))
+                self.debug(' - Setting available money to %d' % (config.money))
                 values[0] = config.money
             if config.eridium is not None:
-                self.debug('Setting available eridium to %d' % (config.eridium))
+                self.debug(' - Setting available eridium to %d' % (config.eridium))
                 values[1] = config.eridium
             if config.seraph is not None:
-                self.debug('Setting available Seraph Crystals to %d' % (config.seraph))
+                self.debug(' - Setting available Seraph Crystals to %d' % (config.seraph))
                 values[2] = config.seraph
             if config.torgue is not None:
-                self.debug('Setting available Torgue Tokens to %d' % (config.torgue))
+                self.debug(' - Setting available Torgue Tokens to %d' % (config.torgue))
                 values[4] = config.torgue
             player[6][0] = [0, values]
 
         if config.itemlevels is not None:
             if config.itemlevels > 0:
-                self.debug('Setting all items to level %d' % (config.itemlevels))
+                self.debug(' - Setting all items to level %d' % (config.itemlevels))
                 level = config.itemlevels
             else:
                 level = player[2][0][1]
-                self.debug('Setting all items to character level (%d)' % (level))
+                self.debug(' - Setting all items to character level (%d)' % (level))
             for field_number in (53, 54):
                 for field in player[field_number]:
                     field_data = self.read_protobuf(field[1])
@@ -2055,13 +2055,13 @@ class App(object):
                         field[1] = self.write_protobuf(field_data)
 
         if config.backpack is not None:
-            self.debug('Setting backpack size to %d' % (config.backpack))
+            self.debug(' - Setting backpack size to %d' % (config.backpack))
             size = config.backpack
             sdus = int(math.ceil((size - 12) / 3.0))
-            self.debug(' - Setting SDU size to %d' % (sdus))
+            self.debug('   - Setting SDU size to %d' % (sdus))
             new_size = 12 + (sdus * 3)
             if size != new_size:
-                self.debug(' - Resetting backpack size to %d to match SDU count' % (new_size))
+                self.debug('   - Resetting backpack size to %d to match SDU count' % (new_size))
             slots = self.read_protobuf(player[13][0][1])
             slots[1][0][1] = new_size
             player[13][0][1] = self.write_protobuf(slots)
@@ -2069,13 +2069,13 @@ class App(object):
             player[36][0][1] = self.write_repeated_protobuf_value(s[: 7] + [sdus] + s[8: ], 0)
 
         if config.bank is not None:
-            self.debug('Setting bank size to %d' % (config.bank))
+            self.debug(' - Setting bank size to %d' % (config.bank))
             size = config.bank
             sdus = int(min(255, math.ceil((size - 6) / 2.0)))
-            self.debug(' - Setting SDU size to %d' % (sdus))
+            self.debug('   - Setting SDU size to %d' % (sdus))
             new_size = 6 + (sdus * 2)
             if size != new_size:
-                self.debug(' - Resetting bank size to %d to match SDU count' % (new_size))
+                self.debug('   - Resetting bank size to %d to match SDU count' % (new_size))
             if player.has_key(56):
                 player[56][0][1] = new_size
             else:
@@ -2086,7 +2086,7 @@ class App(object):
             player[36][0][1] = self.write_repeated_protobuf_value(s[: 8] + [sdus] + s[9: ], 0)
 
         if config.gunslots is not None:
-            self.debug('Setting available gun slots to %d' % (config.gunslots))
+            self.debug(' - Setting available gun slots to %d' % (config.gunslots))
             n = config.gunslots
             slots = self.read_protobuf(player[13][0][1])
             slots[2][0][1] = n
@@ -2101,7 +2101,7 @@ class App(object):
             if player.has_key(24):
                 notifications = map(ord, player[24][0][1])
             if 'slaughterdome' in config.unlock:
-                self.debug('Unlocking Creature Slaughterdome')
+                self.debug(' - Unlocking Creature Slaughterdome')
                 if 1 not in unlocked:
                     unlocked.append(1)
                 if 1 not in notifications:
@@ -2111,11 +2111,11 @@ class App(object):
             if notifications:
                 player[24] = [[2, "".join(map(chr, notifications))]]
             if 'tvhm' in config.unlock:
-                self.debug('Unlocking TVHM')
+                self.debug(' - Unlocking TVHM')
                 if player[7][0][1] < 1:
                     player[7][0][1] = 1
             if 'challenges' in config.unlock:
-                self.debug('Unlocking all non-level-specific challenges')
+                self.debug(' - Unlocking all non-level-specific challenges')
                 challenge_unlocks = [self.apply_structure(self.read_protobuf(d[1]), save_structure[38][2]) for d in player[38]]
                 inverted_structure = self.invert_structure(save_structure[38][2])
                 seen_challenges = {}
@@ -2137,8 +2137,14 @@ class App(object):
             do_max = 'max' in config.challenges
             do_bonus = 'bonus' in config.challenges
 
-            # TODO: sensible messages here
-            self.debug('Working with challenge data')
+            if any([do_zero, do_max, do_bonus]):
+                self.debug(' - Working with challenge data:')
+                if do_zero:
+                    self.debug('   - Setting challenges to 0')
+                if do_max:
+                    self.debug('   - Setting challenges to max-1')
+                if do_bonus:
+                    self.debug('   - Setting bonus challenges')
 
             # Loop through
             for save_challenge in data['challenges']:
@@ -2156,13 +2162,13 @@ class App(object):
             player[15][0][1] = self.wrap_challenges(data)
 
         if config.name is not None and len(config.name) > 0:
-            self.debug('Setting character name to "%s"' % (config.name))
+            self.debug(' - Setting character name to "%s"' % (config.name))
             data = self.apply_structure(self.read_protobuf(player[19][0][1]), save_structure[19][2])
             data['name'] = config.name
             player[19][0][1] = self.write_protobuf(self.remove_structure(data, self.invert_structure(save_structure[19][2])))
 
         if config.save_game_id is not None and config.save_game_id > 0:
-            self.debug('Setting save slot ID to %d' % (config.save_game_id))
+            self.debug(' - Setting save slot ID to %d' % (config.save_game_id))
             player[20][0][1] = config.save_game_id
 
         return self.wrap_player_data(self.write_protobuf(player))
@@ -2495,12 +2501,14 @@ class App(object):
         config = self.config
 
         # Open up our input file
+        self.debug('')
         if config.input_filename == '-':
             self.debug('Using STDIN for input file')
             input_file = sys.stdin
         else:
             self.debug('Opening %s for input file' % (config.input_filename))
             input_file = open(config.input_filename, 'rb')
+        self.debug('')
 
         # ... and read it in.
         save_data = input_file.read()
@@ -2529,6 +2537,7 @@ class App(object):
             save_data = self.modify_save(save_data)
 
         # Open our output file
+        self.debug('')
         if config.output_filename == '-':
             self.debug('Using STDOUT for output file')
             output_file = sys.stdout
@@ -2561,6 +2570,7 @@ class App(object):
             output_file.close()
 
         # ... aaand we're done.
+        self.debug('')
         self.debug('Done!')
 
 if __name__ == "__main__":
