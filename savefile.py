@@ -2031,7 +2031,7 @@ class App(object):
                 self.debug('Setting available eridium to %d' % (config.eridium))
                 values[1] = config.eridium
             if config.seraph is not None:
-                self.debug('Setting available Seraph Tokens to %d' % (config.seraph))
+                self.debug('Setting available Seraph Crystals to %d' % (config.seraph))
                 values[2] = config.seraph
             if config.torgue is not None:
                 self.debug('Setting available Torgue Tokens to %d' % (config.torgue))
@@ -2297,7 +2297,7 @@ class App(object):
 
         parser.add_argument('--seraph',
                 type=int,
-                help='Seraph tokens to set for character',
+                help='Seraph crystals to set for character',
                 )
 
         parser.add_argument('--torgue',
