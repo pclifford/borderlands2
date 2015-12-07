@@ -6,11 +6,30 @@ from cStringIO import StringIO
 import hashlib
 import json
 import math
-import optparse
+import argparse
 import random
 import struct
 import sys
 
+class Config(object):
+
+    # Given by the user, booleans
+    decode = False
+    json = False
+    bigendian = False
+    parse = False
+
+    # Given by the user, strings
+    export_items = None
+    import_items = None
+    modify = None
+    input_filename = '-'
+    output_filename = '-'
+    
+    # Config options interpreted from the above
+    input_file = None
+    output_file = None
+    endian = 0
 
 class BL2Error(Exception): pass
 
@@ -2213,99 +2232,130 @@ def import_items(data, codelist, endian=1):
     return wrap_player_data(write_protobuf(player), endian)
 
 
-def parse_args():
-    usage = "usage: %prog [options] [source file] [destination file]"
-    p = optparse.OptionParser()
-    p.add_option(
-        "-d", "--decode",
-        action="store_true",
-        help="read from a save game, rather than creating one"
-    )
-    p.add_option(
-        "-e", "--export-items", metavar="FILENAME",
-        help="save out codes for all bank and inventory items"
-    )
-    p.add_option(
-        "-i", "--import-items", metavar="FILENAME",
-        help="read in codes for items and add them to the bank and inventory"
-    )
-    p.add_option(
-        "-j", "--json",
-        action="store_true",
-        help="read or write save game data in JSON format, rather than raw protobufs"
-    )
-    p.add_option(
-        "-l", "--little-endian",
-        action="store_true",
-        help="change the output format to little endian, to write PC-compatible save files"
-    )
-    p.add_option(
-        "-m", "--modify", metavar="MODIFICATIONS",
-        help="comma separated list of modifications to make, eg money=99999999,eridium=99"
-    )
-    p.add_option(
-        "-p", "--parse",
-        action="store_true",
-        help="parse the protocol buffer data further and generate more readable JSON"
-    )
-    return p.parse_args()
+def parse_args(argv):
 
-def main(options, args):
-    if len(args) >= 2 and args[0] != "-" and args[0] == args[1]:
-        print >>sys.stderr, "Cannot overwrite the save file, please use a different filename for the new save"
-        return
+    # Set up our config object
+    config = Config()
 
-    if len(args) < 1 or args[0] == "-":
-        input = sys.stdin
+    parser = argparse.ArgumentParser(description='Modify Borderlands 2 Save Files',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument('-d', '--decode',
+            help='read from a save game, rather than creating one',
+            action='store_true',
+            )
+
+    parser.add_argument('-e', '--export-items',
+            dest='export_items',
+            help='save out codes for all bank and inventory items',
+            )
+
+    parser.add_argument('-i', '--import-items',
+            dest='import_items',
+            help='read in codes for items and add them to the bank and inventory',
+            )
+
+    parser.add_argument('-j', '--json',
+            action='store_true',
+            help='read or write save game data in JSON format, rather than raw protobufs',
+            )
+
+    parser.add_argument('-b', '--bigendian',
+            action='store_true',
+            help='change the output format to big-endian, to write PS/xbox save files',
+            )
+
+    parser.add_argument('-m', '--modify',
+            help='comma-separated list of modifications to make, eg money=999999999,eridium=99',
+            )
+
+    parser.add_argument('-p', '--parse',
+            action='store_true',
+            help='parse the protocol buffer data further and generate more readable JSON',
+            )
+
+    parser.add_argument('input_filename',
+            default='-',
+            nargs='?',
+            )
+
+    parser.add_argument('output_filename',
+            default='-',
+            nargs='?',
+            )
+
+    # Actually parse the args
+    parser.parse_args(argv, config)
+
+    # Fiddle with our endianness
+    if config.bigendian:
+        config.endian = 1
     else:
-        input = open(args[0], "rb")
+        config.endian = 0
 
-    if len(args) < 2 or args[1] == "-":
-        output = sys.stdout
+    # Can't read/write to the same file
+    if config.input_filename == config.output_filename and config.input_filename != '-':
+        parser.error('input_filename and output_filename cannot be the same file')
+
+    # Turn out input/output args into filehandles (input)
+    if config.input_filename == '-':
+        config.input_file = sys.stdin
     else:
-        output = open(args[1], "wb")
+        try:
+            config.input_file = open(config.input_filename, 'rb')
+        except IOError, e:
+           parser.error('Cannot open input file %s: %s' % (config.input_filename, e))
 
-    if options.little_endian:
-        endian = 0
+    # Now output
+    if config.output_filename == '-':
+        config.output_file = sys.stdout
     else:
-        endian = 1
+        try:
+            config.output_file = open(config.output_filename, 'wb')
+        except IOError(e):
+            parser.error('Cannot open output file %s: %s' % (config.output_filename, e))
+    
+    # Return
+    return config
 
-    if options.modify is not None:
+def main(config):
+
+    if config.modify is not None:
         changes = {}
-        if options.modify:
-            for m in options.modify.split(","):
+        if config.modify:
+            for m in config.modify.split(","):
                 k, v = (m.split("=", 1) + [None])[: 2]
                 changes[k] = v
-        output.write(modify_save(input.read(), changes, endian))
-    elif options.export_items:
-        output = open(options.export_items, "w")
-        export_items(input.read(), output)
-    elif options.import_items:
-        itemlist = open(options.import_items, "r")
-        output.write(import_items(input.read(), itemlist.read(), endian))
-    elif options.decode:
-        savegame = input.read()
+        config.output_file.write(modify_save(config.input_file.read(), changes, config.endian))
+    elif config.export_items:
+        config.output_file = open(config.export_items, "w")
+        config.export_items(config.input_file.read(), config.output_file)
+    elif config.import_items:
+        itemlist = open(config.import_items, "r")
+        config.output_file.write(import_items(config.input_file.read(), itemlist.read(), config.endian))
+    elif config.decode:
+        savegame = config.input_file.read()
         player = unwrap_player_data(savegame)
-        if options.json:
+        if config.json:
             data = read_protobuf(player)
-            if options.parse:
+            if config.parse:
                 data = apply_structure(data, save_structure)
             player = json.dumps(data, encoding="latin1", sort_keys=True, indent=4)
-        output.write(player)
+        config.output_file.write(player)
     else:
-        player = input.read()
-        if options.json:
+        player = config.input_file.read()
+        if config.json:
             data = json.loads(player, encoding="latin1")
             if not data.has_key("1"):
                 data = remove_structure(data, invert_structure(save_structure))
             player = write_protobuf(data)
         savegame = wrap_player_data(player, endian)
-        output.write(savegame)
+        config.output_file.write(savegame)
 
 if __name__ == "__main__":
-    options, args = parse_args()
+    config = parse_args(sys.argv[1:])
     try:
-        main(options, args)
+        main(config)
     except:
         print >>sys.stderr, (
             "Something went wrong, but please ensure you have the latest "
