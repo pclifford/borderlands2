@@ -51,13 +51,6 @@ class Config(argparse.Namespace):
     endian = '<'
     changes = False
 
-    def __init__(self, debug_func):
-        """
-        Pass in debug_func to specify the function to be called for
-        verbose output.
-        """
-        self.debug = debug_func
-
     def finish(self, parser):
         """
         Some extra sanity checks on our options.  "parser" should
@@ -86,36 +79,6 @@ class Config(argparse.Namespace):
         # Can't read/write to the same file
         if self.input_filename == self.output_filename and self.input_filename != '-':
             parser.error('input_filename and output_filename cannot be the same file')
-    
-    def open_filehandles(self, parser):
-        """
-        Opens our filehandles.  "parser" should be an active
-        ArgumentParser object we can use to raise errors.  This...
-        probably shouldn't actually belong in here, but here it
-        is anyway.
-        """
-
-        # Input first
-        if self.input_filename == '-':
-            self.debug('Using STDIN for input file')
-            self.input_file = sys.stdin
-        else:
-            try:
-                self.debug('Opening %s for input file' % (self.input_filename))
-                self.input_file = open(self.input_filename, 'rb')
-            except IOError, e:
-               parser.error('Cannot open input file %s: %s' % (self.input_filename, e))
-
-        # Now output
-        if self.output_filename == '-':
-            self.debug('Using STDOUT for output file')
-            self.output_file = sys.stdout
-        else:
-            try:
-                self.debug('Opening %s for output file' % (self.output_filename))
-                self.output_file = open(self.output_filename, 'wb')
-            except IOError(e):
-                parser.error('Cannot open output file %s: %s' % (self.output_filename, e))
 
 class DictAction(argparse.Action):
     """
@@ -2039,10 +2002,16 @@ class App(object):
 
         return str(dst)
 
-    def modify_save(self, data, config):
+    def modify_save(self, data):
+        """
+        Performs a set of modifications on file data, based on our
+        config object.  "data" should be the raw data from a save
+        file.
+        """
 
         player = self.read_protobuf(self.unwrap_player_data(data))
         save_structure = self.save_structure
+        config = self.config
 
         if config.level is not None:
             self.debug('Updating to level %d' % (config.level))
@@ -2207,6 +2176,10 @@ class App(object):
         return self.wrap_player_data(self.write_protobuf(player))
 
     def export_items(self, data, output):
+        """
+        Exports items stored in savegame data 'data' to the open
+        filehandle 'output'
+        """
         player = self.read_protobuf(self.unwrap_player_data(data))
         for i, name in ((41, "Bank"), (53, "Items"), (54, "Weapons")):
             content = player.get(i)
@@ -2220,6 +2193,10 @@ class App(object):
                 print >>output, code
 
     def import_items(self, data, codelist):
+        """
+        Imports items into savegame data "data" based on the passed-in
+        item list in "codelist"
+        """
         player = self.read_protobuf(self.unwrap_player_data(data))
 
         to_bank = False
@@ -2260,7 +2237,7 @@ class App(object):
     def parse_args(self, argv):
 
         # Set up our config object
-        self.config = Config(self.debug)
+        self.config = Config()
         config = self.config
 
         parser = argparse.ArgumentParser(description='Modify Borderlands 2 Save Files',
@@ -2268,12 +2245,14 @@ class App(object):
 
         # Optional args
 
-        parser.add_argument('-d', '--decode',
+        output_group = parser.add_mutually_exclusive_group()
+
+        output_group.add_argument('-d', '--decode',
                 help='read from a save game, rather than creating one',
                 action='store_true',
                 )
 
-        parser.add_argument('-e', '--export-items',
+        output_group.add_argument('-e', '--export-items',
                 dest='export_items',
                 help='save out codes for all bank and inventory items',
                 )
@@ -2406,9 +2385,6 @@ class App(object):
         # Do some extra fiddling
         config.finish(parser)
 
-        # Open filehandles
-        config.open_filehandles(parser)
-
     def __init__(self, args):
         """
         Constructor.  Parses arguments and sets up our save_structure
@@ -2532,37 +2508,81 @@ class App(object):
         if self.config.verbose:
             print >>sys.stderr, output
 
+    def open_output_file(self):
+        """
+        Opens our output filename.  Returns the open filehandle
+        """
+
+        if self.config.output_filename == '-':
+            self.debug('Using STDOUT for output file')
+            output_file = sys.stdout
+        else:
+            self.debug('Opening %s for output file' % (self.config.output_filename))
+            output_file = open(self.config.output_filename, 'wb')
+        return output_file
+
     def run(self):
 
         config = self.config
 
+        # Open up our input file
+        if config.input_filename == '-':
+            self.debug('Using STDIN for input file')
+            input_file = sys.stdin
+        else:
+            self.debug('Opening %s for input file' % (config.input_filename))
+            input_file = open(config.input_filename, 'rb')
+
+        # ... and read it in.
+        save_data = input_file.read()
+        if config.input_filename != '-':
+            input_file.close()
+
+        # If we've been told to import items, do so.
+        if config.import_items:
+            self.debug('Importing items from %s' % (config.import_items))
+            itemlist = open(config.import_items, 'r')
+            save_data = self.import_items(save_data, itemlist.read())
+            itemlist.close()
+
+        # Now perform any changes, if requested
         if config.changes:
             self.debug('Performing requested changes')
-            config.output_file.write(self.modify_save(config.input_file.read(), config))
-        elif config.export_items:
-            config.output_file = open(config.export_items, "w")
-            self.export_items(config.input_file.read(), config.output_file)
-        elif config.import_items:
-            itemlist = open(config.import_items, "r")
-            config.output_file.write(self.import_items(config.input_file.read(), itemlist.read()))
+            save_data = self.modify_save(save_data)
+
+        # Now output based on what we've been told to do
+        if config.export_items:
+            self.debug('Exporting items to %s' % (config.export_items))
+            output_file = open(config.export_items, 'w')
+            self.export_items(save_data, output_file)
+            output_file.close()
         elif config.decode:
-            savegame = config.input_file.read()
-            player = self.unwrap_player_data(savegame)
+            self.debug('Decoding savegame file')
+            player = self.unwrap_player_data(save_data)
             if config.json:
+                self.debug('Converting to JSON for more human-readable output')
                 data = self.read_protobuf(player)
                 if config.parse:
+                    self.debug('Parsing protobuf data for even more human-readable output')
                     data = self.apply_structure(data, self.save_structure)
                 player = json.dumps(data, encoding="latin1", sort_keys=True, indent=4)
-            config.output_file.write(player)
+            output_file = self.open_output_file()
+            self.debug('Writing to %s' % (config.output_filename))
+            output_file.write(player)
+            output_file.close()
         else:
-            player = config.input_file.read()
+            self.debug('Writing to new savegame')
             if config.json:
-                data = json.loads(player, encoding="latin1")
-                if not data.has_key("1"):
+                self.debug('Loading from JSON data')
+                data = json.loads(save_data, encoding='latin1')
+                if not data.has_key('1'):
                     data = self.remove_structure(data, self.invert_structure(self.save_structure))
-                player = self.write_protobuf(data)
-            savegame = self.wrap_player_data(player)
-            config.output_file.write(savegame)
+                save_data = self.write_protobuf(data)
+            savegame = self.wrap_player_data(save_data)
+            output_file = self.open_output_file()
+            self.debug('Writing to %s' % (config.output_filename))
+            output_file.write(savegame)
+            output_file.close()
 
 if __name__ == "__main__":
     app = App(sys.argv[1:])
