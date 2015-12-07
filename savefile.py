@@ -12,6 +12,9 @@ import struct
 import sys
 
 class Config(object):
+    """
+    Class to hold our configuration information.
+    """
 
     # Given by the user, booleans
     decode = False
@@ -38,13 +41,38 @@ class Config(object):
     backpack = None
     bank = None
     gunslots = None
-    unlocks = []
-    challenges = []
+    unlocks = {}
+    challenges = {}
     
     # Config options interpreted from the above
     input_file = None
     output_file = None
     endian = 0
+    changes = False
+
+class DictAction(argparse.Action):
+    """
+    Custom argparse action to put list-like arguments into
+    a dict (where the value will be True) rather than a list.
+    This is probably implemented fairly shoddily.
+    """
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        """
+        Constructor, taken right from https://docs.python.org/2.7/library/argparse.html#action
+        """
+        if nargs is not None:
+            raise ValueError('nargs is not allowed')
+        super(DictAction, self).__init__(option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        """
+        Actually setting a value.  Forces the attr into a dict if it isn't already.
+        """
+        arg_value = getattr(namespace, self.dest)
+        if not isinstance(arg_value, dict):
+            arg_value = {}
+        arg_value[values] = True
+        setattr(namespace, self.dest, arg_value)
 
 class BL2Error(Exception): pass
 
@@ -2048,39 +2076,38 @@ def lzo1x_1_compress(s):
     return str(dst)
 
 
-def modify_save(data, changes, endian=1):
+def modify_save(data, config):
     player = read_protobuf(unwrap_player_data(data))
 
-    if changes.has_key("level"):
-        level = int(changes["level"])
-        lower = int(60 * (level ** 2.8) - 59.2)
-        upper = int(60 * ((level + 1) ** 2.8) - 59.2)
+    if config.level is not None:
+        lower = int(60 * (config.level ** 2.8) - 59.2)
+        upper = int(60 * ((config.level + 1) ** 2.8) - 59.2)
         if player[3][0][1] not in range(lower, upper):
             player[3][0][1] = lower
-        player[2] = [[0, int(changes["level"])]]
+        player[2] = [[0, config.level]]
 
-    if changes.has_key("skillpoints"):
-        player[4] = [[0, int(changes["skillpoints"])]]
+    if config.skillpoints is not None:
+        player[4] = [[0, config.skillpoints]]
 
-    if any(map(changes.has_key, ("money", "eridium", "seraph", "tokens"))):
+    if any([x is not None for x in [config.money, config.eridium, config.seraph, config.torgue]]):
         raw = player[6][0][1]
         b = StringIO(raw)
         values = []
         while b.tell() < len(raw):
             values.append(read_protobuf_value(b, 0))
-        if changes.has_key("money"):
-            values[0] = int(changes["money"])
-        if changes.has_key("eridium"):
-            values[1] = int(changes["eridium"])
-        if changes.has_key("seraph"):
-            values[2] = int(changes["seraph"])
-        if changes.has_key("tokens"):
-            values[4] = int(changes["tokens"])
+        if config.money is not None:
+            values[0] = config.money
+        if config.eridium is not None:
+            values[1] = config.eridium
+        if config.seraph is not None:
+            values[2] = config.seraph
+        if config.torgue is not None:
+            values[4] = config.torgue
         player[6][0] = [0, values]
 
-    if changes.has_key("itemlevels"):
-        if changes["itemlevels"]:
-            level = int(changes["itemlevels"])
+    if config.itemlevels is not None:
+        if config.itemlevels > 0:
+            level = config.itemlevels
         else:
             level = player[2][0][1]
         for field_number in (53, 54):
@@ -2092,11 +2119,8 @@ def modify_save(data, changes, endian=1):
                     field_data[1][0][1] = wrap_item(is_weapon, item, key)
                     field[1] = write_protobuf(field_data)
 
-    if changes.has_key("backpack"):
-        if changes["backpack"]:
-            size = int(changes["backpack"])
-        else:
-            size = 39
+    if config.backpack is not None:
+        size = config.backpack
         sdus = int(math.ceil((size - 12) / 3.0))
         size = 12 + (sdus * 3)
         slots = read_protobuf(player[13][0][1])
@@ -2105,8 +2129,8 @@ def modify_save(data, changes, endian=1):
         s = read_repeated_protobuf_value(player[36][0][1], 0)
         player[36][0][1] = write_repeated_protobuf_value(s[: 7] + [sdus] + s[8: ], 0)
 
-    if changes.has_key("bank"):
-        size = int(changes["bank"])
+    if config.bank is not None:
+        size = config.bank
         sdus = int(min(255, math.ceil((size - 6) / 2.0)))
         size = 6 + (sdus * 2)
         if player.has_key(56):
@@ -2118,22 +2142,21 @@ def modify_save(data, changes, endian=1):
             s = s + (9 - len(s)) * [0]
         player[36][0][1] = write_repeated_protobuf_value(s[: 8] + [sdus] + s[9: ], 0)
 
-    if changes.get("gunslots", "0") in "234":
-        n = int(changes["gunslots"])
+    if config.gunslots is not None:
+        n = config.gunslots
         slots = read_protobuf(player[13][0][1])
         slots[2][0][1] = n
         if slots[3][0][1] > n - 2:
             slots[3][0][1] = n - 2
         player[13][0][1] = write_protobuf(slots)
 
-    if changes.has_key("unlocks"):
+    if len(config.unlocks) > 0:
         unlocked, notifications = [], []
         if player.has_key(23):
             unlocked = map(ord, player[23][0][1])
         if player.has_key(24):
             notifications = map(ord, player[24][0][1])
-        unlocks = changes["unlocks"].split(":")
-        if "slaughterdome" in unlocks:
+        if 'slaughterdome' in config.unlocks:
             if 1 not in unlocked:
                 unlocked.append(1)
             if 1 not in notifications:
@@ -2142,10 +2165,10 @@ def modify_save(data, changes, endian=1):
             player[23] = [[2, "".join(map(chr, unlocked))]]
         if notifications:
             player[24] = [[2, "".join(map(chr, notifications))]]
-        if "truevaulthunter" in unlocks:
+        if 'truevaulthunter' in config.unlocks:
             if player[7][0][1] < 1:
                 player[7][0][1] = 1
-        if "challenges" in unlocks:
+        if 'challenges' in config.unlocks:
             challenge_unlocks = [apply_structure(read_protobuf(d[1]), save_structure[38][2]) for d in player[38]]
             inverted_structure = invert_structure(save_structure[38][2])
             seen_challenges = {}
@@ -2158,14 +2181,14 @@ def modify_save(data, changes, endian=1):
                         ('is_from_dlc', challenge.cat.is_from_dlc),
                         ('name', challenge.id_text)]), inverted_structure))])
 
-    if changes.has_key("challenges"):
+    if len(config.challenges) > 0:
         data = unwrap_challenges(player[15][0][1])
         # You can specify multiple options at once.  Specifying "max" and
         # "bonus" at the same time, for instance, will put everything at its
         # max value, and then potentially lower the ones which have bonuses.
-        do_zero = "zero" in changes["challenges"]
-        do_max = "max" in changes["challenges"]
-        do_bonus = "bonus" in changes["challenges"]
+        do_zero = 'zero' in config.challenges
+        do_max = 'max' in config.challenges
+        do_bonus = 'bonus' in config.challenges
 
         # Loop through
         for save_challenge in data['challenges']:
@@ -2182,18 +2205,15 @@ def modify_save(data, changes, endian=1):
         # Re-wrap the data
         player[15][0][1] = wrap_challenges(data)
 
-    if changes.has_key("name") and len(changes["name"]) > 0:
+    if config.name is not None and len(config.name) > 0:
         data = apply_structure(read_protobuf(player[19][0][1]), save_structure[19][2])
-        data["name"] = changes["name"]
+        data['name'] = config.name
         player[19][0][1] = write_protobuf(remove_structure(data, invert_structure(save_structure[19][2])))
 
-    if changes.has_key("save_game_id") and len(changes["save_game_id"]) > 0:
-        try:
-            player[20][0][1] = int(changes["save_game_id"])
-        except ValueError:
-            raise BL2Error("'%s' is not a numeric save_game_id" % (changes["save_game_id"]))
+    if config.save_game_id is not None and config.save_game_id > 0:
+        player[20][0][1] = config.save_game_id
 
-    return wrap_player_data(write_protobuf(player), endian)
+    return wrap_player_data(write_protobuf(player), config.endian)
 
 def export_items(data, output):
     player = read_protobuf(unwrap_player_data(data))
@@ -2359,16 +2379,16 @@ def parse_args(argv):
             )
 
     parser.add_argument('--unlocks',
-            action='append',
+            action=DictAction,
             choices=['slaughterdome', 'truevaulthunter', 'challenges'],
-            default=[],
+            default={},
             help='Game features to unlock',
             )
 
     parser.add_argument('--challenges',
-            action='append',
+            action=DictAction,
             choices=['zero', 'max', 'bonus'],
-            default=[],
+            default={},
             help='Levels to set on challenge data',
             )
 
@@ -2392,6 +2412,18 @@ def parse_args(argv):
         config.endian = 1
     else:
         config.endian = 0
+
+    # Set our "changes" boolean
+    for var in [config.name, config.save_game_id, config.level,
+            config.skillpoints, config.money, config.eridium,
+            config.seraph, config.seraph, config.torgue,
+            config.itemlevels, config.backpack, config.bank,
+            config.gunslots]:
+        if var is not None:
+            config.changes = True
+    for var in [config.unlocks, config.challenges]:
+        if var != []:
+            config.changes = True
 
     # Can't read/write to the same file
     if config.input_filename == config.output_filename and config.input_filename != '-':
@@ -2420,13 +2452,8 @@ def parse_args(argv):
 
 def main(config):
 
-    if config.modify is not None:
-        changes = {}
-        if config.modify:
-            for m in config.modify.split(","):
-                k, v = (m.split("=", 1) + [None])[: 2]
-                changes[k] = v
-        config.output_file.write(modify_save(config.input_file.read(), changes, config.endian))
+    if config.changes:
+        config.output_file.write(modify_save(config.input_file.read(), config))
     elif config.export_items:
         config.output_file = open(config.export_items, "w")
         config.export_items(config.input_file.read(), config.output_file)
