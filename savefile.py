@@ -32,7 +32,6 @@ class Config(argparse.Namespace):
     name = None
     save_game_id = None
     level = None
-    skillpoints = None
     money = None
     eridium = None
     seraph = None
@@ -63,7 +62,7 @@ class Config(argparse.Namespace):
 
         # Set our "changes" boolean
         for var in [self.name, self.save_game_id, self.level,
-                self.skillpoints, self.money, self.eridium,
+                self.money, self.eridium,
                 self.seraph, self.seraph, self.torgue,
                 self.itemlevels, self.backpack, self.bank,
                 self.gunslots]:
@@ -2019,10 +2018,6 @@ class App(object):
                 self.debug(' - Also updating XP to %d' % (lower))
             player[2] = [[0, config.level]]
 
-        if config.skillpoints is not None:
-            self.debug('Updating avilable skill points to %d' % (config.skillpoints))
-            player[4] = [[0, config.skillpoints]]
-
         if any([x is not None for x in [config.money, config.eridium, config.seraph, config.torgue]]):
             raw = player[6][0][1]
             b = StringIO(raw)
@@ -2288,11 +2283,6 @@ class App(object):
         parser.add_argument('--level',
                 type=int,
                 help='Set the character to this level',
-                )
-
-        parser.add_argument('--skillpoints',
-                type=int,
-                help='Skill Points to add to character (probably does not work right now)',
                 )
 
         parser.add_argument('--money',
