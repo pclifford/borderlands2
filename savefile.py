@@ -18,15 +18,13 @@ class Config(argparse.Namespace):
     """
 
     # Given by the user, booleans
-    decode = False
-    export_items = False
     json = False
     bigendian = False
-    parse = False
     verbose = True
 
     # Given by the user, strings
     import_items = None
+    output = 'savegame'
     input_filename = '-'
     output_filename = '-'
 
@@ -2128,7 +2126,7 @@ class App(object):
                 seen_challenges = {}
                 for unlock in challenge_unlocks:
                     seen_challenges[unlock['name']] = True
-                for challenge in challenges.values():
+                for challenge in self.challenges.values():
                     if challenge.id_text not in seen_challenges:
                         player[38].append([2, self.write_protobuf(self.remove_structure(dict([
                             ('dlc_id', challenge.cat.dlc),
@@ -2149,13 +2147,13 @@ class App(object):
 
             # Loop through
             for save_challenge in data['challenges']:
-                if save_challenge['id'] in challenges:
+                if save_challenge['id'] in self.challenges:
                     if do_zero:
                         save_challenge['total_value'] = save_challenge['previous_value']
                     if do_max:
-                        save_challenge['total_value'] = save_challenge['previous_value'] + challenges[save_challenge['id']].get_max()
-                    if do_bonus and challenges[save_challenge['id']].bonus:
-                        bonus_value = save_challenge['previous_value'] + challenges[save_challenge['id']].get_bonus()
+                        save_challenge['total_value'] = save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_max()
+                    if do_bonus and self.challenges[save_challenge['id']].bonus:
+                        bonus_value = save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_bonus()
                         if do_max or do_zero or save_challenge['total_value'] < bonus_value:
                             save_challenge['total_value'] = bonus_value
 
@@ -2244,17 +2242,10 @@ class App(object):
 
         # Optional args
 
-        output_group = parser.add_mutually_exclusive_group()
-
-        output_group.add_argument('-d', '--decode',
-                action='store_true',
-                help='output a decoded save game (as opposed to a "real" savegame)',
-                )
-
-        output_group.add_argument('-e', '--export-items',
-                dest='export_items',
-                action='store_true',
-                help='save out codes for all bank and inventory items',
+        parser.add_argument('-o', '--output',
+                choices=['savegame', 'decoded', 'json', 'parsed', 'items'],
+                default='savegame',
+                help='Output file format',
                 )
 
         parser.add_argument('-i', '--import-items',
@@ -2264,7 +2255,7 @@ class App(object):
 
         parser.add_argument('-j', '--json',
                 action='store_true',
-                help='read or write save game data in JSON format, rather than raw protobufs',
+                help='read savegame data from JSON format, rather than savegame',
                 )
 
         parser.add_argument('-b', '--bigendian',
@@ -2283,10 +2274,6 @@ class App(object):
                 )
 
         # More optional args - used to be the "modify" option
-
-        #parser.add_argument('-m', '--modify',
-        #        help='comma-separated list of modifications to make, eg money=999999999,eridium=99',
-        #        )
 
         parser.add_argument('--name',
                 help='Set the name of the character',
@@ -2529,6 +2516,14 @@ class App(object):
         if config.input_filename != '-':
             input_file.close()
 
+        # If we're reading from JSON, convert it
+        if config.json:
+            self.debug('Interpreting JSON data')
+            data = json.loads(save_data, encoding='latin1')
+            if not data.has_key('1'):
+                data = self.remove_structure(data, self.invert_structure(self.save_structure))
+            save_data = self.wrap_player_data(self.write_protobuf(data))
+
         # If we've been told to import items, do so.
         if config.import_items:
             self.debug('Importing items from %s' % (config.import_items))
@@ -2550,32 +2545,24 @@ class App(object):
             output_file = open(config.output_filename, 'wb')
 
         # Now output based on what we've been told to do
-        if config.export_items:
+        if config.output == 'items':
             self.debug('Exporting items')
             self.export_items(save_data, output_file)
-        elif config.decode:
-            self.debug('Decoding savegame file')
+        elif config.output == 'savegame':
+            self.debug('Writing savegame file')
+            output_file.write(save_data)
+        else:
+            self.debug('Preparing decoded savegame file')
             player = self.unwrap_player_data(save_data)
-            if config.json:
+            if config.output == 'json' or config.output == 'parsed':
                 self.debug('Converting to JSON for more human-readable output')
                 data = self.read_protobuf(player)
-                if config.parse:
+                if config.output == 'parsed':
                     self.debug('Parsing protobuf data for even more human-readable output')
                     data = self.apply_structure(data, self.save_structure)
                 player = json.dumps(data, encoding="latin1", sort_keys=True, indent=4)
             self.debug('Writing decoded savegame file')
             output_file.write(player)
-        else:
-            self.debug('Writing to new savegame')
-            if config.json:
-                self.debug('Loading from JSON data')
-                data = json.loads(save_data, encoding='latin1')
-                if not data.has_key('1'):
-                    data = self.remove_structure(data, self.invert_structure(self.save_structure))
-                save_data = self.write_protobuf(data)
-            savegame = self.wrap_player_data(save_data)
-            self.debug('Writing savegame file')
-            output_file.write(savegame)
 
         # Close the output file
         if config.output_filename != '-':
