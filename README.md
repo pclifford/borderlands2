@@ -28,10 +28,8 @@ two.
 ## Secondly, a note about Pre-Sequel support
 
 Pre-Sequel support's being worked on, though be doubly-careful with making
-backups of your savegames if you're trying this on TPS files.  The Challenges
-data, in particular, definitely does not work properly with TPS, so I wouldn't
-recommend trying those options at all.  Regardless, there's now two commands
-that can be run, `bl2_save_edit.py` and `bltps_save_edit.py`.
+backups of your savegames if you're trying this on TPS files.  There's now
+two commands that can be run, `bl2_save_edit.py` and `bltps_save_edit.py`.
 
 ## Read and write Borderlands 2 save files
 

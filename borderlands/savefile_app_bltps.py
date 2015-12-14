@@ -43,10 +43,8 @@ class AppTPS(App):
     unlock_choices = ['tvhm', 'challenges', 'ammo']
 
     # Challenge categories
-    challenge_cat_dlc4 = ChallengeCat("Hammerlock's Hunt", 4)
-    challenge_cat_dlc3 = ChallengeCat("Campaign of Carnage", 3)
-    challenge_cat_dlc9 = ChallengeCat("Dragon Keep", 9)
-    challenge_cat_dlc1 = ChallengeCat("Pirate's Booty", 1)
+    challenge_cat_gravity = ChallengeCat("Low Gravity")
+    challenge_cat_grinder = ChallengeCat("Grinder")
     challenge_cat_enemies = ChallengeCat("Enemies")
     challenge_cat_elemental = ChallengeCat("Elemental")
     challenge_cat_loot = ChallengeCat("Loot")
@@ -58,6 +56,7 @@ class AppTPS(App):
     challenge_cat_rockets = ChallengeCat("Rocket Launcher")
     challenge_cat_sniper = ChallengeCat("Sniper Rifle")
     challenge_cat_ar = ChallengeCat("Assault Rifle")
+    challenge_cat_laser = ChallengeCat("Laser")
     challenge_cat_smg = ChallengeCat("SMG")
     challenge_cat_shotgun = ChallengeCat("Shotgun")
     challenge_cat_pistol = ChallengeCat("Pistol")
@@ -82,618 +81,594 @@ class AppTPS(App):
     # flexible for anyone editing the JSON directly, and theoretically
     # shouldn't be a problem in the future since there won't be any new major
     # DLC for B2...
+    #
+    # New major DLC for TPS seems unlikely too, though time will tell.
     challenges = {}
 
-    # Hammerlock DLC Challenges
-    challenges[1752] = Challenge(305, 1752,
-        "GD_Sage_Challenges.Challenges.Challenge_Sage_KillSavages",
-        challenge_cat_dlc4,
-        "Savage Bloody Savage",
-        "Kill savages",
-        (20, 50, 100, 250, 500))
-    challenges[1750] = Challenge(303, 1750,
-        "GD_Sage_Challenges.Challenges.Challenge_Sage_KillDrifters",
-        challenge_cat_dlc4,
-        "Harder They Fall",
-        "Kill drifters",
-        (5, 15, 30, 40, 50))
-    challenges[1751] = Challenge(304, 1751,
-        "GD_Sage_Challenges.Challenges.Challenge_Sage_KillFanBoats",
-        challenge_cat_dlc4,
-        "Fan Boy",
-        "Kill Fan Boats",
-        (5, 10, 15, 20, 30))
-    challenges[1753] = Challenge(306, 1753,
-        "GD_Sage_Challenges.Challenges.Challenge_Sage_RaidBossA",
-        challenge_cat_dlc4,
-        "Voracidous the Invincible",
-        "Defeat Voracidous the Invincible",
-        (1, 3, 5, 10, 15))
-    challenges[1952] = Challenge(307, 1952,
-        "GD_Sage_Challenges.Challenges.Challenge_Sage_KillBoroks",
-        challenge_cat_dlc4,
-        "Boroking Around",
-        "kill boroks",
-        (10, 20, 50, 80, 120))
-    challenges[1953] = Challenge(308, 1953,
-        "GD_Sage_Challenges.Challenges.Challenge_Sage_KillScaylions",
-        challenge_cat_dlc4,
-        "Stinging Sensation",
-        "Kill scaylions",
-        (10, 20, 50, 80, 120))
+    # Low Gravity
+    challenges[2052] = Challenge(468, 2052,
+        "GD_Challenges.LowGravity.LowGravity_CriticalsWhileAirborne",
+        challenge_cat_gravity,
+        "Eagle Eye",
+        "Get critical hits while airborne",
+        (50, 250, 500, 1500, 3000))
 
-    # Torgue DLC Challenges
-    challenges[1756] = Challenge(310, 1756,
-        "GD_Iris_Challenges.Challenges.Challenge_Iris_KillMotorcycles",
-        challenge_cat_dlc3,
-        "Bikes Destroyed",
-        "Destroy Bikes",
-        (10, 20, 30, 50, 80))
-    challenges[1757] = Challenge(311, 1757,
-        "GD_Iris_Challenges.Challenges.Challenge_Iris_KillBikers",
-        challenge_cat_dlc3,
-        "Bikers Killed",
-        "Bikers Killed",
-        (50, 100, 150, 200, 250))
-    challenges[1950] = Challenge(316, 1950,
-        "GD_Iris_Challenges.Challenges.Challenge_Iris_TorgueTokens",
-        challenge_cat_dlc3,
-        "Torgue Tokens Acquired",
-        "Acquire Torgue Tokens",
-        (100, 250, 500, 750, 1000))
-    challenges[1949] = Challenge(315, 1949,
-        "GD_Iris_Challenges.Challenges.Challenge_Iris_BuyTorgueItems",
-        challenge_cat_dlc3,
-        "Torgue Items Purchased",
-        "Purchase Torgue Items with Tokens",
-        (2, 5, 8, 12, 15))
-    challenges[1758] = Challenge(312, 1758,
-        "GD_Iris_Challenges.Challenges.Challenge_Iris_CompleteBattles",
-        challenge_cat_dlc3,
-        "Battles Completed",
-        "Complete All Battles",
-        (1, 4, 8, 12))
-    challenges[1759] = Challenge(313, 1759,
-        "GD_Iris_Challenges.Challenges.Challenge_Iris_Raid1",
-        challenge_cat_dlc3,
-        "Pete The Invincible Defeated",
-        "Defeat Pete the Invincible",
-        (1, 3, 5, 10, 15))
+    challenges[2093] = Challenge(507, 2093,
+        "GD_Challenges.LowGravity.LowGravity_DoubleJump",
+        challenge_cat_gravity,
+        "Boosted",
+        "Perform air boosts",
+        (50, 250, 1000, 2500, 5000))
 
-    # Tiny Tina DLC Challenges
-    challenges[1954] = Challenge(318, 1954,
-        "GD_Aster_Challenges.Challenges.Challenge_Aster_KillDwarves",
-        challenge_cat_dlc9,
-        "Scot-Free",
-        "Kill dwarves",
-        (50, 100, 150, 200, 250))
-    challenges[1768] = Challenge(320, 1768,
-        "GD_Aster_Challenges.Challenges.Challenge_Aster_KillGolems",
-        challenge_cat_dlc9,
-        "Rock Out With Your Rock Out",
-        "Kill golems",
-        (10, 25, 50, 80, 120))
-    challenges[1769] = Challenge(321, 1769,
-        "GD_Aster_Challenges.Challenges.Challenge_Aster_KillKnights",
-        challenge_cat_dlc9,
-        "Knighty Knight",
-        "Kill knights",
-        (10, 25, 75, 120, 175))
-    challenges[1771] = Challenge(323, 1771,
-        "GD_Aster_Challenges.Challenges.Challenge_Aster_KillOrcs",
-        challenge_cat_dlc9,
-        "Orcs Should Perish",
-        "Kill orcs",
-        (50, 100, 150, 200, 250))
-    challenges[1772] = Challenge(324, 1772,
-        "GD_Aster_Challenges.Challenges.Challenge_Aster_KillSkeletons",
-        challenge_cat_dlc9,
-        "Bone Breaker",
-        "Kill skeletons",
-        (50, 100, 150, 200, 250))
-    challenges[1773] = Challenge(325, 1773,
-        "GD_Aster_Challenges.Challenges.Challenge_Aster_KillSpiders",
-        challenge_cat_dlc9,
-        "Ew Ew Ew Ew",
-        "Kill spiders",
-        (25, 50, 100, 150, 200))
-    challenges[1774] = Challenge(326, 1774,
-        "GD_Aster_Challenges.Challenges.Challenge_Aster_KillTreants",
-        challenge_cat_dlc9,
-        "Cheerful Green Giants",
-        "Kill treants",
-        (10, 20, 50, 80, 120))
-    challenges[1775] = Challenge(327, 1775,
-        "GD_Aster_Challenges.Challenges.Challenge_Aster_KillWizards",
-        challenge_cat_dlc9,
-        "Magical Massacre",
-        "Kill wizards",
-        (10, 20, 50, 80, 120))
-    challenges[1754] = Challenge(317, 1754,
-        "GD_Aster_Challenges.Challenges.Challenge_Aster_KillDragons",
-        challenge_cat_dlc9,
-        "Fus Roh Die",
-        "Kill dragons",
-        (10, 20, 50, 80, 110))
-    challenges[1770] = Challenge(322, 1770,
-        "GD_Aster_Challenges.Challenges.Challenge_Aster_KillMimics",
-        challenge_cat_dlc9,
-        "Can't Fool Me",
-        "Kill mimics",
-        (5, 15, 30, 50, 75))
+    challenges[2051] = Challenge(467, 2051,
+        "GD_Challenges.LowGravity.LowGravity_KillsWhileAirborne",
+        challenge_cat_gravity,
+        "Death from Above",
+        "Kill enemies while in the air",
+        (50, 250, 1000, 2500, 5000),
+        bonus=5)
 
-    # Captain Scarlett DLC Challenges
-    challenges[1743] = Challenge(298, 1743,
-        "GD_Orchid_Challenges.Challenges.Challenge_Orchid_Crystals",
-        challenge_cat_dlc1,
-        "In The Pink",
-        "Collect Seraph Crystals",
-        (80, 160, 240, 320, 400))
-    challenges[1755] = Challenge(299, 1755,
-        "GD_Orchid_Challenges.Challenges.Challenge_Orchid_Purchase",
-        challenge_cat_dlc1,
-        "Shady Dealings",
-        "Purchase Items With Seraph Crystals",
-        (1, 3, 5, 10, 15))
-    challenges[1745] = Challenge(294, 1745,
-        "GD_Orchid_Challenges.Challenges.Challenge_Orchid_KillWorms",
-        challenge_cat_dlc1,
-        "Worm Killer",
-        "Kill Sand Worms",
-        (10, 20, 30, 50, 80))
-    challenges[1746] = Challenge(295, 1746,
-        "GD_Orchid_Challenges.Challenges.Challenge_Orchid_KillBandits",
-        challenge_cat_dlc1,
-        "Land Lubber",
-        "Kill Pirates",
-        (50, 100, 150, 200, 250))
-    challenges[1747] = Challenge(296, 1747,
-        "GD_Orchid_Challenges.Challenges.Challenge_Orchid_KillHovercrafts",
-        challenge_cat_dlc1,
-        "Hovernator",
-        "Destroy Pirate Hovercrafts",
-        (5, 10, 15, 20, 30))
-    challenges[1748] = Challenge(297, 1748,
-        "GD_Orchid_Challenges.Challenges.Challenge_Orchid_PirateChests",
-        challenge_cat_dlc1,
-        "Pirate Booty",
-        "Open Pirate Chests",
-        (25, 75, 150, 250, 375))
-    challenges[1742] = Challenge(292, 1742,
-        "GD_Orchid_Challenges.Challenges.Challenge_Orchid_Raid1",
-        challenge_cat_dlc1,
-        "Hyperius the Not-So-Invincible",
-        "Divide Hyperius by zero",
-        (1, 3, 5, 10, 15))
-    challenges[1744] = Challenge(293, 1744,
-        "GD_Orchid_Challenges.Challenges.Challenge_Orchid_Raid3",
-        challenge_cat_dlc1,
-        "Master Worm Food",
-        "Feed Master Gee to his worms",
-        (1, 3, 5, 10, 15))
+    challenges[2055] = Challenge(471, 2055,
+        "GD_Challenges.LowGravity.LowGravity_KillsWithSlam",
+        challenge_cat_gravity,
+        "Slampage!",
+        "Kill enemies with slam attacks",
+        (5, 10, 50, 100, 200))
+
+    challenges[2053] = Challenge(469, 2053,
+        "GD_Challenges.LowGravity.LowGravity_MeleeWhileAirborne",
+        challenge_cat_gravity,
+        "Dragon Punch",
+        "Deal melee damage while airborne",
+        (5000, 10000, 25000, 75000, 200000))
+
+    challenges[2054] = Challenge(470, 2054,
+        "GD_Challenges.LowGravity.LowGravity_SlamDamage",
+        challenge_cat_gravity,
+        "Roger Slamjet",
+        "Desc",
+        (2000, 10000, 50000, 100000, 2500000))
+
+    # Grinder
+    challenges[2060] = Challenge(476, 2060,
+        "GD_Challenges.Grinder.Grinder_GrinderRecipes",
+        challenge_cat_grinder,
+        "Master Chef",
+        "Discover Grinder recipes",
+        (2, 5, 10, 20, 34),
+        bonus=3)
+
+    challenges[2061] = Challenge(477, 2061,
+        "GD_Challenges.Grinder.Grinder_MoonstoneAttachments",
+        challenge_cat_grinder,
+        "Greater Than the Sum of its Parts",
+        "Obtain Luneshine weapons from the Grinder",
+        (20, 50, 75, 125, 200))
+
+    challenges[2059] = Challenge(475, 2059,
+        "GD_Challenges.Grinder.Grinder_MoonstoneGrind",
+        challenge_cat_grinder,
+        "This Time for Sure",
+        "Perform Moonstone grinds",
+        (10, 25, 150, 300, 750))
+
+    challenges[2058] = Challenge(474, 2058,
+        "GD_Challenges.Grinder.Grinder_StandardGrind",
+        challenge_cat_grinder,
+        "The Daily Grind",
+        "Perform standard grind",
+        (50, 250, 750, 1500, 25000))
 
     # Enemies
-    challenges[1632] = Challenge(24, 1632,
-        "GD_Challenges.enemies.Enemies_KillSkags",
+    challenges[2035] = Challenge(452, 2035,
+        "GD_Challenges.Enemies.Enemies_KillDahlBadasses",
         challenge_cat_enemies,
-        "Skags to Riches",
-        "Kill skags",
-        (10, 25, 75, 150, 300))
-    challenges[1675] = Challenge(84, 1675,
-        "GD_Challenges.enemies.Enemies_KillConstructors",
+        "Kiss My Badass",
+        "Kill Lost Legion badasses",
+        (5, 10, 20, 30, 50))
+
+    challenges[2028] = Challenge(445, 2028,
+        "GD_Challenges.Enemies.Enemies_KillDahlFlyers",
         challenge_cat_enemies,
-        "Constructor Destructor",
-        "Kill constructors",
-        (5, 12, 20, 30, 50))
-    challenges[1655] = Challenge(80, 1655,
-        "GD_Challenges.enemies.Enemies_KillLoaders",
-        challenge_cat_enemies,
-        "Load and Lock",
-        "Kill loaders",
-        (20, 100, 500, 1000, 1500),
+        "Crash & Burn",
+        "Destroy Lost Legion jet fighters",
+        (1, 3, 5, 10, 20),
         bonus=3)
-    challenges[1651] = Challenge(76, 1651,
-        "GD_Challenges.enemies.Enemies_KillBullymongs",
+
+    challenges[2027] = Challenge(444, 2027,
+        "GD_Challenges.Enemies.Enemies_KillDahlInfantry",
         challenge_cat_enemies,
-        "Bully the Bullies",
-        "Kill bullymongs",
+        "Get Some!",
+        "Kill Lost Legion infantry",
+        (50, 250, 500, 1000, 2000))
+
+    challenges[2029] = Challenge(446, 2029,
+        "GD_Challenges.Enemies.Enemies_KillDahlSuits",
+        challenge_cat_enemies,
+        "No Suit for You!",
+        "Kill Lost Legion powersuits",
+        (10, 25, 75, 150, 300))
+
+    challenges[2043] = Challenge(460, 2043,
+        "GD_Challenges.Enemies.Enemies_KillGuardianBosses",
+        challenge_cat_enemies,
+        "More Where That Came From",
+        "Kill Eridian Guardian bosses",
+        (2, 4, 6, 8, 10),
+        bonus=3)
+
+    challenges[2031] = Challenge(448, 2031,
+        "GD_Challenges.Enemies.Enemies_KillGuardians",
+        challenge_cat_enemies,
+        "Not So Tough Now",
+        "Kill Eridian Guardians",
+        (25, 50, 100, 150, 250))
+
+    challenges[2030] = Challenge(447, 2030,
+        "GD_Challenges.Enemies.Enemies_KillHyperionInfantry",
+        challenge_cat_enemies,
+        "Dose of Death",
+        "Kill enemies infected with space hurps",
+        (10, 50, 125, 250, 500))
+
+    challenges[2034] = Challenge(451, 2034,
+        "GD_Challenges.Enemies.Enemies_KillKraggonBadasses",
+        challenge_cat_enemies,
+        "Slayer of Titans",
+        "Kill kraggon badasses",
+        (1, 3, 7, 15, 25),
+        bonus=3)
+
+    challenges[2032] = Challenge(449, 2032,
+        "GD_Challenges.Enemies.Enemies_KillKraggons",
+        challenge_cat_enemies,
+        "Big Game Hunt",
+        "Kill kraggons",
         (25, 50, 150, 300, 750))
-    challenges[1652] = Challenge(77, 1652,
-        "GD_Challenges.enemies.Enemies_KillCrystalisks",
+
+    challenges[2039] = Challenge(456, 2039,
+        "GD_Challenges.Enemies.Enemies_KillLunarLooters",
         challenge_cat_enemies,
-        "Crystals are a Girl's Best Friend",
-        "Kill crystalisks",
-        (10, 25, 50, 80, 120))
-    challenges[1653] = Challenge(78, 1653,
-        "GD_Challenges.enemies.Enemies_KillGoliaths",
+        "Gift That Keeps Giving",
+        "Kill swagmen",
+        (1, 3, 5, 8, 12))
+
+    challenges[1989] = Challenge(406, 1989,
+        "GD_Challenges.Enemies.Enemies_KillRathyds",
         challenge_cat_enemies,
-        "WHY SO MUCH HURT?!",
-        "Kill goliaths",
-        (10, 25, 50, 80, 120))
-    challenges[1654] = Challenge(79, 1654,
-        "GD_Challenges.enemies.Enemies_KillEngineers",
+        "Exterminator",
+        "Kill rathyds",
+        (25, 50, 150, 300, 750))
+
+    challenges[2038] = Challenge(455, 2038,
+        "GD_Challenges.Enemies.Enemies_KillScavBadasses",
         challenge_cat_enemies,
-        "Paingineering",
-        "Kill Hyperion personnel",
-        (10, 25, 75, 150, 300))
-    challenges[1658] = Challenge(83, 1658,
-        "GD_Challenges.enemies.Enemies_KillSurveyors",
+        "The One That Says B.A.M.F.",
+        "Kill scav badasses",
+        (10, 25, 50, 100, 250))
+
+    challenges[2037] = Challenge(454, 2037,
+        "GD_Challenges.Enemies.Enemies_KillScavFlyers",
         challenge_cat_enemies,
-        "Just a Moment of Your Time...",
-        "Kill surveyors",
-        (10, 25, 75, 150, 300))
-    challenges[1694] = Challenge(87, 1694,
-        "GD_Challenges.enemies.Enemies_KillNomads",
+        "It Wasn't Yours, Anyway",
+        "Destroy scav jet fighters",
+        (1, 3, 5, 10, 20))
+
+    challenges[2036] = Challenge(453, 2036,
+        "GD_Challenges.Enemies.Enemies_KillScavSpacemen",
         challenge_cat_enemies,
-        "You (No)Mad, Bro?",
-        "Kill nomads",
-        (10, 25, 75, 150, 300))
-    challenges[1695] = Challenge(88, 1695,
-        "GD_Challenges.enemies.Enemies_KillPsychos",
+        "Space Dead",
+        "Kill scav outlaws",
+        (25, 50, 150, 300, 750),
+        bonus=3)
+
+    challenges[2033] = Challenge(450, 2033,
+        "GD_Challenges.Enemies.Enemies_KillScavs",
         challenge_cat_enemies,
-        "Mama's Boys",
-        "Kill psychos",
-        (50, 100, 150, 300, 500))
-    challenges[1696] = Challenge(89, 1696,
-        "GD_Challenges.enemies.Enemies_KillRats",
+        "Die, Moon Jerks",
+        "Kill scavs",
+        (75, 250, 750, 2000, 5000))
+
+    challenges[1988] = Challenge(405, 1988,
+        "GD_Challenges.Enemies.Enemies_KillShugguraths",
         challenge_cat_enemies,
-        "You Dirty Rat",
-        "Kill rats.  Yes, really.",
-        (10, 25, 75, 150, 300))
-    challenges[1791] = Challenge(93, 1791,
-        "GD_Challenges.enemies.Enemies_KillSpiderants",
+        "That Was Unpleasant",
+        "Kill shugguraths",
+        (25, 50, 150, 300, 750))
+
+    challenges[2041] = Challenge(458, 2041,
+        "GD_Challenges.Enemies.Enemies_KillTorkBadasses",
+        challenge_cat_enemies,
+        "Torkin' Out the Trash",
+        "Kill tork badasses",
+        (5, 10, 20, 30, 50))
+
+    challenges[1974] = Challenge(391, 1974,
+        "GD_Challenges.Enemies.Enemies_KillTorks",
         challenge_cat_enemies,
         "Pest Control",
-        "Kill spiderants",
-        (10, 25, 75, 150, 300))
-    challenges[1792] = Challenge(94, 1792,
-        "GD_Challenges.enemies.Enemies_KillStalkers",
+        "Kill torks",
+        (25, 75, 150, 500, 1000))
+
+    # This challenge ID is odd, since it identifies itself as a level-specific
+    # challenge, but lives up in the "Enemies" section along with everything
+    # else.  Unlocking this challenge prematurely will correctly show the
+    # challenge in the Enemies section, but will also cause an "Eleseer" entry
+    # to be added to the location-specific area, and a single (undiscovered)
+    # entry will be there.  TODO: I have yet to verify that that doesn't
+    # cause problems when you do first enter Eleseer.  I assume it should be
+    # fine, though I should doublecheck.
+    challenges[2257] = Challenge(671, 2257,
+        "GD_Challenges.Co_LevelChallenges.InnerCore_AintNobodyGotTime",
         challenge_cat_enemies,
-        "You're One Ugly Mother...",
-        "Kill stalkers",
-        (10, 25, 75, 150, 300))
-    challenges[1793] = Challenge(95, 1793,
-        "GD_Challenges.enemies.Enemies_KillThreshers",
+        "Aim for the Little Ones",
+        "Kill Opha's spawned Putti",
+        (10, 25, 45, 70, 100))
+
+    challenges[1728] = Challenge(331, 1728,
+        "GD_Marigold_Challenges.Enemies.Enemies_KillCorruptions",
         challenge_cat_enemies,
-        "Tentacle Obsession",
-        "Kill threshers",
+        "Clean Sweep",
+        "Kill corrupted enemies inside of Claptrap",
         (10, 25, 75, 150, 300))
-    challenges[1693] = Challenge(86, 1693,
-        "GD_Challenges.enemies.Enemies_KillMarauders",
+
+    challenges[1727] = Challenge(330, 1727,
+        "GD_Marigold_Challenges.Enemies.Enemies_KillInsecuityForces",
         challenge_cat_enemies,
-        "Marauder? I Hardly Know 'Er",
-        "Kill marauders",
-        (20, 100, 500, 1000, 1500),
+        "Claptomaniac",
+        "Kill insecurity forces",
+        (5, 10, 25, 75, 200),
         bonus=3)
-    challenges[1794] = Challenge(96, 1794,
-        "GD_Challenges.enemies.Enemies_KillVarkid",
+
+    challenges[1733] = Challenge(336, 1733,
+        "GD_Marigold_Challenges.Enemies.Enemies_KillsFromBitBombs",
         challenge_cat_enemies,
-        "Another Bug Hunt",
-        "Kill varkids",
-        (10, 25, 75, 150, 300))
-    challenges[1795] = Challenge(97, 1795,
-        "GD_Challenges.enemies.Enemies_KillGyros",
-        challenge_cat_enemies,
-        "Die in the Friendly Skies",
-        "Kill buzzards",
-        (10, 25, 45, 70, 100))
-    challenges[1796] = Challenge(98, 1796,
-        "GD_Challenges.enemies.Enemies_KillMidgets",
-        challenge_cat_enemies,
-        "Little Person, Big Pain",
-        "Kill midgets",
-        (10, 25, 75, 150, 300))
-    challenges[1895] = Challenge(249, 1895,
-        "GD_Challenges.enemies.Enemies_ShootBullymongProjectiles",
-        challenge_cat_enemies,
-        "Hurly Burly",
-        "Shoot bullymong-tossed projectiles out of midair",
-        (10, 25, 50, 125, 250))
-    challenges[1896] = Challenge(250, 1896,
-        "GD_Challenges.enemies.Enemies_ReleaseChainedMidgets",
-        challenge_cat_enemies,
-        "Short-Chained",
-        "Shoot chains to release midgets from shields",
-        (1, 5, 15, 30, 50))
-    challenges[1934] = Challenge(99, 1934,
-        "GD_Challenges.enemies.Enemies_KillBruisers",
-        challenge_cat_enemies,
-        "Cruising for a Bruising",
-        "Kill bruisers",
-        (10, 25, 75, 150, 300))
-    challenges[1732] = Challenge(91, 1732,
-        "GD_Challenges.enemies.Enemies_KillVarkidPods",
-        challenge_cat_enemies,
-        "Pod Pew Pew",
-        "Kill varkid pods before they hatch",
-        (10, 25, 45, 70, 100))
+        "Volakillity",
+        "Kill enemies with Volatile Bits",
+        (3, 8, 20, 50, 120))
 
     # Elemental
-    challenges[1873] = Challenge(225, 1873,
+    challenges[1823] = Challenge(226, 1823,
         "GD_Challenges.elemental.Elemental_SetEnemiesOnFire",
         challenge_cat_elemental,
-        "Cowering Inferno",
-        "Ignite enemies",
+        "Way of the Enkindling",
+        "Light enemies on fire",
         (25, 100, 400, 1000, 2000))
-    challenges[1642] = Challenge(40, 1642,
+
+    challenges[1592] = Challenge(40, 1592,
         "GD_Challenges.elemental.Elemental_KillEnemiesCorrosive",
         challenge_cat_elemental,
-        "Acid Trip",
-        "Kill enemies with corrode damage",
+        "Toxic Takedown",
+        "Kill enemies with corrosive damage",
         (20, 75, 250, 600, 1000))
-    challenges[1645] = Challenge(43, 1645,
+
+    challenges[1595] = Challenge(43, 1595,
         "GD_Challenges.elemental.Elemental_KillEnemiesExplosive",
         challenge_cat_elemental,
-        "Boom.",
+        "Out with a Bang",
         "Kill enemies with explosive damage",
-        (20, 75, 250, 600, 1000),
-        bonus=3)
-    challenges[1877] = Challenge(229, 1877,
+        (20, 75, 250, 600, 1000))
+
+    challenges[1827] = Challenge(230, 1827,
         "GD_Challenges.elemental.Elemental_DealFireDOTDamage",
         challenge_cat_elemental,
-        "I Just Want to Set the World on Fire",
-        "Deal burn damage",
+        "Some Like It Hot",
+        "Deal damage with incindiary DoT (damage-over-time) effects",
         (2500, 20000, 100000, 500000, 1000000),
         bonus=5)
-    challenges[1878] = Challenge(230, 1878,
+
+    challenges[1828] = Challenge(231, 1828,
         "GD_Challenges.elemental.Elemental_DealCorrosiveDOTDamage",
         challenge_cat_elemental,
-        "Corroderate",
-        "Deal corrode damage",
+        "Chemical Burn",
+        "Deal damage with corrosive DoT (damage-over-time) effects",
         (2500, 20000, 100000, 500000, 1000000))
-    challenges[1879] = Challenge(231, 1879,
+
+    challenges[1977] = Challenge(394, 1977,
+        "GD_Challenges.elemental.Elemental_DealIceDOTDamage",
+        challenge_cat_elemental,
+        "Frost Bite",
+        "Deal damage with cryo DoT (damage-over-time) effects",
+        (2500, 20000, 100000, 500000, 1000000))
+
+    challenges[1829] = Challenge(232, 1829,
         "GD_Challenges.elemental.Elemental_DealShockDOTDamage",
         challenge_cat_elemental,
-        'Say "Watt" Again',
-        "Deal electrocute damage",
+        "Watt's Up?",
+        "Deal damage with shock DoT (damage-over-time) effects",
         (5000, 20000, 100000, 500000, 1000000))
-    challenges[1880] = Challenge(232, 1880,
-        "GD_Challenges.elemental.Elemental_DealBonusSlagDamage",
-        challenge_cat_elemental,
-        "Slag-Licked",
-        "Deal bonus damage to Slagged enemies",
-        (5000, 25000, 150000, 1000000, 5000000),
-        bonus=3)
 
     # Loot
-    challenges[1898] = Challenge(251, 1898,
+    challenges[1848] = Challenge(252, 1848,
         "GD_Challenges.Pickups.Inventory_PickupWhiteItems",
         challenge_cat_loot,
-        "Another Man's Treasure",
+        "Junkyard Dog",
         "Loot or purchase white items",
         (50, 125, 250, 400, 600))
-    challenges[1899] = Challenge(252, 1899,
+
+    challenges[1849] = Challenge(253, 1849,
         "GD_Challenges.Pickups.Inventory_PickupGreenItems",
         challenge_cat_loot,
-        "It's Not Easy Looting Green",
-        "Loot or purchase green items",
-        (20, 50, 75, 125, 200),
+        "A Chunk of Purest Green",
+        "Loot or purchase green-rarity items",
+        (25, 75, 125, 250, 500),
         bonus=3)
-    challenges[1900] = Challenge(253, 1900,
+
+    challenges[1850] = Challenge(254, 1850,
         "GD_Challenges.Pickups.Inventory_PickupBlueItems",
         challenge_cat_loot,
-        "I Like My Treasure Rare",
-        "Loot or purchase blue items",
-        (5, 12, 20, 30, 45))
-    challenges[1901] = Challenge(254, 1901,
+        "Rare as Rocking Horse...",
+        "Loot or purchase blue-rarity items",
+        (5, 25, 50, 75, 100))
+
+    challenges[1851] = Challenge(255, 1851,
         "GD_Challenges.Pickups.Inventory_PickupPurpleItems",
         challenge_cat_loot,
-        "Purple Reign",
-        "Loot or purchase purple items",
-        (2, 4, 7, 12, 20))
-    challenges[1902] = Challenge(255, 1902,
+        "Purple Haze",
+        "Loot or purchase purple-rarity items",
+        (3, 7, 15, 30, 75))
+
+    challenges[1852] = Challenge(256, 1852,
         "GD_Challenges.Pickups.Inventory_PickupOrangeItems",
         challenge_cat_loot,
-        "Nothing Rhymes with Orange",
-        "Loot or purchase orange items",
+        "The Happiest Color",
+        "Loot or purchase legendary items",
         (1, 3, 6, 10, 15),
         bonus=5)
-    challenges[1669] = Challenge(108, 1669,
+
+    challenges[1731] = Challenge(334, 1731,
+        "GD_Marigold_Challenges.Loot.Loot_OpenGlitchedChests",
+        challenge_cat_loot,
+        "I Like Surprises...",
+        "Open Glitched treasure chests",
+        (1, 3, 5, 8, 12))
+
+    challenges[1730] = Challenge(333, 1730,
+        "GD_Marigold_Challenges.Loot.Loot_PickupGlitchedItems",
+        challenge_cat_loot,
+        "99 Problems and a Glitch Aint One",
+        "Loot or purchase Glitched-rarity items",
+        (1, 3, 6, 10, 15),
+        bonus=5)
+
+    challenges[1619] = Challenge(108, 1619,
         "GD_Challenges.Loot.Loot_OpenChests",
         challenge_cat_loot,
-        "The Call of Booty",
+        "Aaaaaand OPEN!",
         "Open treasure chests",
-        (5, 25, 50, 125, 250))
-    challenges[1670] = Challenge(109, 1670,
+        (10, 25, 75, 150, 300))
+
+    challenges[1620] = Challenge(110, 1620,
         "GD_Challenges.Loot.Loot_OpenLootables",
         challenge_cat_loot,
-        "Open Pandora's Boxes",
-        "Open lootable chests, lockers, and other objects",
-        (50, 250, 750, 1500, 2500),
+        "Scrounging Around",
+        "Open lootable crates, lockers, and other objects",
+        (50, 300, 1000, 2000, 3000),
         bonus=3)
-    challenges[1630] = Challenge(8, 1630,
+
+    challenges[1580] = Challenge(8, 1580,
         "GD_Challenges.Loot.Loot_PickUpWeapons",
         challenge_cat_loot,
-        "Gun Runner",
+        "One for Every Occasion",
         "Pick up or purchase weapons",
         (10, 25, 150, 300, 750))
 
     # Money
-    challenges[1858] = Challenge(118, 1858,
+    challenges[1808] = Challenge(119, 1808,
         "GD_Challenges.Economy.Economy_MoneySaved",
         challenge_cat_money,
-        "For the Hoard!",
+        "Mom Would Be Proud",
         "Save a lot of money",
-        (10000, 50000, 250000, 1000000, 3000000),
-        bonus=3)
-    challenges[1859] = Challenge(119, 1859,
+        (10000, 50000, 250000, 1000000, 3000000))
+
+    challenges[1809] = Challenge(120, 1809,
         "GD_Challenges.Economy.General_MoneyFromCashDrops",
         challenge_cat_money,
-        "Dolla Dolla Bills, Y'all",
+        "Mr. Money Pits",
         "Collect dollars from cash drops",
         (5000, 25000, 125000, 500000, 1000000))
-    challenges[1678] = Challenge(112, 1678,
+
+    challenges[1628] = Challenge(113, 1628,
         "GD_Challenges.Economy.Economy_SellItems",
         challenge_cat_money,
-        "Wholesale",
+        "Pawn Broker",
         "Sell items to vending machines",
-        (10, 25, 150, 300, 750))
-    challenges[1860] = Challenge(113, 1860,
+        (50, 100, 250, 750, 2000))
+
+    challenges[1810] = Challenge(114, 1810,
         "GD_Challenges.Economy.Economy_PurchaseItemsOfTheDay",
         challenge_cat_money,
-        "Limited-Time Offer",
-        "Buy Items of the Day",
+        "Impulse Shopper",
+        "Buy Items of the Day from vending machines",
         (1, 5, 15, 30, 50))
-    challenges[1810] = Challenge(111, 1810,
-        "GD_Challenges.Economy.Economy_BuyItemsWithEridium",
+
+    challenges[1760] = Challenge(112, 1760,
+        "GD_Challenges.Economy.Economy_BuyItemsWithMoonstone",
         challenge_cat_money,
-        "Whaddaya Buyin'?",
-        "Purchase items with Eridium",
-        (2, 5, 9, 14, 20),
-        bonus=4)
-    challenges[1805] = Challenge(214, 1805,
+        "Over the Moon",
+        "Purchase items with Moonstones",
+        (25, 50, 125, 250, 500),
+        bonus=3)
+
+    challenges[1755] = Challenge(215, 1755,
         "GD_Challenges.Economy.Trade_ItemsWithPlayers",
         challenge_cat_money,
-        "Psst, Hey Buddy...",
+        "Trade Negotiations",
         "Trade with other players",
         (1, 5, 15, 30, 50))
 
     # Vehicle
-    challenges[1640] = Challenge(37, 1640,
+    challenges[1590] = Challenge(37, 1590,
         "GD_Challenges.Vehicles.Vehicles_KillByRamming",
         challenge_cat_vehicle,
-        "Hit-and-Fun",
+        "Fender Bender",
         "Kill enemies by ramming them with a vehicle",
         (5, 10, 50, 100, 200))
-    challenges[1920] = Challenge(275, 1920,
+
+    challenges[1870] = Challenge(276, 1870,
         "GD_Challenges.Vehicles.Vehicles_KillByPowerSlide",
         challenge_cat_vehicle,
-        "Blue Sparks",
+        "Splat 'n' Slide",
         "Kill enemies by power-sliding over them in a vehicle",
-        (5, 15, 30, 50, 75),
+        (1, 5, 10, 25, 50),
         bonus=3)
-    challenges[1641] = Challenge(38, 1641,
+
+    challenges[1591] = Challenge(38, 1591,
         "GD_Challenges.Vehicles.Vehicles_KillsWithVehicleWeapon",
         challenge_cat_vehicle,
-        "Turret Syndrome",
+        "Improvise, Adapt, Overcome",
         "Kill enemies using a turret or vehicle-mounted weapon",
         (10, 25, 150, 300, 750))
-    challenges[1922] = Challenge(277, 1922,
+
+    challenges[1872] = Challenge(278, 1872,
         "GD_Challenges.Vehicles.Vehicles_VehicleKillsVehicle",
         challenge_cat_vehicle,
-        "...One Van Leaves",
+        "Road Warrior",
         "Kill vehicles while in a vehicle",
-        (5, 10, 50, 100, 200))
-    challenges[1919] = Challenge(274, 1919,
-        "GD_Challenges.Vehicles.Vehicles_KillsWhilePassenger",
+        (5, 10, 20, 40, 75))
+
+    challenges[2044] = Challenge(461, 2044,
+        "GD_Challenges.Vehicles.Vehicles_KillByPancaking",
         challenge_cat_vehicle,
-        "Passive Aggressive",
-        "Kill enemies while riding as a passenger (not a gunner) in a vehicle",
-        (1, 10, 50, 100, 200))
+        "Pancakes For Breakfast",
+        "Kill enemies with Stingray slams",
+        (1, 5, 10, 25, 50))
 
     # Health
-    challenges[1917] = Challenge(270, 1917,
+    challenges[1867] = Challenge(271, 1867,
         "GD_Challenges.Player.Player_PointsHealed",
         challenge_cat_health,
-        "Heal Plz",
+        "Doctor Feels Good",
         "Recover health",
         (1000, 25000, 150000, 1000000, 5000000))
-    challenges[1865] = Challenge(200, 1865,
+
+    challenges[1815] = Challenge(201, 1815,
         "GD_Challenges.Player.Player_SecondWind",
         challenge_cat_health,
-        "I'll Just Help Myself",
+        "Better You Than Me",
         "Get Second Winds by killing an enemy",
-        (5, 10, 50, 100, 200))
-    challenges[1866] = Challenge(201, 1866,
+        (10, 25, 75, 150, 300))
+
+    challenges[1816] = Challenge(202, 1816,
         "GD_Challenges.Player.Player_SecondWindFromBadass",
         challenge_cat_health,
-        "Badass Bingo",
-        "Get Second Winds by killing a badass enemy",
+        "There Can Be Only... Me",
+        "Get Second Winds by killing badass enemies",
         (1, 5, 15, 30, 50),
         bonus=5)
-    challenges[1868] = Challenge(204, 1868,
+
+    challenges[1818] = Challenge(205, 1818,
         "GD_Challenges.Player.Player_CoopRevivesOfFriends",
         challenge_cat_health,
-        "This is No Time for Lazy!",
+        "Up Unt at Zem",
         "Revive a co-op partner",
         (5, 10, 50, 100, 200),
         bonus=5)
-    challenges[1834] = Challenge(198, 1834,
+
+    challenges[1784] = Challenge(199, 1784,
         "GD_Challenges.Player.Player_SecondWindFromFire",
         challenge_cat_health,
-        "Death, Wind, and Fire",
-        "Get Second Winds by killing enemies with a burn DoT (damage over time)",
+        "The Phoenix",
+        "Get Second Winds by killing enemies with an incindiary DoT (damage over time)",
         (1, 5, 15, 30, 50))
-    challenges[1833] = Challenge(197, 1833,
+
+    challenges[1783] = Challenge(198, 1783,
         "GD_Challenges.Player.Player_SecondWindFromCorrosive",
         challenge_cat_health,
-        "Green Meanie",
+        "Soup's Up!",
         "Get Second Winds by killing enemies with a corrosive DoT (damage over time)",
         (1, 5, 15, 30, 50))
-    challenges[1835] = Challenge(199, 1835,
+
+    challenges[1785] = Challenge(200, 1785,
         "GD_Challenges.Player.Player_SecondWindFromShock",
         challenge_cat_health,
-        "I'm Back! Shocked?",
-        "Get Second Winds by killing enemies with an electrocute DoT (damage over time)",
+        "Had a Bit of a Shocker",
+        "Get Second Winds by killing enemies with a shock DoT (damage over time)",
+        (1, 5, 15, 30, 50))
+
+    challenges[2057] = Challenge(473, 2057,
+        "GD_Challenges.Player.Player_SecondWindFromShatter",
+        challenge_cat_health,
+        "Rollin' the Ice",
+        "Get Second Winds by shattering frozen enemies",
         (1, 5, 15, 30, 50))
 
     # Grenades
-    challenges[1639] = Challenge(31, 1639,
+    challenges[1589] = Challenge(31, 1589,
         "GD_Challenges.Grenades.Grenade_Kills",
         challenge_cat_grenades,
-        "Pull the Pin",
+        "Home Nade Cookin'",
         "Kill enemies with grenades",
         (10, 25, 150, 300, 750),
         bonus=3)
-    challenges[1886] = Challenge(238, 1886,
+
+    challenges[1836] = Challenge(239, 1836,
         "GD_Challenges.Grenades.Grenade_KillsSingularityType",
         challenge_cat_grenades,
-        "Singled Out",
+        "See Ya on the Other Side",
         "Kill enemies with Singularity grenades",
         (10, 25, 75, 150, 300))
-    challenges[1885] = Challenge(237, 1885,
+
+    challenges[1835] = Challenge(238, 1835,
         "GD_Challenges.Grenades.Grenade_KillsMirvType",
         challenge_cat_grenades,
-        "EXPLOOOOOSIONS!",
-        "Kill enemies with Mirv grenades",
+        "Big MIRV",
+        "Kill enemies with MIRV grenades",
         (10, 25, 75, 150, 300),
         bonus=3)
-    challenges[1883] = Challenge(235, 1883,
+
+    challenges[1833] = Challenge(236, 1833,
         "GD_Challenges.Grenades.Grenade_KillsAoEoTType",
         challenge_cat_grenades,
-        "Chemical Sprayer",
+        "Sprayowee",
         "Kill enemies with Area-of-Effect grenades",
-        (10, 25, 75, 150, 300))
-    challenges[1884] = Challenge(236, 1884,
+        (25, 50, 125, 250, 500))
+
+    challenges[1834] = Challenge(237, 1834,
         "GD_Challenges.Grenades.Grenade_KillsBouncing",
         challenge_cat_grenades,
-        "Whoa, Black Betty",
+        "Betty Boom",
         "Kill enemies with Bouncing Betty grenades",
         (10, 25, 75, 150, 300))
-    challenges[1918] = Challenge(239, 1918,
+
+    challenges[1868] = Challenge(240, 1868,
         "GD_Challenges.Grenades.Grenade_KillsTransfusionType",
         challenge_cat_grenades,
-        "Health Vampire",
+        "Pass the Chianti",
         "Kill enemies with Transfusion grenades",
         (10, 25, 75, 150, 300))
 
     # Shields
-    challenges[1889] = Challenge(243, 1889,
+    challenges[1839] = Challenge(244, 1839,
         "GD_Challenges.Shields.Shields_KillsNova",
         challenge_cat_shields,
-        "Super Novas",
+        "Nova Say Die",
         "Kill enemies with a Nova shield burst",
         (5, 10, 50, 100, 200),
         bonus=3)
-    challenges[1890] = Challenge(244, 1890,
+
+    challenges[1840] = Challenge(245, 1840,
         "GD_Challenges.Shields.Shields_KillsRoid",
         challenge_cat_shields,
-        "Roid Rage",
-        'Kill enemies while buffed by a "Maylay" shield',
+        "Wet Work",
+        "Kill enemies while buffed by a Maylay shield",
         (5, 10, 50, 100, 200))
-    challenges[1891] = Challenge(245, 1891,
+
+    challenges[1841] = Challenge(246, 1841,
         "GD_Challenges.Shields.Shields_KillsSpikes",
         challenge_cat_shields,
-        "Game of Thorns",
+        "That'll Learn Ya",
         "Kill enemies with reflected damage from a Spike shield",
         (5, 10, 50, 100, 200))
-    challenges[1892] = Challenge(246, 1892,
+
+    challenges[1842] = Challenge(247, 1842,
         "GD_Challenges.Shields.Shields_KillsImpact",
         challenge_cat_shields,
-        "Amp It Up",
+        "Amplitude Killulation",
         "Kill enemies while buffed by an Amplify shield",
         (5, 10, 50, 100, 200))
-    challenges[1930] = Challenge(222, 1930,
+
+    challenges[1880] = Challenge(223, 1880,
         "GD_Challenges.Shields.Shields_AbsorbAmmo",
         challenge_cat_shields,
         "Ammo Eater",
@@ -702,326 +677,423 @@ class AppTPS(App):
         bonus=5)
 
     # Rocket Launchers
-    challenges[1762] = Challenge(32, 1762,
+    challenges[1712] = Challenge(32, 1712,
         "GD_Challenges.Weapons.Launcher_Kills",
         challenge_cat_rockets,
-        "Rocket and Roll",
+        "Get a Rocket up Ya",
         "Kill enemies with rocket launchers",
         (10, 50, 100, 250, 500),
         bonus=3)
-    challenges[1828] = Challenge(192, 1828,
+
+    challenges[1778] = Challenge(193, 1778,
         "GD_Challenges.Weapons.Launcher_SecondWinds",
         challenge_cat_rockets,
-        "Gone with the Second Wind",
+        "Magic Missile",
         "Get Second Winds with rocket launchers",
         (2, 5, 15, 30, 50))
-    challenges[1870] = Challenge(224, 1870,
+    
+    challenges[1820] = Challenge(225, 1820,
         "GD_Challenges.Weapons.Launcher_KillsSplashDamage",
         challenge_cat_rockets,
-        "Splish Splash",
+        "Collateral Damage",
         "Kill enemies with rocket launcher splash damage",
         (5, 10, 50, 100, 200))
-    challenges[1869] = Challenge(223, 1869,
+
+    challenges[1819] = Challenge(224, 1819,
         "GD_Challenges.Weapons.Launcher_KillsDirectHit",
         challenge_cat_rockets,
-        "Catch-a-Rocket!",
+        "Missile Magnet",
         "Kill enemies with direct hits from rocket launchers",
         (5, 10, 50, 100, 200),
         bonus=5)
-    challenges[1871] = Challenge(54, 1871,
+
+    challenges[1821] = Challenge(54, 1821,
         "GD_Challenges.Weapons.Launcher_KillsFullShieldEnemy",
         challenge_cat_rockets,
-        "Shield Basher",
+        "Punker Buster",
         "Kill shielded enemies with one rocket each",
         (5, 15, 35, 75, 125))
-    challenges[1808] = Challenge(52, 1808,
+
+    challenges[1758] = Challenge(52, 1758,
         "GD_Challenges.Weapons.Launcher_KillsLongRange",
         challenge_cat_rockets,
-        "Sky Rockets in Flight...",
+        "Hand of God",
         "Kill enemies from long range with rocket launchers",
         (25, 100, 400, 1000, 2000))
 
     # Sniper Rifles
-    challenges[1636] = Challenge(28, 1636,
+    challenges[1586] = Challenge(28, 1586,
         "GD_Challenges.Weapons.SniperRifle_Kills",
         challenge_cat_sniper,
-        "Longshot",
+        "Sharp Shooter",
         "Kill enemies with sniper rifles",
         (20, 100, 500, 2500, 5000),
         bonus=3)
-    challenges[1666] = Challenge(178, 1666,
+
+    challenges[1616] = Challenge(179, 1616,
         "GD_Challenges.Weapons.Sniper_CriticalHits",
         challenge_cat_sniper,
-        "Longshot Headshot",
+        "Melon Splitter",
         "Get critical hits with sniper rifles",
         (25, 100, 400, 1000, 2000))
-    challenges[1824] = Challenge(188, 1824,
+
+    challenges[1774] = Challenge(189, 1774,
         "GD_Challenges.Weapons.Sniper_SecondWinds",
         challenge_cat_sniper,
-        "Leaf on the Second Wind",
+        "Windage Adjustment",
         "Get Second Winds with sniper rifles",
         (2, 5, 15, 30, 50))
-    challenges[1844] = Challenge(59, 1844,
+
+    challenges[1794] = Challenge(59, 1794,
         "GD_Challenges.Weapons.Sniper_CriticalHitKills",
         challenge_cat_sniper,
-        "Snipe Hunting",
+        "Critical Reception",
         "Kill enemies with critical hits using sniper rifles",
         (10, 25, 75, 150, 300))
-    challenges[1798] = Challenge(47, 1798,
+
+    challenges[1748] = Challenge(47, 1748,
         "GD_Challenges.Weapons.SniperRifle_KillsFromHip",
         challenge_cat_sniper,
-        "No Scope, No Problem",
-        "Kill enemies with sniper rifles without using ironsights",
+        "Ol' Skool",
+        "Kill enemies with sniper rifles without using the scope/ironsights",
         (5, 10, 50, 100, 200))
-    challenges[1881] = Challenge(233, 1881,
+
+    challenges[1831] = Challenge(234, 1831,
         "GD_Challenges.Weapons.SniperRifle_KillsUnaware",
         challenge_cat_sniper,
-        "Surprise!",
+        "Clean and Simple",
         "Kill unaware enemies with sniper rifles",
         (5, 10, 50, 100, 200))
-    challenges[1872] = Challenge(55, 1872,
+
+    challenges[1822] = Challenge(55, 1822,
         "GD_Challenges.Weapons.SniperRifle_KillsFullShieldEnemy",
         challenge_cat_sniper,
-        "Eviscerated",
+        "Penetrating Wound",
         "Kill shielded enemies with one shot using sniper rifles",
         (5, 15, 35, 75, 125),
         bonus=5)
 
     # Assault Rifles
-    challenges[1637] = Challenge(29, 1637,
+    challenges[1587] = Challenge(29, 1587,
         "GD_Challenges.Weapons.AssaultRifle_Kills",
         challenge_cat_ar,
-        "Aggravated Assault",
+        "Assault With a Deadly Weapon",
         "Kill enemies with assault rifles",
         (25, 100, 400, 1000, 2000),
         bonus=3)
-    challenges[1667] = Challenge(179, 1667,
+
+    challenges[1617] = Challenge(180, 1617,
         "GD_Challenges.Weapons.AssaultRifle_CriticalHits",
         challenge_cat_ar,
-        "This Is My Rifle...",
+        "Aim to Please",
         "Get critical hits with assault rifles",
         (25, 100, 400, 1000, 2000))
-    challenges[1825] = Challenge(189, 1825,
+
+    challenges[1775] = Challenge(190, 1775,
         "GD_Challenges.Weapons.AssaultRifle_SecondWinds",
         challenge_cat_ar,
-        "From My Cold, Dead Hands",
+        "Assaulty Dog",
         "Get Second Winds with assault rifles",
         (5, 15, 30, 50, 75))
-    challenges[1845] = Challenge(60, 1845,
+
+    challenges[1795] = Challenge(60, 1795,
         "GD_Challenges.Weapons.AssaultRifle_CriticalHitKills",
         challenge_cat_ar,
-        "... This Is My Gun",
+        "Hot Lead Injection",
         "Kill enemies with critical hits using assault rifles",
         (10, 25, 75, 150, 300))
-    challenges[1797] = Challenge(46, 1797,
+
+    challenges[1747] = Challenge(46, 1747,
         "GD_Challenges.Weapons.AssaultRifle_KillsCrouched",
         challenge_cat_ar,
-        "Crouching Tiger, Hidden Assault Rifle",
+        "Crouch Potato",
         "Kill enemies with assault rifles while crouched",
         (25, 75, 400, 1600, 3200),
         bonus=5)
 
+    # Laser
+    challenges[1984] = Challenge(401, 1984,
+        "GD_Challenges.Weapons.Laser_CriticalHitKills",
+        challenge_cat_laser,
+        "Light 'em Up",
+        "Kill enemies with critical hits using laser weapons",
+        (10, 25, 75, 150, 300))
+
+    challenges[1982] = Challenge(399, 1982,
+        "GD_Challenges.Weapons.Laser_CriticalHits",
+        challenge_cat_laser,
+        "Aggressive Lasik",
+        "Get critical hits with lasers",
+        (25, 100, 400, 1000, 2000))
+
+    challenges[2045] = Challenge(462, 2045,
+        "GD_Challenges.Weapons.Laser_FlyingKills",
+        challenge_cat_laser,
+        "Battle Star",
+        "Kill flying enemies with laser weapons while airborne",
+        (10, 25, 150, 300, 750),
+        bonus=5)
+
+    challenges[1981] = Challenge(398, 1981,
+        "GD_Challenges.Weapons.Laser_Kills",
+        challenge_cat_laser,
+        "Pew Pew",
+        "Kill enemies with laser weapons",
+        (25, 100, 400, 1000, 2000),
+        bonus=3)
+
+    challenges[1983] = Challenge(400, 1983,
+        "GD_Challenges.Weapons.Laser_SecondWinds",
+        challenge_cat_laser,
+        "I See the Light",
+        "Get Second Winds with laser weapons",
+        (2, 5, 15, 30, 50))
+
     # SMGs
-    challenges[1635] = Challenge(27, 1635,
+    challenges[1585] = Challenge(27, 1585,
         "GD_Challenges.Weapons.SMG_Kills",
         challenge_cat_smg,
-        "Hail of Bullets",
+        "Nice Spray Job",
         "Kill enemies with SMGs",
         (25, 100, 400, 1000, 2000),
         bonus=3)
-    challenges[1665] = Challenge(177, 1665,
+
+    challenges[1615] = Challenge(178, 1615,
         "GD_Challenges.Weapons.SMG_CriticalHits",
         challenge_cat_smg,
-        "Constructive Criticism",
+        "Bring the Pain",
         "Get critical hits with SMGs",
         (25, 100, 400, 1000, 2000))
-    challenges[1843] = Challenge(58, 1843,
+
+    challenges[1793] = Challenge(58, 1793,
         "GD_Challenges.Weapons.SMG_CriticalHitKills",
         challenge_cat_smg,
-        "High Rate of Ire",
+        "Dinky Death Dealer",
         "Kill enemies with critical hits using SMGs",
         (10, 25, 75, 150, 300))
-    challenges[1823] = Challenge(187, 1823,
+
+    challenges[1773] = Challenge(188, 1773,
         "GD_Challenges.Weapons.SMG_SecondWinds",
         challenge_cat_smg,
-        "More Like Submachine FUN",
+        "And Stay Down!",
         "Get Second Winds with SMGs",
         (2, 5, 15, 30, 50))
 
     # Shotguns
-    challenges[1634] = Challenge(26, 1634,
+    challenges[1584] = Challenge(26, 1584,
         "GD_Challenges.Weapons.Shotgun_Kills",
         challenge_cat_shotgun,
-        "Shotgun!",
+        "Boomstick Boogie",
         "Kill enemies with shotguns",
         (25, 100, 400, 1000, 2000),
         bonus=3)
-    challenges[1664] = Challenge(176, 1664,
+
+    challenges[1614] = Challenge(177, 1614,
         "GD_Challenges.Weapons.Shotgun_CriticalHits",
         challenge_cat_shotgun,
-        "Faceful of Buckshot",
+        "Hello Uncle Buckshot",
         "Get critical hits with shotguns",
         (50, 250, 1000, 2500, 5000))
-    challenges[1822] = Challenge(186, 1822,
+
+    challenges[1772] = Challenge(187, 1772,
         "GD_Challenges.Weapons.Shotgun_SecondWinds",
         challenge_cat_shotgun,
-        "Lock, Stock, and...",
+        "Shotgunning the Breeze",
         "Get Second Winds with shotguns",
         (2, 5, 15, 30, 50))
-    challenges[1806] = Challenge(50, 1806,
+
+    challenges[1756] = Challenge(50, 1756,
         "GD_Challenges.Weapons.Shotgun_KillsPointBlank",
         challenge_cat_shotgun,
-        "Open Wide!",
+        "Take It All!",
         "Kill enemies from point-blank range with shotguns",
         (10, 25, 150, 300, 750))
-    challenges[1807] = Challenge(51, 1807,
+
+    challenges[1757] = Challenge(51, 1757,
         "GD_Challenges.Weapons.Shotgun_KillsLongRange",
         challenge_cat_shotgun,
-        "Shotgun Sniper",
+        "Over Achiever",
         "Kill enemies from long range with shotguns",
         (10, 25, 75, 150, 300))
-    challenges[1842] = Challenge(57, 1842,
+
+    challenges[1792] = Challenge(57, 1792,
         "GD_Challenges.Weapons.Shotgun_CriticalHitKills",
         challenge_cat_shotgun,
-        "Shotgun Surgeon",
+        "Shotty Workmanship",
         "Kill enemies with critical hits using shotguns",
         (10, 50, 100, 250, 500))
 
     # Pistols
-    challenges[1633] = Challenge(25, 1633,
+    challenges[1583] = Challenge(25, 1583,
         "GD_Challenges.Weapons.Pistol_Kills",
         challenge_cat_pistol,
-        "The Killer",
+        "Trigger Happy",
         "Kill enemies with pistols",
         (25, 100, 400, 1000, 2000),
         bonus=3)
-    challenges[1663] = Challenge(175, 1663,
+
+    challenges[1613] = Challenge(176, 1613,
         "GD_Challenges.Weapons.Pistol_CriticalHits",
         challenge_cat_pistol,
-        "Deadeye",
+        "Pistoleer",
         "Get critical hits with pistols",
         (25, 100, 400, 1000, 2000))
-    challenges[1821] = Challenge(185, 1821,
+
+    challenges[1771] = Challenge(186, 1771,
         "GD_Challenges.Weapons.Pistol_SecondWinds",
         challenge_cat_pistol,
-        "Hard Boiled",
+        "Pistol Whipped",
         "Get Second Winds with pistols",
         (2, 5, 15, 30, 50))
-    challenges[1841] = Challenge(56, 1841,
+
+    challenges[1791] = Challenge(56, 1791,
         "GD_Challenges.Weapons.Pistol_CriticalHitKills",
         challenge_cat_pistol,
-        "Pistolero",
+        "Magnum Maestro",
         "Kill enemies with critical hits using pistols",
         (10, 25, 75, 150, 300))
-    challenges[1800] = Challenge(49, 1800,
+
+    challenges[1750] = Challenge(49, 1750,
         "GD_Challenges.Weapons.Pistol_KillsQuickshot",
         challenge_cat_pistol,
-        "Quickdraw",
-        "Kill enemies shortly after entering ironsights with a pistol",
+        "Gunslinger",
+        "Kill enemies shortly after aiming down the sights with a pistol",
         (10, 25, 150, 300, 750),
         bonus=5)
 
     # Melee
-    challenges[1650] = Challenge(75, 1650,
+    challenges[1600] = Challenge(75, 1600,
         "GD_Challenges.Melee.Melee_Kills",
         challenge_cat_melee,
-        "Fisticuffs!",
+        "Martial Marhsal",
         "Kill enemies with melee attacks",
         (25, 100, 400, 1000, 2000),
         bonus=3)
-    challenges[1893] = Challenge(247, 1893,
+
+    challenges[1843] = Challenge(248, 1843,
         "GD_Challenges.Melee.Melee_KillsBladed",
         challenge_cat_melee,
-        "A Squall of Violence",
+        "Captain Cutty",
         "Kill enemies with melee attacks using bladed guns",
         (20, 75, 250, 600, 1000))
 
     # General Combat
-    challenges[1621] = Challenge(0, 1621,
+    challenges[1571] = Challenge(0, 1571,
         "GD_Challenges.GeneralCombat.General_RoundsFired",
         challenge_cat_combat,
-        "Knee-Deep in Brass",
+        "Projectile Proliferation",
         "Fire a lot of rounds",
-        (1000, 5000, 10000, 25000, 50000),
+        (5000, 10000, 25000, 50000, 75000),
         bonus=5)
-    challenges[1702] = Challenge(90, 1702,
+
+    challenges[1652] = Challenge(90, 1652,
         "GD_Challenges.GeneralCombat.Player_KillsWithActionSkill",
         challenge_cat_combat,
-        "...To Pay the Bills",
+        "Action Hero",
         "Kill enemies while using your Action Skill",
-        (20, 75, 250, 600, 1000),
-        bonus=5)
-    challenges[1916] = Challenge(269, 1916,
+        (20, 75, 250, 750, 1500))
+
+    challenges[1866] = Challenge(270, 1866,
         "GD_Challenges.GeneralCombat.Kills_AtNight",
         challenge_cat_combat,
-        "...I Got to Boogie",
+        "Dark Sider",
         "Kill enemies at night",
-        (10, 25, 150, 300, 750))
-    challenges[1915] = Challenge(268, 1915,
+        (25, 100, 500, 1000, 1500))
+
+    challenges[1865] = Challenge(269, 1865,
         "GD_Challenges.GeneralCombat.Kills_AtDay",
         challenge_cat_combat,
-        "Afternoon Delight",
+        "Day of the Dead",
         "Kill enemies during the day",
-        (50, 250, 1000, 2500, 5000))
-    challenges[1908] = Challenge(261, 1908,
+        (250, 1000, 2500, 5000, 7500))
+
+    challenges[1858] = Challenge(262, 1858,
         "GD_Challenges.GeneralCombat.Tediore_KillWithReload",
         challenge_cat_combat,
-        "Boomerbang",
+        "Throw Me the Money!",
         "Kill enemies with Tediore reloads",
-        (5, 10, 50, 100, 200),
+        (5, 10, 25, 75, 150),
         bonus=5)
-    challenges[1909] = Challenge(262, 1909,
+
+    challenges[1859] = Challenge(263, 1859,
         "GD_Challenges.GeneralCombat.Tediore_DamageFromReloads",
         challenge_cat_combat,
-        "Gun Slinger",
+        "One Man's Trash",
         "Deal damage with Tediore reloads",
         (5000, 20000, 100000, 500000, 1000000))
-    challenges[1912] = Challenge(265, 1912,
+
+    challenges[1862] = Challenge(266, 1862,
         "GD_Challenges.GeneralCombat.Barrels_KillEnemies",
         challenge_cat_combat,
-        "Not Full of Monkeys",
+        "Barrel of Laughs",
         "Kill enemies with stationary barrels",
-        (10, 25, 45, 70, 100),
+        (10, 25, 50, 100, 200),
         bonus=3)
-    challenges[1646] = Challenge(44, 1646,
+
+    challenges[1596] = Challenge(44, 1596,
         "GD_Challenges.GeneralCombat.Kills_FromCrits",
         challenge_cat_combat,
-        "Critical Acclaim",
-        "Kill enemies with critical hits. And rainbows.",
+        "Executioner",
+        "Kill enemies with critical hits",
         (20, 100, 500, 1000, 1500))
 
+    challenges[2046] = Challenge(463, 2046,
+        "GD_Challenges.GeneralCombat.Break_Masks",
+        challenge_cat_combat,
+        "Having Trouble Breathing?",
+        "Shatter enemy oxygen masks",
+        (25, 100, 250, 500, 1000))
+
+    challenges[2047] = Challenge(464, 2047,
+        "GD_Challenges.GeneralCombat.Kills_Asphyxiation",
+        challenge_cat_combat,
+        "Last Gasp",
+        "Kill enemies by asphyxiation",
+        (10, 25, 150, 300, 750))
+
+    challenges[2050] = Challenge(466, 2050,
+        "GD_Challenges.GeneralCombat.Shatter_With_Falling",
+        challenge_cat_combat,
+        "Comet Crash",
+        "Shatter frozen enemies with falling damage",
+        (5, 10, 50, 100, 200),
+        bonus=5)
+
+    challenges[2049] = Challenge(465, 2049,
+        "GD_Challenges.GeneralCombat.Shatter_With_Weapons",
+        challenge_cat_combat,
+        "Ice to Meet You",
+        "Shatter frozen enemies with weapons",
+        (20, 75, 250, 600, 1000))
+
     # Miscellaneous
-    challenges[1659] = Challenge(104, 1659,
+    challenges[1609] = Challenge(105, 1609,
         "GD_Challenges.Dueling.DuelsWon_HatersGonnaHate",
         challenge_cat_misc,
-        "Haters Gonna Hate",
+        "The Duelist",
         "Win duels",
         (1, 5, 15, 30, 50))
-    challenges[1804] = Challenge(211, 1804,
+
+    challenges[1754] = Challenge(212, 1754,
         "GD_Challenges.Miscellaneous.Missions_SideMissionsCompleted",
         challenge_cat_misc,
-        "Sidejacked",
+        "Little on the Side",
         "Complete side missions",
-        (5, 15, 30, 55, 90))
-    challenges[1803] = Challenge(210, 1803,
+        (10, 25, 50, 75, 125))
+
+    challenges[1753] = Challenge(211, 1753,
         "GD_Challenges.Miscellaneous.Missions_OptionalObjectivesCompleted",
         challenge_cat_misc,
-        "Compl33tionist",
+        "OC/DC",
         "Complete optional mission objectives",
-        (10, 25, 45, 70, 100))
-    challenges[1698] = Challenge(173, 1698,
+        (5, 10, 15, 20, 30))
+
+    challenges[1648] = Challenge(174, 1648,
         "GD_Challenges.Miscellaneous.Misc_CompleteChallenges",
         challenge_cat_misc,
-        "Yo Dawg I Herd You Like Challenges",
+        "We Have a Contender",
         "Complete many, many challenges",
         (5, 25, 50, 100, 200))
-    challenges[1940] = Challenge(100, 1940,
-        "GD_Challenges.Miscellaneous.Misc_JimmyJenkins",
-        challenge_cat_misc,
-        "JEEEEENKINSSSSSS!!!",
-        "Find and eliminate Jimmy Jenkins",
-        (1, 3, 6, 10, 15),
-        bonus=5)
 
     def setup_currency_args(self, parser):
         """
