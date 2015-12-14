@@ -1443,7 +1443,9 @@ class App(object):
 
         parser.add_argument('--bank',
                 type=int,
-                help='Set size of bank',
+                nargs='?',
+                const=24,
+                help='Set size of bank( defaults to 24)',
                 )
 
         parser.add_argument('--gunslots',

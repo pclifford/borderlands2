@@ -178,9 +178,10 @@ your specified size is not correct.
 ### Bank Size
 
 Similarly, the `--bank` option can be used to set the size of your bank, and
-will round up to multiples of 2.  Unlike `--backpack`, there's no default, so
-a number must be specified:
+will round up to multiples of 2.  It will default to the largest available
+size ingame: 24.
 
+    python bl2_save_edit.py --bank old.sav new.sav
     python bl2_save_edit.py --bank 16 old.sav new.sav
 
 ### Gun Slots
