@@ -42,6 +42,7 @@ class Config(argparse.Namespace):
     backpack = None
     bank = None
     gunslots = None
+    maxammo = None
     unlock = {}
     challenges = {}
     
@@ -62,17 +63,20 @@ class Config(argparse.Namespace):
         else:
             self.endian = '<'
 
+        # If we're unlocking ammo, also set maxammo
+        if 'ammo' in self.unlock:
+            self.maxammo = True
+
         # Set our "changes" boolean
-        for var in [self.name, self.save_game_id, self.level,
+        if any([var is not None for var in [self.name,
+                self.save_game_id, self.level,
                 self.money, self.eridium, self.moonstone,
                 self.seraph, self.seraph, self.torgue,
                 self.itemlevels, self.backpack, self.bank,
-                self.gunslots]:
-            if var is not None:
-                self.changes = True
-        for var in [self.unlock, self.challenges]:
-            if len(var) > 0:
-                self.changes = True
+                self.gunslots, self.maxammo]]):
+            self.changes = True
+        if any([len(var) > 0 for var in [self.unlock, self.challenges]]):
+            self.changes = True
 
         # Can't read/write to the same file
         if self.input_filename == self.output_filename and self.input_filename != '-':
@@ -261,6 +265,20 @@ class App(object):
         7, 17, 0, 25, 22, 31, 15, 29, 10, 12, 6, 0, 21, 14, 9, 5,
         20, 8, 19, 18
     )
+
+    # "laser" in here doesn't apply to B2, but it won't hurt anything
+    # because we process ammo pools based off the black market values,
+    # which won't include lasers for B2
+    ammo_resources = {
+        'rifle': ('D_Resources.AmmoResources.Ammo_Combat_Rifle', 'D_Resourcepools.AmmoPools.Ammo_Combat_Rifle_Pool'),
+        'shotgun': ('D_Resources.AmmoResources.Ammo_Combat_Shotgun', 'D_Resourcepools.AmmoPools.Ammo_Combat_Shotgun_Pool'),
+        'grenade': ('D_Resources.AmmoResources.Ammo_Grenade_Protean', 'D_Resourcepools.AmmoPools.Ammo_Grenade_Protean_Pool'),
+        'smg': ('D_Resources.AmmoResources.Ammo_Patrol_SMG', 'D_Resourcepools.AmmoPools.Ammo_Patrol_SMG_Pool'),
+        'pistol': ('D_Resources.AmmoResources.Ammo_Repeater_Pistol', 'D_Resourcepools.AmmoPools.Ammo_Repeater_Pistol_Pool'),
+        'launcher': ('D_Resources.AmmoResources.Ammo_Rocket_Launcher', 'D_Resourcepools.AmmoPools.Ammo_Rocket_Launcher_Pool'),
+        'sniper': ('D_Resources.AmmoResources.Ammo_Sniper_Rifle', 'D_Resourcepools.AmmoPools.Ammo_Sniper_Rifle_Pool'),
+        'laser': ('D_Resources.AmmoResources.Ammo_Combat_Laser', 'D_Resourcepools.AmmoPools.Ammo_Combat_Laser_Pool'),
+    }
 
     def read_huffman_tree(self, b):
         node_type = b.read_bit()
@@ -1059,6 +1077,9 @@ class App(object):
                 values[4] = config.torgue
             player[6][0] = [0, values]
 
+        # Note that this block should always come *after* the block which sets
+        # character level, in case we've been instructed to set items to the
+        # character's level.
         if config.itemlevels is not None:
             if config.itemlevels > 0:
                 self.debug(' - Setting all items to level %d' % (config.itemlevels))
@@ -1155,6 +1176,61 @@ class App(object):
                     if key in self.black_market_ammo:
                         s[idx] = 7
                 player[36][0][1] = self.write_repeated_protobuf_value(s, 0)
+
+        # This should always come after the ammo-unlock section, since our
+        # max ammo will change if more black market SDUs are unlocked.
+        if config.maxammo is not None:
+            self.debug(' - Setting ammo pools to maximum')
+
+            # First we've gotta figure out our black market levels
+            s = self.read_repeated_protobuf_value(player[36][0][1], 0)
+            bm_levels = dict(zip(self.black_market_keys, s))
+
+            # Make a dict of what our max ammo is for each of our black market
+            # ammo pools
+            max_ammo = {}
+            for ammo_type, ammo_level in bm_levels.items():
+                if ammo_type in self.black_market_ammo:
+                    ammo_values = self.black_market_ammo[ammo_type]
+                    if len(ammo_values) - 1 < ammo_level:
+                        max_ammo[ammo_type] = (len(ammo_values)-1, ammo_values[-1])
+                    else:
+                        max_ammo[ammo_type] = (ammo_level, ammo_values[ammo_level])
+
+            # Now loop through our 'resources' structure and modify to
+            # suit, updating 'amount' and 'level' as we go.
+            inverted_structure = self.invert_structure(save_structure[11][2])
+            seen_ammo = {}
+            for idx, protobuf in enumerate(player[11]):
+                data = self.apply_structure(self.read_protobuf(protobuf[1]), save_structure[11][2])
+                if data['resource'] in self.ammo_resource_lookup:
+                    ammo_type = self.ammo_resource_lookup[data['resource']]
+                    seen_ammo[ammo_type] = True
+                    if ammo_type in max_ammo:
+
+                        # Set the data in the structure
+                        data['level'] = max_ammo[ammo_type][0]
+                        data['amount'] = float(max_ammo[ammo_type][1])
+
+                        # And now convert back into a protobuf
+                        player[11][idx][1] = self.write_protobuf(self.remove_structure(data, inverted_structure))
+
+                    else:
+                        self.error('Ammo type "%s" / pool "%s" not found!' % (ammo_type, data['pool']))
+                else:
+                    self.error('Ammo pool "%s" not found!' % (data['pool']))
+
+            # Also, early in the game there isn't an entry in here for, for instance,
+            # rocket launchers.  So let's make sure that all our known ammo exists.
+            for ammo_type in bm_levels.keys():
+                if ammo_type in self.ammo_resources.keys() and ammo_type not in seen_ammo:
+                    new_struct = {
+                        'resource': self.ammo_resources[ammo_type][0],
+                        'pool': self.ammo_resources[ammo_type][1],
+                        'level': max_ammo[ammo_type][0],
+                        'amount': float(max_ammo[ammo_type][1]),
+                    }
+                    player[11].append([2, self.write_protobuf(self.remove_structure(new_struct, inverted_structure))])
 
         if len(config.challenges) > 0:
             data = self.unwrap_challenges(player[15][0][1])
@@ -1267,7 +1343,13 @@ class App(object):
         Constructor.  Parses arguments and sets up our save_structure
         struct.
         """
+
+        # Set up a reverse lookup for our ammo pools
+        self.ammo_resource_lookup = {}
+        for shortname, (resource, pool) in self.ammo_resources.items():
+            self.ammo_resource_lookup[resource] = shortname
         
+        # Parse Arguments
         self.parse_args(args)
 
         # This is implemented in AppBL2 and AppBLTPS
@@ -1384,6 +1466,11 @@ class App(object):
                 help='Levels to set on challenge data',
                 )
 
+        parser.add_argument('--maxammo',
+                action='store_true',
+                help='Fill all ammo pools to their maximum',
+                )
+
         # Positional args
 
         parser.add_argument('input_filename',
@@ -1401,6 +1488,12 @@ class App(object):
 
         # Do some extra fiddling
         config.finish(parser)
+
+    def error(self, output):
+        """
+        Stupid little function to send some output to STDERR.
+        """
+        print >>sys.stderr, 'ERROR: %s' % (output)
 
     def debug(self, output):
         """

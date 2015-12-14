@@ -233,6 +233,15 @@ The Creature Slaughterdome might be unlockable with:
 
     python bl2_save_edit.py --unlock slaughterdome old.sav new.sav
 
+### Ammo
+
+The `--maxammo` option can be used to set all ammo to its maximum level.  This
+is obviously a bit silly ordinarily, given how easy ammo is to come by.  This
+option is automatically set if `--unlock ammo` is specified, though, which is
+the one place where it's probably worthwhile.
+
+    python bl2_save_edit.py --maxammo old.sav new.sav
+
 ### Challenge Levels
 
 This option is admittedly rather silly, but the `--challenges` argument will
