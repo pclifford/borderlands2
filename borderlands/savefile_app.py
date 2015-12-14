@@ -1208,7 +1208,7 @@ class App(object):
             for field in content:
                 raw = self.read_protobuf(field[1])[1][0][1]
                 raw = self.replace_raw_item_key(raw, 0)
-                code = "BL2(" + raw.encode("base64").strip() + ")"
+                code = '%s(%s)' % (self.item_prefix, raw.encode("base64").strip())
                 print >>output, code
 
     def import_items(self, data, codelist):
@@ -1217,6 +1217,8 @@ class App(object):
         item list in "codelist"
         """
         player = self.read_protobuf(self.unwrap_player_data(data))
+
+        prefix_length = len(self.item_prefix)+1
 
         to_bank = False
         for line in codelist.splitlines():
@@ -1228,10 +1230,10 @@ class App(object):
                 elif name in ("items", "weapons"):
                     to_bank = False
                 continue
-            elif line[: 4] + line[-1: ] != "BL2()":
+            elif line[: prefix_length] + line[-1: ] != '%s()' % (self.item_prefix):
                 continue
 
-            code = line[4: -1]
+            code = line[prefix_length: -1]
             try:
                 raw = code.decode("base64")
             except binascii.Error:
@@ -1256,13 +1258,142 @@ class App(object):
     def __init__(self, args):
         """
         Constructor.  Parses arguments and sets up our save_structure
-        struct (needs to happen inside a function since we need to reference
-        class methods).
+        struct.
         """
         
-        # These are implemented in AppBL2 and AppBLTPS
         self.parse_args(args)
+
+        # This is implemented in AppBL2 and AppBLTPS
         self.setup_save_structure()
+
+    def parse_args(self, argv):
+        """
+        Parse our arguments.
+        """
+
+        # Set up our config object
+        self.config = Config()
+        config = self.config
+
+        parser = argparse.ArgumentParser(description='Modify %s Save Files' % (self.game_name),
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+        # Optional args
+
+        parser.add_argument('-o', '--output',
+                choices=['savegame', 'decoded', 'json', 'parsed', 'items'],
+                default='savegame',
+                help='Output file format',
+                )
+
+        parser.add_argument('-i', '--import-items',
+                dest='import_items',
+                help='read in codes for items and add them to the bank and inventory',
+                )
+
+        parser.add_argument('-j', '--json',
+                action='store_true',
+                help='read savegame data from JSON format, rather than savegame',
+                )
+
+        parser.add_argument('-b', '--bigendian',
+                action='store_true',
+                help='change the output format to big-endian, to write PS/xbox save files',
+                )
+
+        parser.add_argument('-p', '--parse',
+                action='store_true',
+                help='parse the protocol buffer data further and generate more readable JSON',
+                )
+
+        parser.add_argument('-q', '--quiet',
+                dest='verbose',
+                action='store_false',
+                help='quiet output (should generate no output unless there are errors)',
+                )
+
+        # More optional args - used to be the "modify" option
+
+        parser.add_argument('--name',
+                help='Set the name of the character',
+                )
+
+        parser.add_argument('--save-game-id',
+                dest='save_game_id',
+                type=int,
+                help='Set the save game slot ID of the character (probably not actually needed ever)',
+                )
+
+        parser.add_argument('--level',
+                type=int,
+                help='Set the character to this level',
+                )
+
+        parser.add_argument('--money',
+                type=int,
+                help='Money to set for character',
+                )
+
+        # B2 and TPS have different currency types, so this function is
+        # implemented in the implementing classes.
+        self.setup_currency_args(parser)
+
+        parser.add_argument('--itemlevels',
+                type=int,
+                nargs='?',
+                const=0,
+                help='Set item levels (default to the current player level)',
+                )
+
+        parser.add_argument('--backpack',
+                type=int,
+                nargs='?',
+                const=39,
+                help='Set size of backpack (defaults to 39)',
+                )
+
+        parser.add_argument('--bank',
+                type=int,
+                help='Set size of bank',
+                )
+
+        parser.add_argument('--gunslots',
+                type=int,
+                choices=[2,3,4],
+                help='Set number of gun slots open',
+                )
+
+        parser.add_argument('--unlock',
+                action=DictAction,
+                choices=self.unlock_choices,
+                default={},
+                help='Game features to unlock',
+                )
+
+        parser.add_argument('--challenges',
+                action=DictAction,
+                choices=['zero', 'max', 'bonus'],
+                default={},
+                help='Levels to set on challenge data',
+                )
+
+        # Positional args
+
+        parser.add_argument('input_filename',
+                default='-',
+                nargs='?',
+                )
+
+        parser.add_argument('output_filename',
+                default='-',
+                nargs='?',
+                )
+
+        # Actually parse the args
+        parser.parse_args(argv, config)
+
+        # Do some extra fiddling
+        config.finish(parser)
 
     def debug(self, output):
         """

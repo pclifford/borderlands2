@@ -8,16 +8,38 @@ class AppBL2(App):
     Our main application class for Borderlands 2
     """
 
+    # Game name
+    game_name = 'Borderlands 2'
+
+    # Item export/import prefix
+    item_prefix = 'BL2'
+
     # The only difference here is that BLTPS has "laser"
     black_market_keys = (
-        "rifle", "pistol", "launcher", "shotgun", "smg",
-        "sniper", "grenade", "backpack", "bank",
+        'rifle', 'pistol', 'launcher', 'shotgun', 'smg',
+        'sniper', 'grenade', 'backpack', 'bank',
     )
+
+    # Dict to tell us which black market keys are ammo-related, and
+    # what the max ammo is at each level.  Could be computed pretty
+    # easily, but we may as well just store it.
+    black_market_ammo = {
+        'rifle':    [280, 420, 560, 700, 840,  980,  1120, 1260],
+        'pistol':   [200, 300, 400, 500, 600,  700,  800,  900],
+        'launcher': [12,  15,  18,  21,  24,   27,   30,   33],
+        'shotgun':  [80,  100, 120, 140, 160,  180,  200,  220],
+        'smg':      [360, 540, 720, 900, 1080, 1260, 1440, 1620],
+        'sniper':   [48,  60,  72,  84,  96,   108,  120,  132],
+        'grenade':  [3,   4,   5,   6,   7,    8,    9,    10],
+    }
 
     # B2 version is 7, TPS version is 10
     # "version" taken from what Gibbed calls it, not sure if that's
     # an appropriate descriptor or not.
     item_struct_version = 7
+
+    # Available choices for --unlock option
+    unlock_choices = ['slaughterdome', 'tvhm', 'challenges']
 
     # Challenge categories
     challenge_cat_dlc4 = ChallengeCat("Hammerlock's Hunt", 4)
@@ -1000,75 +1022,10 @@ class AppBL2(App):
         (1, 3, 6, 10, 15),
         bonus=5)
 
-    def parse_args(self, argv):
+    def setup_currency_args(self, parser):
         """
-        Parse our arguments.  There's a fair bit of duplication between BL2 and BLTPS,
-        but it seems like it'd be annoying to separate it out, so I'm just dealing with
-        the duplication
+        Adds the options we're using to control currency
         """
-
-        # Set up our config object
-        self.config = Config()
-        config = self.config
-
-        parser = argparse.ArgumentParser(description='Modify Borderlands 2 Save Files',
-                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-        # Optional args
-
-        parser.add_argument('-o', '--output',
-                choices=['savegame', 'decoded', 'json', 'parsed', 'items'],
-                default='savegame',
-                help='Output file format',
-                )
-
-        parser.add_argument('-i', '--import-items',
-                dest='import_items',
-                help='read in codes for items and add them to the bank and inventory',
-                )
-
-        parser.add_argument('-j', '--json',
-                action='store_true',
-                help='read savegame data from JSON format, rather than savegame',
-                )
-
-        parser.add_argument('-b', '--bigendian',
-                action='store_true',
-                help='change the output format to big-endian, to write PS/xbox save files',
-                )
-
-        parser.add_argument('-p', '--parse',
-                action='store_true',
-                help='parse the protocol buffer data further and generate more readable JSON',
-                )
-
-        parser.add_argument('-q', '--quiet',
-                dest='verbose',
-                action='store_false',
-                help='quiet output (should generate no output unless there are errors)',
-                )
-
-        # More optional args - used to be the "modify" option
-
-        parser.add_argument('--name',
-                help='Set the name of the character',
-                )
-
-        parser.add_argument('--save-game-id',
-                dest='save_game_id',
-                type=int,
-                help='Set the save game slot ID of the character (probably not actually needed ever)',
-                )
-
-        parser.add_argument('--level',
-                type=int,
-                help='Set the character to this level',
-                )
-
-        parser.add_argument('--money',
-                type=int,
-                help='Money to set for character',
-                )
 
         parser.add_argument('--eridium',
                 type=int,
@@ -1084,63 +1041,6 @@ class AppBL2(App):
                 type=int,
                 help='Torgue tokens to set for character',
                 )
-
-        parser.add_argument('--itemlevels',
-                type=int,
-                nargs='?',
-                const=0,
-                help='Set item levels (default to the current player level)',
-                )
-
-        parser.add_argument('--backpack',
-                type=int,
-                nargs='?',
-                const=39,
-                help='Set size of backpack (defaults to 39)',
-                )
-
-        parser.add_argument('--bank',
-                type=int,
-                help='Set size of bank',
-                )
-
-        parser.add_argument('--gunslots',
-                type=int,
-                choices=[2,3,4],
-                help='Set number of gun slots open',
-                )
-
-        parser.add_argument('--unlock',
-                action=DictAction,
-                choices=['slaughterdome', 'tvhm', 'challenges'],
-                default={},
-                help='Game features to unlock',
-                )
-
-        parser.add_argument('--challenges',
-                action=DictAction,
-                choices=['zero', 'max', 'bonus'],
-                default={},
-                help='Levels to set on challenge data',
-                )
-
-        # Positional args
-
-        parser.add_argument('input_filename',
-                default='-',
-                nargs='?',
-                )
-
-        parser.add_argument('output_filename',
-                default='-',
-                nargs='?',
-                )
-
-        # Actually parse the args
-        parser.parse_args(argv, config)
-
-        # Do some extra fiddling
-        config.finish(parser)
 
     def setup_save_structure(self):
         """
