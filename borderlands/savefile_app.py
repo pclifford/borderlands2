@@ -102,7 +102,7 @@ class DictAction(argparse.Action):
         arg_value[values] = True
         setattr(namespace, self.dest, arg_value)
 
-class BL2Error(Exception): pass
+class BorderlandsError(Exception): pass
 
 
 class ReadBitstream(object):
@@ -436,7 +436,7 @@ class App(object):
         elif wire_type == 5:
             value = struct.unpack("<I", b.read(4))[0]
         else:
-            raise BL2Error("Unsupported wire type " + str(wire_type))
+            raise BorderlandsError("Unsupported wire type " + str(wire_type))
         return value
 
     def read_repeated_protobuf_value(self, data, wire_type):
@@ -480,7 +480,7 @@ class App(object):
         elif wire_type == 5:
             b.write(struct.pack("<I", value))
         else:
-            raise BL2Error("Unsupported wire type " + str(wire_type))
+            raise BorderlandsError("Unsupported wire type " + str(wire_type))
 
     def write_repeated_protobuf_value(self, data, wire_type):
         b = StringIO()
@@ -541,7 +541,7 @@ class App(object):
                 continue
             mapping = inv.get(k)
             if mapping is None:
-                raise BL2Error("Unknown key %r in data" % (k, ))
+                raise BorderlandsError("Unknown key %r in data" % (k, ))
             elif type(mapping) is int:
                 pbdata[mapping] = [[self.guess_wire_type(value), value]]
                 continue
@@ -658,12 +658,12 @@ class App(object):
 
         # Sanity check on size reported
         if (size_in_bytes + 8) != len(data):
-            raise BL2Error('Challenge data reported as %d bytes, but %d bytes found' % (
+            raise BorderlandsError('Challenge data reported as %d bytes, but %d bytes found' % (
                 size_in_bytes, len(data)-8))
         
         # Sanity check on number of challenges reported
         if (num_challenges * 12) != (size_in_bytes - 2):
-            raise BL2Error('%d challenges reported, but %d bytes of data found' % (
+            raise BorderlandsError('%d challenges reported, but %d bytes of data found' % (
                 num_challenges, size_in_bytes - 2))
 
         # Now read them in
@@ -754,15 +754,15 @@ class App(object):
         work.
         """
         if data[: 4] == "CON ":
-            raise BL2Error("You need to use a program like Horizon or Modio to extract the SaveGame.sav file first")
+            raise BorderlandsError("You need to use a program like Horizon or Modio to extract the SaveGame.sav file first")
 
         if data[: 20] != hashlib.sha1(data[20: ]).digest():
-            raise BL2Error("Invalid save file")
+            raise BorderlandsError("Invalid save file")
 
         data = self.lzo1x_decompress("\xf0" + data[20: ])
         size, wsg, version = struct.unpack(">I3sI", data[: 11])
         if version != 2 and version != 0x02000000:
-            raise BL2Error("Unknown save version " + str(version))
+            raise BorderlandsError("Unknown save version " + str(version))
 
         if version == 2:
             crc, size = struct.unpack(">II", data[11: 19])
@@ -774,7 +774,7 @@ class App(object):
         player = self.huffman_decompress(tree, bitstream, size)
 
         if (binascii.crc32(player) & 0xffffffff) != crc:
-            raise BL2Error("CRC check failed")
+            raise BorderlandsError("CRC check failed")
 
         return player
 
