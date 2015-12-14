@@ -202,7 +202,8 @@ thing.
 
 #### Ammo
 
-To unlock all ammo SDU upgrades (ordinarily available in the black market):
+This option will unlock all ammo SDU upgrades (ordinarily available in the black
+market).  This will also automatically refill all ammo pools:
 
     python bl2_save_edit.py --unlock ammo old.sav new.sav
 
@@ -235,12 +236,15 @@ The Creature Slaughterdome might be unlockable with:
 
 ### Ammo
 
-The `--maxammo` option can be used to set all ammo to its maximum level.  This
-is obviously a bit silly ordinarily, given how easy ammo is to come by.  This
-option is automatically set if `--unlock ammo` is specified, though, which is
-the one place where it's probably worthwhile.
+The `--maxammo` option can be used to refill all ammo to its current maximum
+level (based on what you've already purchased at the black market).  This
+is obviously a bit silly ordinarily, given how easy ammo is to come by.
 
     python bl2_save_edit.py --maxammo old.sav new.sav
+
+To actually increase your total available ammo pool, as you'd do through the
+black market, use `--unlock ammo` *(see above)*.  Doing so will then also refill
+ammo as if `--maxammo` had been specified.
 
 ### Challenge Levels
 
