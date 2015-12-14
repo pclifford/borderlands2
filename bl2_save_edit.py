@@ -2,7 +2,7 @@
 
 import sys
 import traceback
-from borderlands.savefile_app_bl2 import AppBL2
+from borderlands.bl2 import AppBL2
 
 if __name__ == "__main__":
     try:

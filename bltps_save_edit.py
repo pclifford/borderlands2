@@ -2,7 +2,7 @@
 
 import sys
 import traceback
-from borderlands.savefile_app_bltps import AppTPS
+from borderlands.bltps import AppTPS
 
 if __name__ == "__main__":
     try:

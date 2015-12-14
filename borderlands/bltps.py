@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import argparse
-from .savefile_app import App, ChallengeCat, Challenge, Config, DictAction
+from .savefile import App, ChallengeCat, Challenge, Config, DictAction
 
 class AppTPS(App):
     """
