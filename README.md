@@ -124,21 +124,28 @@ Set money with the `--money` option:
 
     python bl2_save_edit.py --money 3000000 old.sav new.sav
 
-### Eridium
+### Eridium (Borderlands 2 Only)
 
 Set available Eridium with the `--eridium` option.  Note that the game will
 reduce this to a maxmimum of 500 if you attempt to add more:
 
     python bl2_save_edit.py --eridium 500 old.sav new.sav
 
-### Seraph Crystals
+### Moonstone (Borderlands: The Pre-Sequel Only)
+
+Set available Moonstone with the `--moonstone` option.  Note that the game will
+reduce this to a maxmimum of 500 if you attempt to add more:
+
+    python bltps_save_edit.py --moonstone 500 old.sav new.sav
+
+### Seraph Crystals (Borderlands 2 Only)
 
 Set the available Seraph Crystals with the `--seraph` option.  The game will
 enforce a maximum of 999:
 
     python bl2_save_edit.py --seraph 999 old.sav new.sav
 
-### Torgue Tokens
+### Torgue Tokens (Borderlands 2 Only)
 
 Set the available Torgue Tokens with the `--torgue` option.  The game will
 enforce a maximum of 999:
@@ -193,6 +200,12 @@ There are a few things which can be unlocked via this utility, with the `--unloc
 option.  This option can be specified more than once to unlock more than one
 thing.
 
+#### Ammo
+
+To unlock all ammo SDU upgrades (ordinarily available in the black market):
+
+    python bl2_save_edit.py --unlock ammo old.sav new.sav
+
 #### Challenges
 
 Some challenges do not actually appear in the challenge list until certain
@@ -202,7 +215,7 @@ kills has reached level 5.  This will unlock all those challenges regardless
 of the prerequisites.  *(Note: this only applies to non-level-specific
 challenges)*
 
-    python savefile --unlock challenges old.sav new.sav
+    python bl2_save_edit.py --unlock challenges old.sav new.sav
 
 #### True Vault Hunter Mode (playthrough 2)
 
@@ -210,7 +223,7 @@ To unlock TVHM:
 
     python bl2_save_edit.py --unlock tvhm old.sav new.sav
 
-#### Creature Slaughterdome
+#### Creature Slaughterdome (Borderlands 2 Only)
 
 **NOTE:** I'm unsure whether or not this would actually work on a system
 without the Creature Slaughterdome explicitly enabled, but it's possible maybe

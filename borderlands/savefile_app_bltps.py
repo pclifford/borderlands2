@@ -40,7 +40,7 @@ class AppTPS(App):
     item_struct_version = 10
 
     # Available choices for --unlock option
-    unlock_choices = ['tvhm', 'challenges']
+    unlock_choices = ['tvhm', 'challenges', 'ammo']
 
     # Challenge categories
     challenge_cat_dlc4 = ChallengeCat("Hammerlock's Hunt", 4)

@@ -1116,21 +1116,21 @@ class App(object):
             player[13][0][1] = self.write_protobuf(slots)
 
         if len(config.unlock) > 0:
-            unlocked, notifications = [], []
-            if player.has_key(23):
-                unlocked = map(ord, player[23][0][1])
-            if player.has_key(24):
-                notifications = map(ord, player[24][0][1])
             if 'slaughterdome' in config.unlock:
+                unlocked, notifications = [], []
+                if player.has_key(23):
+                    unlocked = map(ord, player[23][0][1])
+                if player.has_key(24):
+                    notifications = map(ord, player[24][0][1])
                 self.debug(' - Unlocking Creature Slaughterdome')
                 if 1 not in unlocked:
                     unlocked.append(1)
                 if 1 not in notifications:
                     notifications.append(1)
-            if unlocked:
-                player[23] = [[2, "".join(map(chr, unlocked))]]
-            if notifications:
-                player[24] = [[2, "".join(map(chr, notifications))]]
+                if unlocked:
+                    player[23] = [[2, "".join(map(chr, unlocked))]]
+                if notifications:
+                    player[24] = [[2, "".join(map(chr, notifications))]]
             if 'tvhm' in config.unlock:
                 self.debug(' - Unlocking TVHM')
                 if player[7][0][1] < 1:
@@ -1148,6 +1148,13 @@ class App(object):
                             ('dlc_id', challenge.cat.dlc),
                             ('is_from_dlc', challenge.cat.is_from_dlc),
                             ('name', challenge.id_text)]), inverted_structure))])
+            if 'ammo' in config.unlock:
+                self.debug(' - Unlocking ammo capacity')
+                s = self.read_repeated_protobuf_value(player[36][0][1], 0)
+                for idx, (key, value) in enumerate(zip(self.black_market_keys, s)):
+                    if key in self.black_market_ammo:
+                        s[idx] = 7
+                player[36][0][1] = self.write_repeated_protobuf_value(s, 0)
 
         if len(config.challenges) > 0:
             data = self.unwrap_challenges(player[15][0][1])
