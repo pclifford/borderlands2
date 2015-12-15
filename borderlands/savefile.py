@@ -52,11 +52,12 @@ class Config(argparse.Namespace):
     endian = '<'
     changes = False
 
-    def finish(self, parser):
+    def finish(self, parser, app):
         """
         Some extra sanity checks on our options.  "parser" should
         be an active ArgumentParser object we can use to raise
-        errors.
+        errors.  "app" is an App object which we use for a couple
+        lookups.
         """
 
         # Endianness
@@ -83,6 +84,34 @@ class Config(argparse.Namespace):
         # Can't read/write to the same file
         if self.input_filename == self.output_filename and self.input_filename != '-':
             parser.error('input_filename and output_filename cannot be the same file')
+
+        # Sort out 'backpack'
+        if self.backpack is not None:
+            if self.backpack == 'max':
+                self.backpack = app.max_backpack_size
+            else:
+                try:
+                    self.backpack = int(self.backpack)
+                except ValueError:
+                    parser.error('Backpack value "%s" is not a number' % (self.backpack))
+                if self.backpack > app.max_backpack_size:
+                    self.backpack = app.max_backpack_size
+                elif self.backpack < app.min_backpack_size:
+                    self.backpack = app.min_backpack_size
+
+        # Sort out bank
+        if self.bank is not None:
+            if self.bank == 'max':
+                self.bank = app.max_bank_size
+            else:
+                try:
+                    self.bank = int(self.bank)
+                except ValueError:
+                    parser.error('Backpack value "%s" is not a number' % (self.bank))
+                if self.bank > app.max_bank_size:
+                    self.bank = app.max_bank_size
+                elif self.bank < app.min_bank_size:
+                    self.bank = app.min_bank_size
 
 class DictAction(argparse.Action):
     """
@@ -267,6 +296,11 @@ class App(object):
         7, 17, 0, 25, 22, 31, 15, 29, 10, 12, 6, 0, 21, 14, 9, 5,
         20, 8, 19, 18
     )
+
+    min_backpack_size=12
+    max_backpack_size=39
+    min_bank_size=6
+    max_bank_size=24
 
     # "laser" in here doesn't apply to B2, but it won't hurt anything
     # because we process ammo pools based off the black market values,
@@ -1101,9 +1135,9 @@ class App(object):
         if config.backpack is not None:
             self.debug(' - Setting backpack size to %d' % (config.backpack))
             size = config.backpack
-            sdus = int(math.ceil((size - 12) / 3.0))
+            sdus = int(math.ceil((size - self.min_backpack_size) / 3.0))
             self.debug('   - Setting SDU size to %d' % (sdus))
-            new_size = 12 + (sdus * 3)
+            new_size = self.min_backpack_size + (sdus * 3)
             if size != new_size:
                 self.debug('   - Resetting backpack size to %d to match SDU count' % (new_size))
             slots = self.read_protobuf(player[13][0][1])
@@ -1115,9 +1149,9 @@ class App(object):
         if config.bank is not None:
             self.debug(' - Setting bank size to %d' % (config.bank))
             size = config.bank
-            sdus = int(min(255, math.ceil((size - 6) / 2.0)))
+            sdus = int(min(255, math.ceil((size - self.min_bank_size) / 2.0)))
             self.debug('   - Setting SDU size to %d' % (sdus))
-            new_size = 6 + (sdus * 2)
+            new_size = self.min_bank_size + (sdus * 2)
             if size != new_size:
                 self.debug('   - Resetting bank size to %d to match SDU count' % (new_size))
             if player.has_key(56):
@@ -1436,23 +1470,15 @@ class App(object):
 
         parser.add_argument('--itemlevels',
                 type=int,
-                nargs='?',
-                const=0,
-                help='Set item levels (default to the current player level)',
+                help='Set item levels (to set to current player level, specify 0)',
                 )
 
         parser.add_argument('--backpack',
-                type=int,
-                nargs='?',
-                const=39,
-                help='Set size of backpack (defaults to 39)',
+                help='Set size of backpack (maximum is %d, "max" may be specified)' % (self.max_backpack_size),
                 )
 
         parser.add_argument('--bank',
-                type=int,
-                nargs='?',
-                const=24,
-                help='Set size of bank( defaults to 24)',
+                help='Set size of bank(maximum is %d, "max" may be specified)' % (self.max_bank_size),
                 )
 
         parser.add_argument('--gunslots',
@@ -1494,7 +1520,7 @@ class App(object):
         parser.parse_args(argv, config)
 
         # Do some extra fiddling
-        config.finish(parser)
+        config.finish(parser, self)
 
     def notice(self, output):
         """

@@ -157,7 +157,7 @@ either your character's current level, or to the level you specify.
 
 To set to the character's level:
 
-    python bl2_save_edit.py --itemlevels old.sav new.sav
+    python bl2_save_edit.py --itemlevels 0 old.sav new.sav
 
 To set to a specific level:
 
@@ -167,21 +167,21 @@ Note that items of level 1, however, are always left alone.
 
 ### Backpack Size
 
-The `--backpack` option can be used to set the size of your backpack.  It will
-default to the largest available size ingame: 39.  Note that the utility will
-also enforce that the backpack size is a multiple of 3, and will round up if
-your specified size is not correct.
+The `--backpack` option can be used to set the size of your backpack.  To set
+the maximum possible size of the backpack, either specify 39 or "max". Note
+that the utility will also enforce that the backpack size is a multiple of 3,
+and between the range of 12 and 39.
 
-    python bl2_save_edit.py --backpack old.sav new.sav
+    python bl2_save_edit.py --backpack max old.sav new.sav
     python bl2_save_edit.py --backpack 31 old.sav new.sav
 
 ### Bank Size
 
 Similarly, the `--bank` option can be used to set the size of your bank, and
-will round up to multiples of 2.  It will default to the largest available
-size ingame: 24.
+will round up to multiples of 2, between 6 and 24.  To specify the maximum
+value, either use 24 or "max".
 
-    python bl2_save_edit.py --bank old.sav new.sav
+    python bl2_save_edit.py --bank max old.sav new.sav
     python bl2_save_edit.py --bank 16 old.sav new.sav
 
 ### Gun Slots
