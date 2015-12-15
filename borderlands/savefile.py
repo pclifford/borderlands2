@@ -1438,7 +1438,7 @@ class App(object):
         # Optional args
 
         parser.add_argument('-o', '--output',
-                choices=['savegame', 'decoded', 'json', 'parsed', 'items'],
+                choices=['savegame', 'decoded', 'decodedjson', 'json', 'items'],
                 default='savegame',
                 help='Output file format',
                 )
@@ -1596,7 +1596,7 @@ class App(object):
             self.debug('Interpreting JSON data')
             data = json.loads(save_data, encoding='latin1')
             if not data.has_key('1'):
-                # This means the file had been output as 'parsed'
+                # This means the file had been output as 'json'
                 data = self.remove_structure(data, self.invert_structure(self.save_structure))
             save_data = self.wrap_player_data(self.write_protobuf(data))
 
@@ -1650,10 +1650,10 @@ class App(object):
         else:
             self.debug('Preparing decoded savegame file')
             player = self.unwrap_player_data(save_data)
-            if config.output == 'json' or config.output == 'parsed':
+            if config.output == 'decodedjson' or config.output == 'json':
                 self.debug('Converting to JSON for more human-readable output')
                 data = self.read_protobuf(player)
-                if config.output == 'parsed':
+                if config.output == 'json':
                     self.debug('Parsing protobuf data for even more human-readable output')
                     data = self.apply_structure(data, self.save_structure)
                 player = json.dumps(data, encoding="latin1", sort_keys=True, indent=4)

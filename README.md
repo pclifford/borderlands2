@@ -49,15 +49,15 @@ specify alternate outputs to use, using the `-o` or `--output` option.  The
 most useful outputs are:
 
 * **`savegame`** - This is the default, and the only output usable by Borderlands itself.
-* **`parsed`** - This is the most human-editable format, saved in a text-based
-  heirarchy which should be fairly reasonable to work with.
+* **`json`** - This is the most human-editable format, saved in a text-based
+  heirarchy in JSON format, which should be fairly reasonable to work with.
 * **`items`** - This will save the character's inventory and bank into a text
   file which can then be imported into other tools like Gibbed, or imported
   into other characters using this tool.
 
 For example, saving to a JSON file for later hand-editing:
 
-    python bl2_save_edit.py -o parsed save0001.sav testing.json
+    python bl2_save_edit.py -o json save0001.sav testing.json
 
 After hand-editing a JSON file, you can convert it back by specifying the `-j`
 or `--json` option, to tell the utility that you're loading from a JSON file,
@@ -86,7 +86,7 @@ they are primarily only useful to programmers looking to work with the raw data
 a little more closely:
 
 * **`decoded`** - The raw protocol buffer data, after decompression.
-* **`json`** - A midway point between `decoded` and `parsed`, this will generate
+* **`decodedjson`** - A midway point between `decoded` and `json`, this will generate
   a JSON file, so it'll be technically editable by hand, but most of the internal
   data structures will be present as raw protobuf strings.
 
@@ -97,7 +97,7 @@ as a parsed JSON file, edit the JSON by hand (in a text editor), and then
 re-export the JSON into a savefile.  As always, make sure to take backups
 of your savefiles before overwriting them.
 
-1. `python bl2_save_edit.py -o parsed save0001.sav to_edit.json`
+1. `python bl2_save_edit.py -o json save0001.sav to_edit.json`
 2. Edit `to_edit.json` in a text editor, to suit
 3. `python bl2_save_edit.py -j to_edit.json save0001.sav`
 
@@ -301,7 +301,7 @@ bonuses:
 In general, the various options can be combined.  To make a few changes to a
 savegame but save as parsed JSON:
 
-    python bl2_save_edit.py --name "Laura Palmer" --save-game-id 2 --money 3000000 --output parsed save0001.sav laura.json
+    python bl2_save_edit.py --name "Laura Palmer" --save-game-id 2 --money 3000000 --output json save0001.sav laura.json
 
 To take that JSON, unlock TVHM and Challenges, and set challenges to their
 primed "bonus" levels, and save as a real savefile:
@@ -319,12 +319,12 @@ use JSON as an intermediate step.  For the commands which deal with the
 console savegames, be sure to specify the `-b` or `--bigendian` options.  For
 instance, to convert from a Console savegame to a PC savegame:
 
-    python savegame.py -b -o parsed xbox.sav pc.json
+    python savegame.py -b -o json xbox.sav pc.json
     python savegame.py -j pc.json pc.sav
 
 Or to convert from a PC savegame to a Console savegame:
 
-    python savegame.py --output parsed pc.sav xbox.json
+    python savegame.py --output json pc.sav xbox.json
     python savegame.py --json --bigendian xbox.json xbox.sav
 
 # Exporting character items
@@ -389,7 +389,7 @@ Sample output from that option is shown below, though might get out-of-date
 if I forget to update this README after updating the program:
 
 ```
-usage: bltps_save_edit.py [-h] [-o {savegame,decoded,json,parsed,items}]
+usage: bltps_save_edit.py [-h] [-o {savegame,decoded,decodedjson,json,items}]
                           [-i IMPORT_ITEMS] [-j] [-b] [-q] [-f] [--name NAME]
                           [--save-game-id SAVE_GAME_ID] [--level LEVEL]
                           [--money MONEY] [--moonstone MOONSTONE]
@@ -407,7 +407,7 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -o {savegame,decoded,json,parsed,items}, --output {savegame,decoded,json,parsed,items}
+  -o {savegame,decoded,decodedjson,json,items}, --output {savegame,decoded,decodedjson,json,items}
                         Output file format (default: savegame)
   -i IMPORT_ITEMS, --import-items IMPORT_ITEMS
                         read in codes for items and add them to the bank and
