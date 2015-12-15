@@ -1476,13 +1476,11 @@ class App(object):
         # Positional args
 
         parser.add_argument('input_filename',
-                default='-',
-                nargs='?',
+                help='Input filename, can be "-" to specify STDIN'
                 )
 
         parser.add_argument('output_filename',
-                default='-',
-                nargs='?',
+                help='Output filename, can be "-" to specify STDOUT'
                 )
 
         # Actually parse the args
