@@ -1339,6 +1339,10 @@ class App(object):
 
         prefix_length = len(self.item_prefix)+1
 
+        bank_count = 0
+        weapon_count = 0
+        item_count = 0
+
         to_bank = False
         for line in codelist.splitlines():
             line = line.strip()
@@ -1361,16 +1365,23 @@ class App(object):
             key = random.randrange(0x100000000) - 0x80000000
             raw = self.replace_raw_item_key(raw, key)
             if to_bank:
+                bank_count += 1
                 field = 41
                 entry = {1: [[2, raw]]}
             elif (ord(raw[0]) & 0x80) == 0:
+                item_count += 1
                 field = 53
                 entry = {1: [[2, raw]], 2: [[0, 1]], 3: [[0, 0]], 4: [[0, 1]]}
             else:
-                field = 53
+                weapon_count += 1
+                field = 54
                 entry = {1: [[2, raw]], 2: [[0, 0]], 3: [[0, 1]]}
 
             player.setdefault(field, []).append([2, self.write_protobuf(entry)])
+
+        self.debug(' - Bank imported: %d' % (bank_count))
+        self.debug(' - Items imported: %d' % (item_count))
+        self.debug(' - Weapons imported: %d' % (weapon_count))
 
         return self.wrap_player_data(self.write_protobuf(player))
 
