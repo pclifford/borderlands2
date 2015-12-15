@@ -1458,11 +1458,6 @@ class App(object):
                 help='change the output format to big-endian, to write PS/xbox save files',
                 )
 
-        parser.add_argument('-p', '--parse',
-                action='store_true',
-                help='parse the protocol buffer data further and generate more readable JSON',
-                )
-
         parser.add_argument('-q', '--quiet',
                 dest='verbose',
                 action='store_false',
