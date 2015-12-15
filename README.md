@@ -408,7 +408,8 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -o {savegame,decoded,decodedjson,json,items}, --output {savegame,decoded,decodedjson,json,items}
-                        Output file format (default: savegame)
+                        Output file format. The most useful to humans are:
+                        savegame, json, and items (default: savegame)
   -i IMPORT_ITEMS, --import-items IMPORT_ITEMS
                         read in codes for items and add them to the bank and
                         inventory (default: None)

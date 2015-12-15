@@ -1440,7 +1440,7 @@ class App(object):
         parser.add_argument('-o', '--output',
                 choices=['savegame', 'decoded', 'decodedjson', 'json', 'items'],
                 default='savegame',
-                help='Output file format',
+                help='Output file format.  The most useful to humans are: savegame, json, and items',
                 )
 
         parser.add_argument('-i', '--import-items',
