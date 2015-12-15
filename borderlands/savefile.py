@@ -1319,16 +1319,37 @@ class App(object):
         filehandle 'output'
         """
         player = self.read_protobuf(self.unwrap_player_data(data))
+        skipped_count = 0
         for i, name in ((41, "Bank"), (53, "Items"), (54, "Weapons")):
+            count = 0
             content = player.get(i)
             if content is None:
                 continue
             print >>output, "; " + name
             for field in content:
                 raw = self.read_protobuf(field[1])[1][0][1]
-                raw = self.replace_raw_item_key(raw, 0)
-                code = '%s(%s)' % (self.item_prefix, raw.encode("base64").strip())
-                print >>output, code
+
+                # For whatever reason, Borderlands seems to sometimes store items
+                # which show up as [255, 0, 0, 0, ..., 0] in "item" after being
+                # passed to unwrap_item().  Basically an "empty" item which doesn't
+                # actually show up ingame (or in Gibbed).  Their base64
+                # representations end up looking like this:
+                #
+                #   BL2(CgAAAABs+/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==)
+                #
+                # There always seems to be at least a couple of them, and there's
+                # no real reason to export them since they're not real items and
+                # don't contain any information.  So, we're going to skip them.
+                is_weapon, item, key = self.unwrap_item(raw)
+                if item[0] == 255 and not any([val != 0 for val in item[1:]]):
+                    skipped_count += 1
+                else:
+                    count += 1
+                    raw = self.replace_raw_item_key(raw, 0)
+                    code = '%s(%s)' % (self.item_prefix, raw.encode("base64").strip())
+                    print >>output, code
+            self.debug(' - %s exported: %d' % (name, count))
+        self.debug(' - Empty items skipped: %d' % (skipped_count))
 
     def import_items(self, data, codelist):
         """
