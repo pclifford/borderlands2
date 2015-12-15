@@ -10,6 +10,7 @@ import argparse
 import random
 import struct
 import sys
+import os
 
 class Config(argparse.Namespace):
     """
@@ -22,6 +23,7 @@ class Config(argparse.Namespace):
     json = False
     bigendian = False
     verbose = True
+    force = False
 
     # Given by the user, strings
     import_items = None
@@ -1401,6 +1403,11 @@ class App(object):
                 help='quiet output (should generate no output unless there are errors)',
                 )
 
+        parser.add_argument('-f', '--force',
+                action='store_true',
+                help='force output file overwrite, if the destination file exists',
+                )
+
         # More optional args - used to be the "modify" option
 
         parser.add_argument('--name',
@@ -1489,6 +1496,12 @@ class App(object):
         # Do some extra fiddling
         config.finish(parser)
 
+    def notice(self, output):
+        """
+        Stupid little function to send some output to STDERR.
+        """
+        print >>sys.stderr, output
+
     def error(self, output):
         """
         Stupid little function to send some output to STDERR.
@@ -1553,6 +1566,25 @@ class App(object):
             output_file = sys.stdout
         else:
             self.debug('Opening %s for output file' % (config.output_filename))
+            if os.path.exists(config.output_filename):
+                if config.force:
+                    self.debug('Overwriting output file "%s"' % (config.output_filename))
+                else:
+                    if config.input_filename == '-':
+                        raise BorderlandsError('Output filename "%s" exists and --force not specified, aborting' %
+                            (config.output_filename))
+                    else:
+                        self.notice('')
+                        self.notice('Output filename "%s" exists' % (config.output_filename))
+                        sys.stderr.write('Continue and overwrite? [y|N] ')
+                        answer = sys.stdin.readline()
+                        if answer[0].lower() == 'y':
+                            self.notice('')
+                            self.notice('Continuing!')
+                        else:
+                            self.notice('')
+                            self.notice('Exiting!')
+                            return
             output_file = open(config.output_filename, 'wb')
 
         # Now output based on what we've been told to do
