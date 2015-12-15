@@ -443,3 +443,21 @@ optional arguments:
                         Levels to set on challenge data (default: {})
   --maxammo             Fill all ammo pools to their maximum (default: False)
 ```
+
+# TODO
+
+1. Borderlands:TPS has a bunch more data stored in the file that we don't
+   currently parse, so the JSON generated with `-o json` includes a pretty
+   large `_raw` section up at the top, for all the data we don't know about.
+   The Gibbed editor seems to know about some of these, and I'd sort of like to
+   go through and see if anything's worth decoding for this utility.
+
+2. The internal `modify_save` function starts off with the raw, decoded
+   protobuf, and each little snippet in there decodes further as-needed, and
+   then re-encodes once it's done.  I wonder if it'd make more sense to just
+   unwrap the whole thing to JSON at the beginning and then re-wrap at the end,
+   rather than doing it piecemeal like that.  The current method is sort of
+   nice in that only the bits of the file that actually *need* to get touched
+   are processed, but on the other hand, it adds a bunch of unnecessary cruft
+   in there.
+
