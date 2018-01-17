@@ -85,6 +85,13 @@ class Config(argparse.Namespace):
         if self.input_filename == self.output_filename and self.input_filename != '-':
             parser.error('input_filename and output_filename cannot be the same file')
 
+        # If the user specified --level, make sure it's from 1 to 72
+        if self.level is not None:
+            if self.level < 1:
+                parser.error('level must be at least 1')
+            if self.level > 72:
+                parser.error('level can be at most 72')
+
         # Sort out 'backpack'
         if self.backpack is not None:
             if self.backpack == 'max':
@@ -315,6 +322,99 @@ class App(object):
         'sniper': ('D_Resources.AmmoResources.Ammo_Sniper_Rifle', 'D_Resourcepools.AmmoPools.Ammo_Sniper_Rifle_Pool'),
         'laser': ('D_Resources.AmmoResources.Ammo_Combat_Laser', 'D_Resourcepools.AmmoPools.Ammo_Combat_Laser_Pool'),
     }
+
+    # An equation for computing the XP required for a given level is
+    # stated at http://borderlands.wikia.com/wiki/Experience_Points to
+    # be (in Python terms):
+    #
+    #       math.ceil(60*(level**2.8) - 60)
+    #
+    # That works well for most of the levels in the game but it's not
+    # perfect - it overshoots a bit towards the higher levels, which can
+    # result in some annoying error messages in the game if you bring
+    # a character to level 72 but have slightly too much XP.  Changing
+    # math.ceil() to plain ol' int() works a bit better for that, actually.
+    # Things get a bit better in Python if we use decimal.Decimal for
+    # the numbers instead of relying on Python's native floats, but even
+    # then it's not perfect.  I've tried out the calculation for level
+    # 72 on a few different languages/calculators/platforms, and I think
+    # the equation is just not exactly correct.
+    #
+    # So, what the heck - we'll just hardcode the XP requirements in here.
+    required_xp = [
+        0,          # lvl 1
+        358,        # lvl 2
+        1241,       # lvl 3
+        2850,       # lvl 4
+        5376,       # lvl 5
+        8997,       # lvl 6
+        13886,      # lvl 7
+        20208,      # lvl 8
+        28126,      # lvl 9
+        37798,      # lvl 10
+        49377,      # lvl 11
+        63016,      # lvl 12
+        78861,      # lvl 13
+        97061,      # lvl 14
+        117757,     # lvl 15
+        141092,     # lvl 16
+        167206,     # lvl 17
+        196238,     # lvl 18
+        228322,     # lvl 19
+        263595,     # lvl 20
+        302190,     # lvl 21
+        344238,     # lvl 22
+        389873,     # lvl 23
+        439222,     # lvl 24
+        492414,     # lvl 25
+        549578,     # lvl 26
+        610840,     # lvl 27
+        676325,     # lvl 28
+        746158,     # lvl 29
+        820463,     # lvl 30
+        899363,     # lvl 31
+        982980,     # lvl 32
+        1071435,    # lvl 33
+        1164850,    # lvl 34
+        1263343,    # lvl 35
+        1367034,    # lvl 36
+        1476041,    # lvl 37
+        1590483,    # lvl 38
+        1710476,    # lvl 39
+        1836137,    # lvl 40
+        1967582,    # lvl 41
+        2104926,    # lvl 42
+        2248285,    # lvl 43
+        2397772,    # lvl 44
+        2553501,    # lvl 45
+        2715586,    # lvl 46
+        2884139,    # lvl 47
+        3059273,    # lvl 48
+        3241098,    # lvl 49
+        3429728,    # lvl 50
+        3625271,    # lvl 51
+        3827840,    # lvl 52
+        4037543,    # lvl 53
+        4254491,    # lvl 54
+        4478792,    # lvl 55
+        4710556,    # lvl 56
+        4949890,    # lvl 57
+        5196902,    # lvl 58
+        5451701,    # lvl 59
+        5714393,    # lvl 60
+        5985086,    # lvl 61
+        6263885,    # lvl 62
+        6550897,    # lvl 63
+        6846227,    # lvl 64
+        7149982,    # lvl 65
+        7462266,    # lvl 66
+        7783184,    # lvl 67
+        8112840,    # lvl 68
+        8451340,    # lvl 69
+        8798786,    # lvl 70
+        9155282,    # lvl 71
+        9520931,    # lvl 72
+    ]
 
     def read_huffman_tree(self, b):
         node_type = b.read_bit()
@@ -1082,13 +1182,21 @@ class App(object):
         config = self.config
 
         if config.level is not None:
-            self.debug(' - Updating to level %d' % (config.level))
-            lower = int(60 * (config.level ** 2.8) - 59.2)
-            upper = int(60 * ((config.level + 1) ** 2.8) - 59.2)
-            if player[3][0][1] not in range(lower, upper):
-                player[3][0][1] = lower
-                self.debug('   - Also updating XP to %d' % (lower))
-            player[2] = [[0, config.level]]
+            if config.level < 1 or config.level > len(self.required_xp):
+                self.error('Invalid character level specified: %d' % (config.level))
+            else:
+                self.debug(' - Updating to level %d' % (config.level))
+                lower = self.required_xp[config.level - 1]
+                if config.level == len(self.required_xp):
+                    if player[3][0][1] != lower:
+                        player[3][0][1] = lower
+                        self.debug('   - Also updating XP to %d' % (lower))
+                else:
+                    upper = self.required_xp[config.level]
+                    if player[3][0][1] < lower or player[3][0][1] >= upper:
+                        player[3][0][1] = lower
+                        self.debug('   - Also updating XP to %d' % (lower))
+                player[2] = [[0, config.level]]
 
         if any([x is not None for x in [config.money, config.eridium, config.moonstone, config.seraph, config.torgue]]):
             raw = player[6][0][1]
@@ -1483,7 +1591,7 @@ class App(object):
 
         parser.add_argument('--level',
                 type=int,
-                help='Set the character to this level',
+                help='Set the character to this level (from 1 to 72)',
                 )
 
         parser.add_argument('--money',
