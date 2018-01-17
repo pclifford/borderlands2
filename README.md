@@ -178,7 +178,10 @@ To set to a specific level:
 
     python bl2_save_edit.py --itemlevels 50 old.sav new.sav
 
-Note that items of level 1, however, are always left alone.
+Note that items of level 1, however, are left alone unless you also specify
+the `--forceitemlevels` flag:
+
+    python bl2_save_edit.py --itemlevels 0 --forceitemlevels old.sav new.sav
 
 ## Backpack Size
 
@@ -393,8 +396,9 @@ usage: bltps_save_edit.py [-h] [-o {savegame,decoded,decodedjson,json,items}]
                           [-i IMPORT_ITEMS] [-j] [-b] [-q] [-f] [--name NAME]
                           [--save-game-id SAVE_GAME_ID] [--level LEVEL]
                           [--money MONEY] [--moonstone MOONSTONE]
-                          [--itemlevels ITEMLEVELS] [--backpack BACKPACK]
-                          [--bank BANK] [--gunslots {2,3,4}]
+                          [--itemlevels ITEMLEVELS] [--forceitemlevels]
+                          [--backpack BACKPACK] [--bank BANK]
+                          [--gunslots {2,3,4}]
                           [--unlock {tvhm,challenges,ammo}]
                           [--challenges {zero,max,bonus}] [--maxammo]
                           input_filename output_filename
@@ -425,13 +429,17 @@ optional arguments:
   --save-game-id SAVE_GAME_ID
                         Set the save game slot ID of the character (probably
                         not actually needed ever) (default: None)
-  --level LEVEL         Set the character to this level (default: None)
+  --level LEVEL         Set the character to this level (from 1 to 72)
+                        (default: None)
   --money MONEY         Money to set for character (default: None)
   --moonstone MOONSTONE
                         Moonstone to set for character (default: None)
   --itemlevels ITEMLEVELS
                         Set item levels (to set to current player level,
-                        specify 0) (default: None)
+                        specify 0).Skips level 1 items unless
+                        --forceitemlevels is specified too (default: None)
+  --forceitemlevels     Set item levels even if the item is at level 1
+                        (default: False)
   --backpack BACKPACK   Set size of backpack (maximum is 39, "max" may be
                         specified) (default: None)
   --bank BANK           Set size of bank(maximum is 24, "max" may be

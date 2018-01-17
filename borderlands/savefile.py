@@ -1224,6 +1224,7 @@ class App(object):
         # Note that this block should always come *after* the block which sets
         # character level, in case we've been instructed to set items to the
         # character's level.
+        seen_level_1_warning = False
         if config.itemlevels is not None:
             if config.itemlevels > 0:
                 self.debug(' - Setting all items to level %d' % (config.itemlevels))
@@ -1235,10 +1236,15 @@ class App(object):
                 for field in player[field_number]:
                     field_data = self.read_protobuf(field[1])
                     is_weapon, item, key = self.unwrap_item(field_data[1][0][1])
-                    if item[4] > 1:
+                    if config.forceitemlevels or item[4] > 1:
                         item = item[: 4] + [level, level] + item[6: ]
                         field_data[1][0][1] = self.wrap_item(is_weapon, item, key)
                         field[1] = self.write_protobuf(field_data)
+                    else:
+                        if item[4] == 1 and not seen_level_1_warning:
+                            seen_level_1_warning = True
+                            self.debug('   NOTICE: At least one item is level 1 and will not be updated.')
+                            self.debug('   Use --forceitemlevels to update these items')
 
         if config.backpack is not None:
             self.debug(' - Setting backpack size to %d' % (config.backpack))
@@ -1605,7 +1611,13 @@ class App(object):
 
         parser.add_argument('--itemlevels',
                 type=int,
-                help='Set item levels (to set to current player level, specify 0)',
+                help='Set item levels (to set to current player level, specify 0).'
+                    'Skips level 1 items unless --forceitemlevels is specified too',
+                )
+
+        parser.add_argument('--forceitemlevels',
+                action='store_true',
+                help='Set item levels even if the item is at level 1',
                 )
 
         parser.add_argument('--backpack',
