@@ -1,3 +1,15 @@
+# WARNING
+
+This branch is a pretty early stage of porting this tool to Python 3.
+Basic savefile editing does seem to work after some limited testing, but
+it's barely been tested, and there are some things which simply don't
+work at all (such as outputting to `json` or `decodedjson` formats).
+Use at your own risk!
+
+If I ever do get to the point of being comfortable with the app's basic
+functionality (and finish fixing things like the JSON output) then I'll
+also want to go ahead and move to new-style string formatting, etc.
+
 # Borderlands 2 / Borderlands: The Pre-Sequel Save File Modification Tool
 
 This is a simple command line utility to extract and modify player information

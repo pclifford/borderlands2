@@ -2,7 +2,7 @@
 
 import binascii
 from bisect import insort
-from cStringIO import StringIO
+from io import BytesIO
 import hashlib
 import json
 import math
@@ -11,6 +11,8 @@ import random
 import struct
 import sys
 import os
+import copy
+import itertools
 
 class Config(argparse.Namespace):
     """
@@ -156,7 +158,7 @@ class ReadBitstream(object):
     def read_bit(self):
         i = self.i
         self.i = i + 1
-        byte = ord(self.s[i >> 3])
+        byte = self.s[i >> 3]
         bit = byte >> (7 - (i & 7))
         return bit & 1
 
@@ -165,9 +167,9 @@ class ReadBitstream(object):
         i = self.i
         end = i + n
         chunk = s[i >> 3: (end + 7) >> 3]
-        value = ord(chunk[0]) &~ (0xff00 >> (i & 7))
+        value = chunk[0] &~ (0xff00 >> (i & 7))
         for c in chunk[1: ]:
-            value = (value << 8) | ord(c)
+            value = (value << 8) | c
         if (end & 7) != 0:
             value = value >> (8 - (end & 7))
         self.i = end
@@ -176,16 +178,16 @@ class ReadBitstream(object):
     def read_byte(self):
         i = self.i
         self.i = i + 8
-        byte = ord(self.s[i >> 3])
+        byte = self.s[i >> 3]
         if (i & 7) == 0:
             return byte
-        byte = (byte << 8) | ord(self.s[(i >> 3) + 1])
+        byte = (byte << 8) | self.s[(i >> 3) + 1]
         return (byte >> (8 - (i & 7))) & 0xff
 
 class WriteBitstream(object):
 
     def __init__(self):
-        self.s = ""
+        self.s = bytearray() 
         self.byte = 0
         self.i = 7
 
@@ -193,7 +195,7 @@ class WriteBitstream(object):
         i = self.i
         byte = self.byte | (b << i)
         if i == 0:
-            self.s += chr(byte)
+            self.s.append(byte)
             self.byte = 0
             self.i = 7
         else:
@@ -209,7 +211,7 @@ class WriteBitstream(object):
             n = n - (i + 1)
             byte = byte | (b >> shift)
             b = b &~ (byte << shift)
-            s = s + chr(byte)
+            s.append(byte)
             byte = 0
             i = 7
         if n > 0:
@@ -222,16 +224,18 @@ class WriteBitstream(object):
     def write_byte(self, b):
         i = self.i
         if i == 7:
-            self.s += chr(b)
+            self.s.append(b)
         else:
-            self.s += chr(self.byte | (b >> (7 - i)))
+            self.s.append(self.byte | (b >> (7 - i)))
             self.byte = (b << (i + 1)) & 0xff
 
     def getvalue(self):
         if self.i != 7:
-            return self.s + chr(self.byte)
+            ret_s = copy.copy(self.s)
+            ret_s.append(self.byte)
+            return bytes(ret_s)
         else:
-            return self.s
+            return bytes(self.s)
 
 class ChallengeCat(object):
     """
@@ -432,24 +436,67 @@ class App(object):
             self.write_huffman_tree(node[1][0], b)
             self.write_huffman_tree(node[1][1], b)
 
+    class HuffmanNode(object):
+        """
+        This is a bit of a hack because I don't feel like rewriting `make_huffman_tree`
+        entirely.  Basically the current implementation relies on Python 2 behavior
+        where lists and ints can be compared directly with comparison operators. 
+        Python 3 forbids this, so the call to `bisect.insort()` inside
+        `make_huffman_tree` fails once it encounters an "regular" two-element list
+        with two ints, and another whose second element is a nested structure.
+        Really `make_huffman_tree` should just be rewritten to be sensible, but
+        rather than doing that I'm doing this hacky thing.  C'est la vie.
+        """
+
+        def __init__(self, weight, data):
+            self.weight = weight
+            self.data = data
+
+        def __repr__(self):
+            return 'hn({}, {})'.format(self.weight, self.data)
+
+        def __lt__(self, other):
+            """
+            Compare by weight, and then by data.  If the data on either
+            isn't an int, sort it after the other one (as Python 2
+            would do)
+            """
+            if self.weight != other.weight:
+                return self.weight < other.weight
+
+            if type(self.data) == int and type(other.data) == int:
+                return self.data < other.data
+            else:
+                return type(self.data) == int
+
+        def to_list(self):
+            """
+            Returns ourself as a nested collection of lists, rather than a
+            nested collection of HuffmanNodes.
+            """
+            if type(self.data) == int:
+                return [self.weight, self.data]
+            else:
+                return [self.weight, [d.to_list() for d in self.data]]
+
     def make_huffman_tree(self, data):
         frequencies = [0] * 256
         for c in data:
-            frequencies[ord(c)] += 1
+            frequencies[c] += 1
 
-        nodes = [[f, i] for (i, f) in enumerate(frequencies) if f != 0]
+        nodes = [self.HuffmanNode(f, i) for (i, f) in enumerate(frequencies) if f != 0]
         nodes.sort()
 
         while len(nodes) > 1:
             l, r = nodes[: 2]
             nodes = nodes[2: ]
-            insort(nodes, [l[0] + r[0], [l, r]])
+            insort(nodes, self.HuffmanNode(l.weight + r.weight, [l, r]))
 
-        return nodes[0]
+        return nodes[0].to_list()
 
     def invert_tree(self, node, code=0, bits=0):
         if type(node[1]) is int:
-            return {chr(node[1]): (code, bits)}
+            return {node[1]: (code, bits)}
         else:
             d = {}
             d.update(self.invert_tree(node[1][0], code << 1, bits + 1))
@@ -457,16 +504,16 @@ class App(object):
             return d
 
     def huffman_decompress(self, tree, bitstream, size):
-        output = ""
+        output = bytearray() 
         while len(output) < size:
             node = tree
             while 1:
                 b = bitstream.read_bit()
                 node = node[1][b]
                 if type(node[1]) is int:
-                    output += chr(node[1])
+                    output.append(node[1])
                     break
-        return output
+        return bytes(output)
 
     def huffman_compress(self, encoding, data, bitstream):
         for c in data:
@@ -476,25 +523,25 @@ class App(object):
 
     def pack_item_values(self, is_weapon, values):
         i = 0
-        bytes = [0] * 32
+        itembytes = bytearray(32)
         for value, size in zip(values, self.item_sizes[is_weapon]):
             if value is None:
                 break
             j = i >> 3
             value = value << (i & 7)
             while value != 0:
-                bytes[j] |= value & 0xff
+                itembytes[j] |= value & 0xff
                 value = value >> 8
                 j = j + 1
             i = i + size
         if (i & 7) != 0:
             value = 0xff << (i & 7)
-            bytes[i >> 3] |= (value & 0xff)
-        return "".join(map(chr, bytes[: (i + 7) >> 3]))
+            itembytes[i >> 3] |= (value & 0xff)
+        return bytes(itembytes[: (i + 7) >> 3])
 
     def unpack_item_values(self, is_weapon, data):
         i = 8
-        data = " " + data
+        data = b' ' + data
         values = []
         end = len(data) * 8
         for size in self.item_sizes[is_weapon]:
@@ -504,7 +551,7 @@ class App(object):
                 continue
             value = 0
             for b in data[j >> 3: (i >> 3) - 1: -1]:
-                value = (value << 8) | ord(b)
+                value = (value << 8) | b
             values.append((value >> (i & 7)) &~ (0xff << size))
             i = j
         return values
@@ -519,17 +566,17 @@ class App(object):
 
     def xor_data(self, data, key):
         key = key & 0xffffffff
-        output = ""
+        output = bytearray()
         for c in data:
             key = (key * 279470273) % 4294967291
-            output += chr((ord(c) ^ key) & 0xff)
-        return output
+            output.append((c ^ key) & 0xff)
+        return bytes(output)
 
     def wrap_item(self, is_weapon, values, key):
         item = self.pack_item_values(is_weapon, values)
         header = struct.pack(">Bi", (is_weapon << 7) | self.item_struct_version, key)
-        padding = "\xff" * (33 - len(item))
-        h = binascii.crc32(header + "\xff\xff" + item + padding) & 0xffffffff
+        padding = b"\xff" * (33 - len(item))
+        h = binascii.crc32(header + b"\xff\xff" + item + padding) & 0xffffffff
         checksum = struct.pack(">H", ((h >> 16) ^ h) & 0xffff)
         body = self.xor_data(self.rotate_data_left(checksum + item, key & 31), key >> 5)
         return header + body
@@ -563,14 +610,14 @@ class App(object):
 
     def write_varint(self, f, i):
         while i > 0x7f:
-            f.write(chr(0x80 | (i & 0x7f)))
+            f.write(bytes([0x80 | (i & 0x7f)]))
             i = i >> 7
-        f.write(chr(i))
+        f.write(bytes([i]))
 
     def read_protobuf(self, data):
         fields = {}
         end_position = len(data)
-        bytestream = StringIO(data)
+        bytestream = BytesIO(data)
         while bytestream.tell() < end_position:
             key = self.read_varint(bytestream)
             field_number = key >> 3
@@ -594,14 +641,14 @@ class App(object):
         return value
 
     def read_repeated_protobuf_value(self, data, wire_type):
-        b = StringIO(data)
+        b = BytesIO(data)
         values = []
         while b.tell() < len(data):
             values.append(self.read_protobuf_value(b, wire_type))
         return values
 
     def write_protobuf(self, data):
-        b = StringIO()
+        b = BytesIO()
         # If the data came from a JSON file the keys will all be strings
         data = dict([(int(k), v) for (k, v) in data.items()])
         for key, entries in sorted(data.items()):
@@ -610,7 +657,7 @@ class App(object):
                     value = self.write_protobuf(value)
                     wire_type = 2
                 elif type(value) in (list, tuple) and wire_type != 2:
-                    sub_b = StringIO()
+                    sub_b = BytesIO()
                     for v in value:
                         self.write_protobuf_value(sub_b, wire_type, v)
                     value = sub_b.getvalue()
@@ -625,8 +672,8 @@ class App(object):
         elif wire_type == 1:
             b.write(struct.pack("<Q", value))
         elif wire_type == 2:
-            if type(value) is unicode:
-                value = value.encode("latin1")
+            if type(value) is str:
+                value = value.encode('utf-8')
             elif type(value) is list:
                 value = "".join(map(chr, value))
             self.write_varint(b, len(value))
@@ -637,7 +684,7 @@ class App(object):
             raise BorderlandsError("Unsupported wire type " + str(wire_type))
 
     def write_repeated_protobuf_value(self, data, wire_type):
-        b = StringIO()
+        b = BytesIO()
         for value in data:
             self.write_protobuf_value(b, wire_type, value)
         return b.getvalue()
@@ -682,7 +729,7 @@ class App(object):
                 safe_values = []
                 for (wire_type, v) in values:
                     if wire_type == 2:
-                        v = [ord(c) for c in v]
+                        v = list(v)
                     safe_values.append([wire_type, v])
                 fields["_raw"][k] = safe_values
         return fields
@@ -705,7 +752,7 @@ class App(object):
                 pbdata[key] = [[self.guess_wire_type(v), v] for v in value]
             elif type(child_inv) is int:
                 if repeated:
-                    b = StringIO()
+                    b = BytesIO()
                     for v in value:
                         self.write_protobuf_value(b, child_inv, v)
                     pbdata[key] = [[2, b.getvalue()]]
@@ -731,7 +778,7 @@ class App(object):
         return pbdata
 
     def guess_wire_type(self, value):
-        return 2 if isinstance(value, basestring) else 0
+        return 2 if isinstance(value, str) else 0
 
     def invert_structure(self, structure):
         inv = {}
@@ -746,7 +793,7 @@ class App(object):
         return inv
 
     def unwrap_bytes(self, value):
-        return [ord(d) for d in value]
+        return list(value)
 
     def wrap_bytes(self, value):
         return "".join(map(chr, value))
@@ -913,10 +960,10 @@ class App(object):
         if data[: 20] != hashlib.sha1(data[20: ]).digest():
             raise BorderlandsError("Invalid save file")
 
-        data = self.lzo1x_decompress("\xf0" + data[20: ])
-        size, wsg, version = struct.unpack(">I3sI", data[: 11])
+        data = self.lzo1x_decompress(b'\xf0' + data[20: ])
+        size, wsg, version = struct.unpack('>I3sI', data[: 11])
         if version != 2 and version != 0x02000000:
-            raise BorderlandsError("Unknown save version " + str(version))
+            raise BorderlandsError('Unknown save version {}'.format(version))
 
         if version == 2:
             crc, size = struct.unpack(">II", data[11: 19])
@@ -944,9 +991,9 @@ class App(object):
         tree = self.make_huffman_tree(player)
         self.write_huffman_tree(tree, bitstream)
         self.huffman_compress(self.invert_tree(tree), player, bitstream)
-        data = bitstream.getvalue() + "\x00\x00\x00\x00"
+        data = bitstream.getvalue() + b"\x00\x00\x00\x00"
 
-        header = struct.pack(">I3s", len(data) + 15, "WSG")
+        header = struct.pack(">I3s", len(data) + 15, b'WSG')
         header = header + struct.pack("%sIII" % (self.config.endian), 2, crc, len(player))
 
         data = self.lzo1x_1_compress(header + data)[1: ]
@@ -1003,7 +1050,7 @@ class App(object):
                     t = src[ip]
                     offset += (t | (src[ip + 1] << 8)) >> 2; ip += 2
                     if offset == 0:
-                        return str(dst)
+                        return bytes(dst)
                     self.copy_earlier(dst, offset + 0x4000, count + 2)
                 else:
                     self.copy_earlier(dst, 1 + (t >> 2) + (src[ip] << 2), 2); ip += 1
@@ -1075,7 +1122,7 @@ class App(object):
                         tt = t - 18
                         dst.append(0)
                         n, tt = divmod(tt, 255)
-                        dst.extend("\x00" * n)
+                        dst.extend(b"\x00" * n)
                         dst.append(tt)
                     dst.extend(src[ii: ii + t])
                     ii += t
@@ -1160,7 +1207,7 @@ class App(object):
                 tt = t - 18
                 dst.append(0)
                 n, tt = divmod(tt, 255)
-                dst.extend("\x00" * n)
+                dst.extend(b"\x00" * n)
                 dst.append(tt)
             dst.extend(src[ii: ii + t])
 
@@ -1168,7 +1215,7 @@ class App(object):
         dst.append(0)
         dst.append(0)
 
-        return str(dst)
+        return bytes(dst)
 
     def modify_save(self, data):
         """
@@ -1200,7 +1247,7 @@ class App(object):
 
         if any([x is not None for x in [config.money, config.eridium, config.moonstone, config.seraph, config.torgue]]):
             raw = player[6][0][1]
-            b = StringIO(raw)
+            b = BytesIO(raw)
             values = []
             while b.tell() < len(raw):
                 values.append(self.read_protobuf_value(b, 0))
@@ -1439,7 +1486,7 @@ class App(object):
             content = player.get(i)
             if content is None:
                 continue
-            print >>output, "; " + name
+            print('; {}'.format(name), file=output)
             for field in content:
                 raw = self.read_protobuf(field[1])[1][0][1]
 
@@ -1461,7 +1508,7 @@ class App(object):
                     count += 1
                     raw = self.replace_raw_item_key(raw, 0)
                     code = '%s(%s)' % (self.item_prefix, raw.encode("base64").strip())
-                    print >>output, code
+                    print(code, file=output)
             self.debug(' - %s exported: %d' % (name, count))
         self.debug(' - Empty items skipped: %d' % (skipped_count))
 
@@ -1673,20 +1720,20 @@ class App(object):
         """
         Stupid little function to send some output to STDERR.
         """
-        print >>sys.stderr, output
+        print(output, file=sys.stderr)
 
     def error(self, output):
         """
         Stupid little function to send some output to STDERR.
         """
-        print >>sys.stderr, 'ERROR: %s' % (output)
+        print('ERROR: {}'.format(output), file=sys.stderr)
 
     def debug(self, output):
         """
         Stupid little function to send some output to STDERR.
         """
         if self.config.verbose:
-            print >>sys.stderr, output
+            print(output, file=sys.stderr)
 
     def run(self):
         """
@@ -1714,7 +1761,7 @@ class App(object):
         # If we're reading from JSON, convert it
         if config.json:
             self.debug('Interpreting JSON data')
-            data = json.loads(save_data, encoding='latin1')
+            data = json.loads(save_data, encoding='utf-8')
             if not data.has_key('1'):
                 # This means the file had been output as 'json'
                 data = self.remove_structure(data, self.invert_structure(self.save_structure))
@@ -1750,6 +1797,7 @@ class App(object):
                         self.notice('')
                         self.notice('Output filename "%s" exists' % (config.output_filename))
                         sys.stderr.write('Continue and overwrite? [y|N] ')
+                        sys.stderr.flush()
                         answer = sys.stdin.readline()
                         if answer[0].lower() == 'y':
                             self.notice('')
@@ -1776,7 +1824,7 @@ class App(object):
                 if config.output == 'json':
                     self.debug('Parsing protobuf data for even more human-readable output')
                     data = self.apply_structure(data, self.save_structure)
-                player = json.dumps(data, encoding="latin1", sort_keys=True, indent=4)
+                player = json.dumps(data, sort_keys=True, indent=4)
             self.debug('Writing decoded savegame file')
             output_file.write(player)
 
