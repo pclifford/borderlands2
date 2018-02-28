@@ -253,6 +253,12 @@ To unlock TVHM:
 
     python bl2_save_edit.py --unlock tvhm old.sav new.sav
 
+### Ultimate Vault Hunter Mode (playthrough 3)
+
+To unlock UVHM (and also TVHM):
+
+    python bl2_save_edit.py --unlock uvhm old.sav new.sav
+
 ### Creature Slaughterdome (Borderlands 2 Only)
 
 **NOTE:** I'm unsure whether or not this would actually work on a system
@@ -411,7 +417,7 @@ usage: bltps_save_edit.py [-h] [-o {savegame,decoded,decodedjson,json,items}]
                           [--itemlevels ITEMLEVELS] [--forceitemlevels]
                           [--backpack BACKPACK] [--bank BANK]
                           [--gunslots {2,3,4}]
-                          [--unlock {tvhm,challenges,ammo}]
+                          [--unlock {tvhm,uvhm,challenges,ammo}]
                           [--challenges {zero,max,bonus}] [--maxammo]
                           input_filename output_filename
 
@@ -457,7 +463,7 @@ optional arguments:
   --bank BANK           Set size of bank(maximum is 24, "max" may be
                         specified) (default: None)
   --gunslots {2,3,4}    Set number of gun slots open (default: None)
-  --unlock {tvhm,challenges,ammo}
+  --unlock {tvhm,uvhm,challenges,ammo}
                         Game features to unlock (default: {})
   --challenges {zero,max,bonus}
                         Levels to set on challenge data (default: {})

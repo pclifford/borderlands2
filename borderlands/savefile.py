@@ -1349,7 +1349,11 @@ class App(object):
                     player[23] = [[2, "".join(map(chr, unlocked))]]
                 if notifications:
                     player[24] = [[2, "".join(map(chr, notifications))]]
-            if 'tvhm' in config.unlock:
+            if 'uvhm' in config.unlock:
+                self.debug(' - Unlocking UVHM (and TVHM)')
+                if player[7][0][1] < 2:
+                    player[7][0][1] = 2
+            elif 'tvhm' in config.unlock:
                 self.debug(' - Unlocking TVHM')
                 if player[7][0][1] < 1:
                     player[7][0][1] = 1

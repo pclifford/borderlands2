@@ -40,7 +40,7 @@ class AppTPS(App):
     item_struct_version = 10
 
     # Available choices for --unlock option
-    unlock_choices = ['tvhm', 'challenges', 'ammo']
+    unlock_choices = ['tvhm', 'uvhm', 'challenges', 'ammo']
 
     # Challenge categories
     challenge_cat_gravity = ChallengeCat("Low Gravity")

@@ -39,7 +39,7 @@ class AppBL2(App):
     item_struct_version = 7
 
     # Available choices for --unlock option
-    unlock_choices = ['slaughterdome', 'tvhm', 'challenges', 'ammo']
+    unlock_choices = ['slaughterdome', 'tvhm', 'uvhm', 'challenges', 'ammo']
 
     # Challenge categories
     challenge_cat_dlc4 = ChallengeCat("Hammerlock's Hunt", 4)
