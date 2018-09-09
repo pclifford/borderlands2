@@ -674,9 +674,9 @@ class App(object):
             b.write(struct.pack("<Q", value))
         elif wire_type == 2:
             if type(value) is str:
-                value = value.encode('utf-8')
+                value = value.encode('latin1')
             elif type(value) is list:
-                value = "".join(map(chr, value)).encode('utf-8')
+                value = "".join(map(chr, value)).encode('latin1')
             self.write_varint(b, len(value))
             b.write(value)
         elif wire_type == 5:
@@ -1523,7 +1523,7 @@ class App(object):
                 else:
                     count += 1
                     raw = self.replace_raw_item_key(raw, 0)
-                    code = '%s(%s)' % (self.item_prefix, base64.b64encode(raw).decode('utf-8'))
+                    code = '%s(%s)' % (self.item_prefix, base64.b64encode(raw).decode('latin1'))
                     print(code, file=output)
             self.debug(' - %s exported: %d' % (name, count))
         self.debug(' - Empty items skipped: %d' % (skipped_count))
@@ -1798,7 +1798,7 @@ class App(object):
         # If we're reading from JSON, convert it
         if config.json:
             self.debug('Interpreting JSON data')
-            data = json.loads(save_data, encoding='utf-8')
+            data = json.loads(save_data, encoding='latin1')
             if '1' not in data:
                 # This means the file had been output as 'json'
                 data = self.remove_structure(data, self.invert_structure(self.save_structure))
