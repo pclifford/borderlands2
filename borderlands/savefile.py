@@ -1556,7 +1556,7 @@ class App(object):
 
             code = line[prefix_length: -1]
             try:
-                raw = code.decode("base64")
+                raw = base64.b64decode(code)
             except binascii.Error:
                 continue
 
@@ -1566,7 +1566,7 @@ class App(object):
                 bank_count += 1
                 field = 41
                 entry = {1: [[2, raw]]}
-            elif (ord(raw[0]) & 0x80) == 0:
+            elif (raw[0] & 0x80) == 0:
                 item_count += 1
                 field = 53
                 entry = {1: [[2, raw]], 2: [[0, 1]], 3: [[0, 0]], 4: [[0, 1]]}
