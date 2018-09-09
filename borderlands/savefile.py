@@ -13,6 +13,7 @@ import sys
 import os
 import copy
 import itertools
+import base64
 
 class Config(argparse.Namespace):
     """
@@ -590,9 +591,9 @@ class App(object):
     def replace_raw_item_key(self, data, key):
         old_key = struct.unpack(">i", data[1: 5])[0]
         item = self.rotate_data_right(self.xor_data(data[5: ], old_key >> 5), old_key & 31)[2: ]
-        header = data[0] + struct.pack(">i", key)
-        padding = "\xff" * (33 - len(item))
-        h = binascii.crc32(header + "\xff\xff" + item + padding) & 0xffffffff
+        header = struct.pack(">Bi", data[0], key)
+        padding = b"\xff" * (33 - len(item))
+        h = binascii.crc32(header + b"\xff\xff" + item + padding) & 0xffffffff
         checksum = struct.pack(">H", ((h >> 16) ^ h) & 0xffff)
         body = self.xor_data(self.rotate_data_left(checksum + item, key & 31), key >> 5)
         return header + body
@@ -1522,7 +1523,7 @@ class App(object):
                 else:
                     count += 1
                     raw = self.replace_raw_item_key(raw, 0)
-                    code = '%s(%s)' % (self.item_prefix, raw.encode("base64").strip())
+                    code = '%s(%s)' % (self.item_prefix, base64.b64encode(raw).decode('utf-8'))
                     print(code, file=output)
             self.debug(' - %s exported: %d' % (name, count))
         self.debug(' - Empty items skipped: %d' % (skipped_count))
