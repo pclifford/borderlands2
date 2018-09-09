@@ -675,7 +675,7 @@ class App(object):
             if type(value) is str:
                 value = value.encode('utf-8')
             elif type(value) is list:
-                value = "".join(map(chr, value))
+                value = "".join(map(chr, value)).encode('utf-8')
             self.write_varint(b, len(value))
             b.write(value)
         elif wire_type == 5:
@@ -739,6 +739,13 @@ class App(object):
         pbdata.update(data.get("_raw", {}))
         for k, value in data.items():
             if k == "_raw":
+                # Fix for Python 3 - these inner lists need to be
+                # run through wrap_bytes, else they'll be interpreted
+                # weirdly.
+                for raw_k, raw_values in value.items():
+                    for idx, (wire_type, v) in enumerate(raw_values):
+                        if wire_type == 2:
+                            raw_values[idx][1] = self.wrap_bytes(v)
                 continue
             mapping = inv.get(k)
             if mapping is None:
@@ -759,7 +766,8 @@ class App(object):
                 else:
                     pbdata[key] = [[child_inv, value]]
             elif type(child_inv) is tuple:
-                value = [value] if not repeated else value
+                if not repeated:
+                    value = [value]
                 values = []
                 for v in map(child_inv[1], value):
                     if type(v) is list:
@@ -778,7 +786,10 @@ class App(object):
         return pbdata
 
     def guess_wire_type(self, value):
-        return 2 if isinstance(value, str) else 0
+        if isinstance(value, str) or isinstance(value, bytes):
+            return 2
+        else:
+            return 0
 
     def invert_structure(self, structure):
         inv = {}
@@ -796,7 +807,7 @@ class App(object):
         return list(value)
 
     def wrap_bytes(self, value):
-        return "".join(map(chr, value))
+        return bytes(value)
 
     def unwrap_float(self, v):
         return struct.unpack("<f", struct.pack("<I", v))[0]
@@ -896,16 +907,16 @@ class App(object):
         Change the number of challenges at your own risk!
         """
         
-        parts = []
-        parts.append(struct.pack('%sIIH' % (self.config.endian), data['unknown'], (len(data['challenges'])*12)+2, len(data['challenges'])))
+        b = BytesIO()
+        b.write(struct.pack('%sIIH' % (self.config.endian), data['unknown'], (len(data['challenges'])*12)+2, len(data['challenges'])))
         save_challenges = data['challenges']
         for challenge in save_challenges:
-            parts.append(struct.pack('%sHBIBI' % (self.config.endian), challenge['id'],
+            b.write(struct.pack('%sHBIBI' % (self.config.endian), challenge['id'],
                 challenge['first_one'],
                 challenge['total_value'],
                 challenge['second_one'],
                 challenge['previous_value']))
-        return ''.join(parts)
+        return b.getvalue()
 
     def unwrap_item_info(self, value):
         is_weapon, item, key = self.unwrap_item(value)
@@ -1739,6 +1750,27 @@ class App(object):
         if self.config.verbose:
             print(output, file=sys.stderr)
 
+    def conv_binary_to_str(self, data):
+        """
+        In Python 2, we can dump to a JSON object directly, but Python 3
+        doesn't like that some of the data is binary (since that's invalid in
+        JSON).  Python 2 would just cast those as strings automatically.
+        So this will loop through and convert everything that's binary
+        into a string.
+        """
+        if type(data) == bytes:
+            return data.decode('latin1')
+        elif type(data) == dict:
+            for key in data.keys():
+                data[key] = self.conv_binary_to_str(data[key])
+            return data
+        elif type(data) == list:
+            for idx in range(len(data)):
+                data[idx] = self.conv_binary_to_str(data[idx])
+            return data
+        else:
+            return data
+
     def run(self):
         """
         Main routine - loads data, does things to it, and then writes
@@ -1766,7 +1798,7 @@ class App(object):
         if config.json:
             self.debug('Interpreting JSON data')
             data = json.loads(save_data, encoding='utf-8')
-            if not data.has_key('1'):
+            if '1' not in data:
                 # This means the file had been output as 'json'
                 data = self.remove_structure(data, self.invert_structure(self.save_structure))
             save_data = self.wrap_player_data(self.write_protobuf(data))
@@ -1810,7 +1842,11 @@ class App(object):
                             self.notice('')
                             self.notice('Exiting!')
                             return
-            output_file = open(config.output_filename, 'wb')
+            if config.output == 'savegame' or config.output == 'decoded':
+                mode = 'wb'
+            else:
+                mode = 'w'
+            output_file = open(config.output_filename, mode)
 
         # Now output based on what we've been told to do
         if config.output == 'items':
@@ -1828,7 +1864,7 @@ class App(object):
                 if config.output == 'json':
                     self.debug('Parsing protobuf data for even more human-readable output')
                     data = self.apply_structure(data, self.save_structure)
-                player = json.dumps(data, sort_keys=True, indent=4)
+                player = json.dumps(self.conv_binary_to_str(data), sort_keys=True, indent=4)
             self.debug('Writing decoded savegame file')
             output_file.write(player)
 
