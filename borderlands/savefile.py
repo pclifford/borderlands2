@@ -1327,7 +1327,7 @@ class App(object):
             new_size = self.min_bank_size + (sdus * 2)
             if size != new_size:
                 self.debug('   - Resetting bank size to %d to match SDU count' % (new_size))
-            if player.has_key(56):
+            if 56 in player:
                 player[56][0][1] = new_size
             else:
                 player[56] = [[0, new_size]]
@@ -1348,9 +1348,9 @@ class App(object):
         if len(config.unlock) > 0:
             if 'slaughterdome' in config.unlock:
                 unlocked, notifications = [], []
-                if player.has_key(23):
+                if 23 in player:
                     unlocked = map(ord, player[23][0][1])
-                if player.has_key(24):
+                if 24 in player:
                     notifications = map(ord, player[24][0][1])
                 self.debug(' - Unlocking Creature Slaughterdome')
                 if 1 not in unlocked:
