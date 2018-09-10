@@ -1417,8 +1417,9 @@ class App(object):
             seen_ammo = {}
             for idx, protobuf in enumerate(player[11]):
                 data = self.apply_structure(self.read_protobuf(protobuf[1]), save_structure[11][2])
-                if data['resource'] in self.ammo_resource_lookup:
-                    ammo_type = self.ammo_resource_lookup[data['resource']]
+                resource = data['resource'].decode('latin1')
+                if resource in self.ammo_resource_lookup:
+                    ammo_type = self.ammo_resource_lookup[resource]
                     seen_ammo[ammo_type] = True
                     if ammo_type in max_ammo:
 
@@ -1432,7 +1433,7 @@ class App(object):
                     else:
                         self.error('Ammo type "%s" / pool "%s" not found!' % (ammo_type, data['pool']))
                 else:
-                    self.error('Ammo pool "%s" not found!' % (data['pool']))
+                    self.error('Ammo pool "%s" not found!' % (resource))
 
             # Also, early in the game there isn't an entry in here for, for instance,
             # rocket launchers.  So let's make sure that all our known ammo exists.
