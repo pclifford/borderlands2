@@ -1,15 +1,3 @@
-# WARNING
-
-This branch is a pretty early stage of porting this tool to Python 3.
-Basic savefile editing does seem to work after some limited testing, but
-it's barely been tested, and there are some things which simply don't
-work at all (such as outputting to `json` or `decodedjson` formats).
-Use at your own risk!
-
-If I ever do get to the point of being comfortable with the app's basic
-functionality (and finish fixing things like the JSON output) then I'll
-also want to go ahead and move to new-style string formatting, etc.
-
 # Borderlands 2 / Borderlands: The Pre-Sequel Save File Modification Tool
 
 This is a simple command line utility to extract and modify player information
@@ -24,7 +12,8 @@ Note the following before trying to use it:
 * It does not provide any mechanisms for creating items or weapons, or even
   editing items/weapons in a useful fashion.
 * It is a proof of concept and can corrupt your save files **(take backups!)**
-* It requires a working Python 2 interpreter (2.6 or later, not 3)
+* It requires a working Python 3 interpreter (if you need the old Python 2
+  version, change to the `python2` branch)
 
 This repository is a fork of the original at https://github.com/pclifford/borderlands2
 
