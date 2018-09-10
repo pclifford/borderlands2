@@ -285,6 +285,9 @@ class Challenge(object):
         else:
             return None
 
+    def __lt__(self, other):
+        return self.id_text.lower() < other.id_text.lower()
+
 class App(object):
     """
     Our main application class.
@@ -1347,20 +1350,18 @@ class App(object):
 
         if len(config.unlock) > 0:
             if 'slaughterdome' in config.unlock:
-                unlocked, notifications = [], []
+                unlocked, notifications = b'', b''
                 if 23 in player:
-                    unlocked = map(ord, player[23][0][1])
+                    unlocked = player[23][0][1]
                 if 24 in player:
-                    notifications = map(ord, player[24][0][1])
+                    notifications = player[24][0][1]
                 self.debug(' - Unlocking Creature Slaughterdome')
                 if 1 not in unlocked:
-                    unlocked.append(1)
+                    unlocked += b"\x01"
                 if 1 not in notifications:
-                    notifications.append(1)
-                if unlocked:
-                    player[23] = [[2, "".join(map(chr, unlocked))]]
-                if notifications:
-                    player[24] = [[2, "".join(map(chr, notifications))]]
+                    notifications += b"\x01"
+                player[23] = [[2, unlocked]]
+                player[24] = [[2, notifications]]
             if 'uvhm' in config.unlock:
                 self.debug(' - Unlocking UVHM (and TVHM)')
                 if player[7][0][1] < 2:
@@ -1375,8 +1376,8 @@ class App(object):
                 inverted_structure = self.invert_structure(save_structure[38][2])
                 seen_challenges = {}
                 for unlock in challenge_unlocks:
-                    seen_challenges[unlock['name']] = True
-                for challenge in self.challenges.values():
+                    seen_challenges[unlock['name'].decode('latin1')] = True
+                for challenge in sorted(self.challenges.values()):
                     if challenge.id_text not in seen_challenges:
                         player[38].append([2, self.write_protobuf(self.remove_structure(dict([
                             ('dlc_id', challenge.cat.dlc),
