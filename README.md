@@ -32,7 +32,7 @@ two.
 
 # Running the program
 
-There are two executables: `bl2_save_edit.py` and `bltps_save_edit.py`, for
+There are two executables: `bl2_save_edit.py` and `tps_save_edit.py`, for
 Borderlands 2 and Borderlands: The Pre-Sequel, respectively.  The functionality
 of both is virtually identical, only differing in a few of the modification
 options (`--moonstone` instead of `--eridium`, for instance).
@@ -150,7 +150,7 @@ reduce this to a maxmimum of 500 if you attempt to add more:
 Set available Moonstone with the `--moonstone` option.  Note that the game will
 reduce this to a maxmimum of 500 if you attempt to add more:
 
-    python bltps_save_edit.py --moonstone 500 old.sav new.sav
+    python tps_save_edit.py --moonstone 500 old.sav new.sav
 
 ## Seraph Crystals (Borderlands 2 Only)
 
@@ -399,7 +399,7 @@ Sample output from that option is shown below, though might get out-of-date
 if I forget to update this README after updating the program:
 
 ```
-usage: bltps_save_edit.py [-h] [-o {savegame,decoded,decodedjson,json,items}]
+usage: tps_save_edit.py [-h] [-o {savegame,decoded,decodedjson,json,items}]
                           [-i IMPORT_ITEMS] [-j] [-b] [-q] [-f] [--name NAME]
                           [--save-game-id SAVE_GAME_ID] [--level LEVEL]
                           [--money MONEY] [--moonstone MOONSTONE]
