@@ -48,6 +48,7 @@ class Config(argparse.Namespace):
     bank = None
     gunslots = None
     maxammo = None
+    oplevel = None
     unlock = {}
     challenges = {}
     
@@ -79,7 +80,7 @@ class Config(argparse.Namespace):
                 self.money, self.eridium, self.moonstone,
                 self.seraph, self.seraph, self.torgue,
                 self.itemlevels, self.backpack, self.bank,
-                self.gunslots, self.maxammo]]):
+                self.gunslots, self.maxammo, self.oplevel]]):
             self.changes = True
         if any([len(var) > 0 for var in [self.unlock, self.challenges]]):
             self.changes = True
@@ -1308,6 +1309,59 @@ class App(object):
                             self.debug('   NOTICE: At least one item is level 1 and will not be updated.')
                             self.debug('   Use --forceitemlevels to update these items')
 
+        # OP Level is stored in a weird little custom item.  See Gibbed's
+        # Gibbed.Borderlands2.FileFormats/SaveExpansion.cs for a bit more
+        # rigorous example of how to process those properly.
+        # Note that this needs to happen before the unlock section, since
+        # it may trigger an unlock of UVHM if that wasn't already specified.
+        if config.oplevel is not None:
+            set_op_level = False
+            self.debug(' - Setting OP Level to %d' % (config.oplevel))
+
+            # Constructing the new value ahead of time since we'll need it
+            # no matter what else happens below.
+            # This little signed/unsigned dance is awful, but it lets us put the
+            # value in as the same format we got it.  So: awesome.  Endianness
+            # shouldn't actually matter here so long as it's consistent.
+            new_field_data = struct.unpack(
+                    '>Q',
+                    struct.pack('>q', -(4 | (max(0, min(config.oplevel, 0x7FFFFF)) << 8)))
+                    )[0]
+
+            # Now actually get on with it
+            if config.oplevel > 0:
+                if player[7][0][1] < 2 and 'uvhm' not in config.unlock:
+                    config.unlock['uvhm'] = True
+                    self.debug('   - Also unlocking UVHM mode')
+            for field in player[53]:
+                field_data = self.read_protobuf(field[1])
+                if 2 in field_data:
+                    is_weapon, item, key = self.unwrap_item(field_data[1][0][1])
+                    if item[0] == 255 and not any([val != 0 for val in item[1:]]):
+                        idnum = (-field_data[2][0][1]) & 0xFF
+                        # An ID of 4 is the one we're after
+                        if idnum == 4:
+                            field_data[2][0][1] = new_field_data
+                            field[1] = self.write_protobuf(field_data)
+                            set_op_level = True
+                            break
+            if not set_op_level:
+                # If we didn't find an existing structure, we'll have to add our
+                # own in
+                self.debug('   - Creating new OP Level "virtual" item')
+                # More magic from Gibbed's code
+                base_data = b"\x07\x00\x00\x00\x00\x39\x2a\xff" + \
+                        b"\x00\x00\x00\x00\x00\x00\x00\x00" + \
+                        b"\x00\x00\x00\x00\x00\x00\x00\x00" + \
+                        b"\x00\x00\x00\x00\x00\x00\x00\x00" + \
+                        b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                entry = {}
+                entry[1] = [[2, base_data]]
+                entry[2] = [[0, new_field_data]]
+                entry[3] = [[0, 0]]
+                entry[4] = [[0, 0]]
+                player[53].append([2, self.write_protobuf(entry)])
+
         if config.backpack is not None:
             self.debug(' - Setting backpack size to %d' % (config.backpack))
             size = config.backpack
@@ -1508,17 +1562,19 @@ class App(object):
             for field in content:
                 raw = self.read_protobuf(field[1])[1][0][1]
 
-                # For whatever reason, Borderlands seems to sometimes store items
-                # which show up as [255, 0, 0, 0, ..., 0] in "item" after being
-                # passed to unwrap_item().  Basically an "empty" item which doesn't
-                # actually show up ingame (or in Gibbed).  Their base64
-                # representations end up looking like this:
+                # Borderlands uses some sort-of "fake" items to store some DLC
+                # data.  As per the Gibbed sourcecode, this includes:
+                #   1. "Currency On Hand"  (?)
+                #   2. Last Playthrough Number / Playthroughs completed
+                #   3. "Has played in UVHM"
+                #   4. Overpower levels unlocked
+                #   5. Last Overpower selection
                 #
-                #   BL2(CgAAAABs+/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==)
-                #
-                # There always seems to be at least a couple of them, and there's
-                # no real reason to export them since they're not real items and
-                # don't contain any information.  So, we're going to skip them.
+                # The data for these is stored in the `unknown2` field, by this
+                # app's data definitions (or the protobuf's [2] index).  Regardless,
+                # these aren't actual items, so we're skipping them.  See Gibbed's
+                # Gibbed.Borderlands2.FileFormats/SaveExpansion.cs for details
+                # on how to parse the `unknown2` field.
                 is_weapon, item, key = self.unwrap_item(raw)
                 if item[0] == 255 and not any([val != 0 for val in item[1:]]):
                     skipped_count += 1
@@ -1528,7 +1584,9 @@ class App(object):
                     code = '%s(%s)' % (self.item_prefix, base64.b64encode(raw).decode('latin1'))
                     print(code, file=output)
             self.debug(' - %s exported: %d' % (name, count))
-        self.debug(' - Empty items skipped: %d' % (skipped_count))
+        # Don't bother reporting on skipped items, actually, since I now
+        # know what they're actually used for.
+        #self.debug(' - Empty items skipped: %d' % (skipped_count))
 
     def import_items(self, data, codelist):
         """
@@ -1601,6 +1659,12 @@ class App(object):
 
         # This is implemented in AppBL2 and AppBLTPS
         self.setup_save_structure()
+
+    def setup_game_specific_args(self, parser):
+        """
+        Function to add game-specific arguments.  By default it does nothing,
+        must be overridden
+        """
 
     def parse_args(self, argv):
         """
@@ -1727,6 +1791,9 @@ class App(object):
         parser.add_argument('output_filename',
                 help='Output filename, can be "-" to specify STDOUT'
                 )
+
+        # Additional game-specific arguments
+        self.setup_game_specific_args(parser)
 
         # Actually parse the args
         parser.parse_args(argv, config)

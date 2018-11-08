@@ -1042,6 +1042,29 @@ class AppBL2(App):
                 help='Torgue tokens to set for character',
                 )
 
+    @staticmethod
+    def oplevel(value):
+        """
+        Helper function for argparse which requires a valid Overpower level
+        """
+        try:
+            intval = int(value)
+        except ValueError:
+            raise argparse.ArgumentTypeError('OP Levels must be from 0 to 8')
+        if intval < 0 or intval > 8:
+            raise argparse.ArgumentTypeError('OP Levels must be from 0 to 8')
+        return intval
+
+    def setup_game_specific_args(self, parser):
+        """
+        Adds BL2-specific arguments
+        """
+
+        parser.add_argument('--oplevel',
+                type=AppBL2.oplevel,
+                help='OP Level to unlock (will also unlock TVHM/UVHM if not already unlocked)',
+                )
+
     def setup_save_structure(self):
         """
         Sets up our main save_structure var which controls how we read the file

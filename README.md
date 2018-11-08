@@ -258,6 +258,15 @@ The Creature Slaughterdome might be unlockable with:
 
     python bl2_save_edit.py --unlock slaughterdome old.sav new.sav
 
+## Overpower Levels (Borderlands 2 Only)
+
+To set OP Levels:
+
+    python bl2_save_edit.py --oplevel 8 old.sav new.sav
+
+This will also trigger an unlock of TVHM/UVHM if the save does not already
+have UVHM unlocked.
+
 ## Ammo
 
 The `--maxammo` option can be used to refill all ammo to its current maximum
