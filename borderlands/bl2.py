@@ -1050,9 +1050,9 @@ class AppBL2(App):
         try:
             intval = int(value)
         except ValueError:
-            raise argparse.ArgumentTypeError('OP Levels must be from 0 to 8')
-        if intval < 0 or intval > 8:
-            raise argparse.ArgumentTypeError('OP Levels must be from 0 to 8')
+            raise argparse.ArgumentTypeError('OP Levels must be from 0 to 10')
+        if intval < 0 or intval > 10:
+            raise argparse.ArgumentTypeError('OP Levels must be from 0 to 10')
         return intval
 
     def setup_game_specific_args(self, parser):

@@ -89,12 +89,12 @@ class Config(argparse.Namespace):
         if self.input_filename == self.output_filename and self.input_filename != '-':
             parser.error('input_filename and output_filename cannot be the same file')
 
-        # If the user specified --level, make sure it's from 1 to 72
+        # If the user specified --level, make sure it's from 1 to 80
         if self.level is not None:
             if self.level < 1:
                 parser.error('level must be at least 1')
-            if self.level > 72:
-                parser.error('level can be at most 72')
+            if self.level > 80:
+                parser.error('level can be at most 80')
 
         # Sort out 'backpack'
         if self.backpack is not None:
@@ -423,6 +423,14 @@ class App(object):
         8798786,    # lvl 70
         9155282,    # lvl 71
         9520931,    # lvl 72
+        9895837,    # lvl 73
+        10280103,    # lvl 74
+        10673830,    # lvl 75
+        11077120,    # lvl 76
+        11490077,    # lvl 77
+        11912801,    # lvl 78
+        12345393,    # lvl 79
+        12787955,    # lvl 80
     ]
 
     def read_huffman_tree(self, b):
@@ -1726,7 +1734,7 @@ class App(object):
 
         parser.add_argument('--level',
                 type=int,
-                help='Set the character to this level (from 1 to 72)',
+                help='Set the character to this level (from 1 to 80)',
                 )
 
         parser.add_argument('--money',
