@@ -14,6 +14,9 @@ class AppTPS(App):
     # Item export/import prefix
     item_prefix = 'BLOZ'
 
+    # Max char level
+    max_level = 70
+
     # The only difference here is that BLTPS has "laser"
     black_market_keys = (
         'rifle', 'pistol', 'launcher', 'shotgun', 'smg',

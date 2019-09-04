@@ -14,6 +14,9 @@ class AppBL2(App):
     # Item export/import prefix
     item_prefix = 'BL2'
 
+    # Max char level
+    max_level = 80
+
     # The only difference here is that BLTPS has "laser"
     black_market_keys = (
         'rifle', 'pistol', 'launcher', 'shotgun', 'smg',

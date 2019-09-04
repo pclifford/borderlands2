@@ -27,6 +27,7 @@ class Config(argparse.Namespace):
     bigendian = False
     verbose = True
     force = False
+    copy_nvhm_missions = False
 
     # Given by the user, strings
     import_items = None
@@ -80,7 +81,8 @@ class Config(argparse.Namespace):
                 self.money, self.eridium, self.moonstone,
                 self.seraph, self.seraph, self.torgue,
                 self.itemlevels, self.backpack, self.bank,
-                self.gunslots, self.maxammo, self.oplevel]]):
+                self.gunslots, self.maxammo, self.oplevel,
+                self.copy_nvhm_missions]]):
             self.changes = True
         if any([len(var) > 0 for var in [self.unlock, self.challenges]]):
             self.changes = True
@@ -93,8 +95,8 @@ class Config(argparse.Namespace):
         if self.level is not None:
             if self.level < 1:
                 parser.error('level must be at least 1')
-            if self.level > 80:
-                parser.error('level can be at most 80')
+            if self.level > app.max_level:
+                parser.error('level can be at most {}'.format(app.max_level))
 
         # Sort out 'backpack'
         if self.backpack is not None:
@@ -1410,6 +1412,14 @@ class App(object):
                 slots[3][0][1] = n - 2
             player[13][0][1] = self.write_protobuf(slots)
 
+        if config.copy_nvhm_missions:
+            self.debug(' - Copying NVHM mission status to TVHM+UVHM')
+            if 'uvhm' not in config.unlock:
+                config.unlock['uvhm'] = True
+                self.debug('   - Also unlocking UVHM mode')
+            player[18][1][1] = player[18][0][1]
+            player[18][2][1] = player[18][0][1]
+
         if len(config.unlock) > 0:
             if 'slaughterdome' in config.unlock:
                 unlocked, notifications = b'', b''
@@ -1734,7 +1744,7 @@ class App(object):
 
         parser.add_argument('--level',
                 type=int,
-                help='Set the character to this level (from 1 to 80)',
+                help='Set the character to this level (from 1 to {})'.format(self.max_level),
                 )
 
         parser.add_argument('--money',
@@ -1762,13 +1772,19 @@ class App(object):
                 )
 
         parser.add_argument('--bank',
-                help='Set size of bank(maximum is %d, "max" may be specified)' % (self.max_bank_size),
+                help='Set size of bank (maximum is %d, "max" may be specified)' % (self.max_bank_size),
                 )
 
         parser.add_argument('--gunslots',
                 type=int,
                 choices=[2,3,4],
                 help='Set number of gun slots open',
+                )
+
+        parser.add_argument('--copy-nvhm-missions',
+                dest='copy_nvhm_missions',
+                action='store_true',
+                help='Copies NVHM mission state to both TVHM and UVHM modes.  Also unlocks TVHM/UVHM',
                 )
 
         parser.add_argument('--unlock',

@@ -315,6 +315,16 @@ bonuses:
 
     python bl2_save_edit.py --challenges max --challenges bonus old.sav new.sav
 
+## Copying mission data from NVHM to TVHM+UVHM
+
+This is a very specific thing which I can't imagine anyone but me would ever
+be looking for, but it's in here anyway because I needed it once.  Basically,
+whatever the mission state is from NVHM will be copied to the other two
+playthroughs, so they'll appear to be at the exact same state.  This will
+also unlock TVHM/UVHM if need be.
+
+    python bl2_save_edit.py --copy-nvhm-missions old.sav new.sav
+
 # Combining Commandline Options
 
 In general, the various options can be combined.  To make a few changes to a
