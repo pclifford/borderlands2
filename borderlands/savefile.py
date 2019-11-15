@@ -1182,7 +1182,7 @@ class App(object):
                     m_len -= 33
                     dst.append(32)
                     n, m_len = divmod(m_len, 255)
-                    dst.extend("\x00" * n)
+                    dst.extend(b"\x00" * n)
                     dst.append(m_len)
                 dst.append((m_off << 2) & 0xff)
                 dst.append((m_off >> 6) & 0xff)
@@ -1194,7 +1194,7 @@ class App(object):
                     m_len -= 9
                     dst.append(0xff & (16 | ((m_off >> 11) & 8)))
                     n, m_len = divmod(m_len, 255)
-                    dst.extend("\x00" * n)
+                    dst.extend(b"\x00" * n)
                     dst.append(m_len)
                 dst.append((m_off << 2) & 0xff)
                 dst.append((m_off >> 6) & 0xff)
