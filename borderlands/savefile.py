@@ -1243,7 +1243,7 @@ class App(object):
 
         return bytes(dst)
 
-    def modify_save(self, data):
+    def modify_save(self, data, input_filename=None):
         """
         Performs a set of modifications on file data, based on our
         config object.  "data" should be the raw data from a save
@@ -1419,6 +1419,63 @@ class App(object):
                 self.debug('   - Also unlocking UVHM mode')
             player[18][1][1] = player[18][0][1]
             player[18][2][1] = player[18][0][1]
+
+        # Playing around with mission stuff.  Was thinking about including some
+        # functions to mess around with level stats (like gamestage, etc) but will
+        # probably not, in the end.  This was used to generate an index for my
+        # big ol' collection of BL2/TPS savegames, though.
+        #
+        # I'm leaving this stuff in here just for my own purposes, in case I change
+        # my mind, or need to re-do or tweak my savegame archives.
+        # BL2: http://apocalyptech.com/games/bl-saves/
+        # TPS: http://apocalyptech.com/games/bl-saves/tps.php
+        # Github (both): https://github.com/apocalyptech/blsaves
+
+        if False:
+            MSTAT = {
+                    0: 'Not Started',
+                    1: 'Active',
+                    2: 'Required Objectives Complete',
+                    3: 'Ready to Turn In',
+                    4: 'Completed',
+                    5: 'Failed',
+                    }
+            #print('')
+            #print('Last-visited teleporter: {}'.format(player[17][0][1].decode('latin1')))
+            nvhm_proto = self.read_protobuf(player[18][0][1])
+            cur_mission = nvhm_proto[2][0][1].decode('latin1')
+            #print('All active missions:')
+            active_missions = []
+            turnin_missions = []
+
+            last_visited = 'None'
+            # This exists in BL2 but not TPS
+            if 17 in player:
+                last_visited = player[17][0][1].decode('latin1')
+            # This exists in TPS but not BL2
+            if 8 in nvhm_proto:
+                last_visited = nvhm_proto[8][0][1].decode('latin1')
+
+            if 3 in nvhm_proto:
+                for mission_data in nvhm_proto[3]:
+                    mission = self.read_protobuf(mission_data[1])
+                    mission_name = mission[1][0][1].decode('latin1')
+                    mission_status = mission[2][0][1]
+                    gamestage = mission[11][0][1]
+                    if mission_status > 0:
+                        if mission_status < 3:
+                            active_missions.append(mission_name)
+                        elif mission_status < 4:
+                            turnin_missions.append(mission_name)
+                            #print( ' * {} (level {}): {}'.format(mission_name, gamestage, MSTAT[mission_status]))
+                            #if cur_mission == mission_name:
+                            #    print('   ^^^^^^^^ currently-active mission')
+            print('{}|{}|{}|{}'.format(
+                input_filename,
+                last_visited,
+                ','.join(active_missions),
+                ','.join(turnin_missions),
+                ))
 
         if len(config.unlock) > 0:
             if 'slaughterdome' in config.unlock:
@@ -1907,7 +1964,7 @@ class App(object):
         # Now perform any changes, if requested
         if config.changes:
             self.debug('Performing requested changes')
-            save_data = self.modify_save(save_data)
+            save_data = self.modify_save(save_data, config.input_filename)
 
         # Open our output file
         self.debug('')
