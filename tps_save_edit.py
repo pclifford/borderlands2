@@ -5,6 +5,7 @@ import traceback
 from borderlands.bltps import AppTPS
 
 if __name__ == "__main__":
+    version_check()
     try:
         app = AppTPS(sys.argv[1:])
         app.run()

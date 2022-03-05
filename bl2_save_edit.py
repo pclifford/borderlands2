@@ -2,9 +2,11 @@
 
 import sys
 import traceback
+from borderlands import version_check
 from borderlands.bl2 import AppBL2
 
 if __name__ == "__main__":
+    version_check()
     try:
         app = AppBL2(sys.argv[1:])
         app.run()

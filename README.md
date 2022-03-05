@@ -13,7 +13,8 @@ Note the following before trying to use it:
   editing items/weapons in a useful fashion.
 * It is a proof of concept and can corrupt your save files **(take backups!)**
 * It requires a working Python 3 interpreter (if you need the old Python 2
-  version, change to the `python2` branch)
+  version, change to the `python2` branch).  As of March 5, 2022, the minimum
+  Python version is 3.9.
 
 This repository is a fork of the original at https://github.com/pclifford/borderlands2
 

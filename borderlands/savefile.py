@@ -1948,7 +1948,7 @@ class App(object):
         # If we're reading from JSON, convert it
         if config.json:
             self.debug('Interpreting JSON data')
-            data = json.loads(save_data, encoding='latin1')
+            data = json.loads(save_data)
             if '1' not in data:
                 # This means the file had been output as 'json'
                 data = self.remove_structure(data, self.invert_structure(self.save_structure))
