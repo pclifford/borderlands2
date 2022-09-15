@@ -2,6 +2,7 @@
 
 import sys
 import traceback
+from borderlands import version_check
 from borderlands.bltps import AppTPS
 
 if __name__ == "__main__":
