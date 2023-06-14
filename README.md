@@ -316,6 +316,22 @@ bonuses:
 
     python bl2_save_edit.py --challenges max --challenges bonus old.sav new.sav
 
+## Fixing Negative-Number Challenges
+
+Some people find that their game starts showing huge negative numbers for their
+challenge variables, caused by the savegame values overflowing the in-game
+datatypes.  (Presumably due to either Cheat Engine shenanigans, or joining
+lobbies of folks doing Cheat Engine shenanigans or the like.)  Some threads
+on the issue: [one](https://steamcommunity.com/app/49520/discussions/0/1327844097129063344/),
+[two](https://steamcommunity.com/app/49520/discussions/0/38596748231645372/).
+The `--fix-challenge-overflow` option can fix those up for you, setting them
+instead to the max value:
+
+    python bl2_save_edit.py --fix-challenge-overflow old.sav new.sav
+
+Thanks to [Loot Midget](https://github.com/apocalyptech/borderlands2/pull/5)
+for this PR!
+
 ## Copying mission data from NVHM to TVHM+UVHM
 
 This is a very specific thing which I can't imagine anyone but me would ever

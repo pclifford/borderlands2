@@ -1878,7 +1878,7 @@ class App(object):
 
         parser.add_argument('--fix-challenge-overflow',
                 action='store_true',
-                help='Fix values for challenges that look as huge negative numbers',
+                help='Fix values for challenges which appear as huge negative numbers',
                 )
 
         # Positional args
