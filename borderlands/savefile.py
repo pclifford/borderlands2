@@ -1609,6 +1609,19 @@ class App(object):
             # Re-wrap the data
             player[15][0][1] = self.wrap_challenges(data)
 
+        if config.fix_challenge_overflow:
+            data = self.unwrap_challenges(player[15][0][1])
+
+            # Loop through
+            for save_challenge in data['challenges']:
+                if save_challenge['id'] in self.challenges:
+                    if save_challenge['total_value'] >= 2000000000:
+                        print(f'fix overflow in: {save_challenge["_name"]}')
+                        save_challenge['total_value'] = self.challenges[save_challenge['id']].get_max() + 1
+
+            # Re-wrap the data
+            player[15][0][1] = self.wrap_challenges(data)
+
         if config.name is not None and len(config.name) > 0:
             self.debug(' - Setting character name to "%s"' % (config.name))
             data = self.apply_structure(self.read_protobuf(player[19][0][1]), save_structure[19][2])
@@ -1861,6 +1874,11 @@ class App(object):
         parser.add_argument('--maxammo',
                 action='store_true',
                 help='Fill all ammo pools to their maximum',
+                )
+
+        parser.add_argument('--fix-challenge-overflow',
+                action='store_true',
+                help='Fix values for challenges that look as huge negative numbers',
                 )
 
         # Positional args
