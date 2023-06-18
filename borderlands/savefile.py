@@ -926,7 +926,7 @@ class App(object):
     def print_explored_levels(self, player) -> None:
         levels_to_travel_station_map = self.levels_to_travel_station_map()
         if not levels_to_travel_station_map:
-            self.error('areas_to_travel_station_map is empty in class %s' % (self.__class__.__name__,))
+            self.error('levels_to_travel_station_map is empty in class %s' % (self.__class__.__name__,))
             return
 
         unique_names = set(levels_to_travel_station_map.keys())
@@ -938,8 +938,8 @@ class App(object):
             label = '  %s (%s)' % (travel_station, name)
             labels.append(label)
         if labels:
-            self.notice('Not fully explored areas:\n%s' % ('\n'.join(sorted(labels))))
-        self.notice('Total not fully explored areas: %d' % len(unexplored))
+            self.notice('Not fully explored levels:\n%s' % ('\n'.join(sorted(labels))))
+        self.notice('Total not fully explored levels: %d' % len(unexplored))
 
     def wrap_challenges(self, data):
         """
