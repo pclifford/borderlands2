@@ -1,7 +1,9 @@
 #! /usr/bin/env python
 
 import argparse
-from .savefile import App, ChallengeCat, Challenge, Config, DictAction
+
+from . import bl2data
+from .savefile import App, ChallengeCat, Challenge
 
 class AppBL2(App):
     """
@@ -1057,6 +1059,9 @@ class AppBL2(App):
         if intval < 0 or intval > 10:
             raise argparse.ArgumentTypeError('OP Levels must be from 0 to 10')
         return intval
+
+    def levels_to_travel_station_map(self) -> dict[str, str]:
+        return bl2data.BL2_LEVELS_TO_TRAVEL_STATION_MAP
 
     def setup_game_specific_args(self, parser):
         """

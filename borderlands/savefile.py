@@ -12,7 +12,6 @@ import struct
 import sys
 import os
 import copy
-import itertools
 import base64
 
 class Config(argparse.Namespace):
@@ -295,6 +294,7 @@ class App(object):
     """
     Our main application class.
     """
+    save_structure = None
 
     # These seem to be the same for both BL2 and BLTPS
     item_sizes = (
@@ -911,6 +911,35 @@ class App(object):
 
         # Return
         return mydict
+
+    def get_fully_explored_areas(self, player) -> list[str]:
+        """
+        Reuse converting full player data to json
+        for simpler code
+        """
+        json_data = self.apply_structure(player, self.save_structure)
+        if 'explored_areas' not in json_data:
+            return []
+        names = [x.decode('utf-8') for x in json_data['explored_areas']]
+        return names
+
+    def print_explored_levels(self, player) -> None:
+        levels_to_travel_station_map = self.levels_to_travel_station_map()
+        if not levels_to_travel_station_map:
+            self.error('areas_to_travel_station_map is empty in class %s' % (self.__class__.__name__,))
+            return
+
+        unique_names = set(levels_to_travel_station_map.keys())
+        explored_areas = self.get_fully_explored_areas(player)
+        unexplored = set(unique_names) - set(explored_areas)
+        labels = []
+        for name in unexplored:
+            travel_station = levels_to_travel_station_map.get(name, name)
+            label = '  %s (%s)' % (travel_station, name)
+            labels.append(label)
+        if labels:
+            self.notice('Not fully explored areas:\n%s' % ('\n'.join(sorted(labels))))
+        self.notice('Total not fully explored areas: %d' % len(unexplored))
 
     def wrap_challenges(self, data):
         """
@@ -1622,6 +1651,9 @@ class App(object):
             # Re-wrap the data
             player[15][0][1] = self.wrap_challenges(data)
 
+        if config.print_unexplored_levels:
+            self.print_explored_levels(player)
+
         if config.name is not None and len(config.name) > 0:
             self.debug(' - Setting character name to "%s"' % (config.name))
             data = self.apply_structure(self.read_protobuf(player[19][0][1]), save_structure[19][2])
@@ -1881,6 +1913,11 @@ class App(object):
                 help='Fix values for challenges which appear as huge negative numbers',
                 )
 
+        parser.add_argument('--print-unexplored-levels',
+                            action='store_true',
+                            help='Print level names that are not fully explored by player',
+                            )
+
         # Positional args
 
         parser.add_argument('input_filename',
@@ -1939,6 +1976,9 @@ class App(object):
             return data
         else:
             return data
+
+    def levels_to_travel_station_map(self) -> dict[str, str]:
+        return {}
 
     def run(self):
         """
