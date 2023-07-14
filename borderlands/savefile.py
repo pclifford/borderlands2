@@ -935,6 +935,8 @@ class App(object):
         for name in unexplored:
             travel_station = self.LEVELS_TO_TRAVEL_STATION_MAP.get(name, name)
             label = '  %s (%s)' % (travel_station, name)
+            if name in self.NO_EXPLORATION_CHALLENGE_LEVELS:
+                label = '%s (does not contribute to Explorer-of-X achievement)' % (label)
             labels.append(label)
         if labels:
             self.notice('Not fully explored levels:\n%s' % ('\n'.join(sorted(labels))))

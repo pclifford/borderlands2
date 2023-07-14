@@ -83,6 +83,11 @@ class AppTPS(App):
             'Wreck_P': "Pity's Fall",
             }
 
+    # Maps which don't actually contribute to the "Explorer-of-X" achievements
+    # (This empty set is totally unverified -- not even sure if TPS even has this
+    # achievement.)
+    NO_EXPLORATION_CHALLENGE_LEVELS = set()
+
     # Challenge categories
     challenge_cat_gravity = ChallengeCat("Low Gravity")
     challenge_cat_grinder = ChallengeCat("Grinder")

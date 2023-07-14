@@ -129,6 +129,13 @@ class AppBL2(App):
             'tundraexpress_p': 'Tundra Express',
             }
 
+    # Maps which don't actually contribute to the "Explorer-of-X" achievements
+    NO_EXPLORATION_CHALLENGE_LEVELS = {
+            'Mines_P',
+            'Distillery_P',
+            'Easter_P',
+            }
+
     # Challenge categories
     challenge_cat_dlc4 = ChallengeCat("Hammerlock's Hunt", 4)
     challenge_cat_dlc3 = ChallengeCat("Campaign of Carnage", 3)

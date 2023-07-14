@@ -353,11 +353,11 @@ you only want this option, at the moment:
 That will result something like the following output printed on the console
 as the editor processes the save:
 
-    Not fully explored levels:
-      Mines of Avarice (Mines_P)
-      Rotgut Distillery (Distillery_P)
-      The Raid on Digistruct Peak (TestingZone_P)
-    Total not fully explored levels: 3
+	Not fully explored levels:
+	  Mines of Avarice (Mines_P) (does not contribute to Explorer-of-X achievement)
+	  Rotgut Distillery (Distillery_P) (does not contribute to Explorer-of-X achievement)
+	  The Raid on Digistruct Peak (TestingZone_P)
+	Total not fully explored levels: 3
 
 # Combining Commandline Options
 
