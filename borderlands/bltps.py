@@ -45,6 +45,44 @@ class AppTPS(App):
     # Available choices for --unlock option
     unlock_choices = ['tvhm', 'uvhm', 'challenges', 'ammo']
 
+    # Level-to-Name Mapping
+    LEVELS_TO_TRAVEL_STATION_MAP = {
+            'Access_P': "Tycho's Ribs",
+            'CentralTerminal_P': "Hyperion Hub of Heroism",
+            'ComFacility_P': "Crisis Scar",
+            'DahlFactory_Boss': "Titan Robot Production Plant",
+            'DahlFactory_P': "Titan Industrial Facility",
+            'Deadsurface_P': "Regolith Range",
+            'Digsite_P': "Vorago Solitude",
+            'Digsite_Rk5arena_P': "Outfall Pumping Station",
+            'Eridian_Slaughter_P': "Holodome",
+            'InnerCore_P': "Eleseer",
+            'InnerHull_P': "Veins of Helios",
+            'JacksOffice_P': "Jack's Office",
+            'Laser_P': "Lunar Launching Station",
+            'LaserBoss_P': "Eye of Helios",
+            'Ma_Deck13_P': "Deck 13 1/2",
+            'Ma_FinalBoss_P': "Deck 13.5",
+            'Ma_LeftCluster_P': "Cluster 00773 P4ND0R4",
+            'Ma_Motherboard_P': "Motherlessboard",
+            'Ma_Nexus_P': "Nexus",
+            'Ma_RightCluster_P': "Cluster 99002 0V3RL00K",
+            'Ma_SubBoss_P': "Cortex",
+            'Ma_Subconscious_P': "Subconscious",
+            'Meriff_P': "Meriff's Office",
+            'Moon_P': "Triton Flats",
+            'MoonShotIntro_P': "Helios Station",
+            'MoonSlaughter_P': "Abandoned Training Facility",
+            'Moonsurface_P': "Serenity's Waste",
+            'Outlands_P': "Outlands Spur",
+            'Outlands_P2': "Outlands Canyon",
+            'RandDFacility_P': "Research and Development",
+            'Spaceport_P': "Concordia",
+            'StantonsLiver_P': "Stanton's Liver",
+            'Sublevel13_P': "Sub-Level 13",
+            'Wreck_P': "Pity's Fall",
+            }
+
     # Challenge categories
     challenge_cat_gravity = ChallengeCat("Low Gravity")
     challenge_cat_grinder = ChallengeCat("Grinder")

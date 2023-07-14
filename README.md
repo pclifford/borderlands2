@@ -341,6 +341,24 @@ also unlock TVHM/UVHM if need be.
 
     python bl2_save_edit.py --copy-nvhm-missions old.sav new.sav
 
+# Printing out not-fully-explored levels
+
+The utility also includes an option to print out levels which the user has not
+fully explored.  At the moment, the editor doesn't actually have an "only show
+me information" mode, so you have to pretend to be doing a save edit even if
+you only want this option, at the moment:
+
+    bl2_save_edit.py --print-unexplored-levels old.sav dummy
+
+That will result something like the following output printed on the console
+as the editor processes the save:
+
+    Not fully explored levels:
+      Mines of Avarice (Mines_P)
+      Rotgut Distillery (Distillery_P)
+      The Raid on Digistruct Peak (TestingZone_P)
+    Total not fully explored levels: 3
+
 # Combining Commandline Options
 
 In general, the various options can be combined.  To make a few changes to a
