@@ -364,6 +364,19 @@ class App(object):
     # the equation is just not exactly correct.
     #
     # So, what the heck - we'll just hardcode the XP requirements in here.
+    #
+    # Update in 2023, btw: I'd looked into this more thoroughly because
+    # it's the same essential math used in BL3 / Wonderlands (including
+    # Chaos XP in WL), and I was having the same XP drift over there that
+    # I'd always seen while trying to compute this stuff in Python.  Well,
+    # it turns out that the essential problem is that Python sort of
+    # unavoidably does all the calculations using 64-bit doubles, instead
+    # of 32-bit floats.  The difference in precision starts to add up over
+    # time.  It turns out to be *real* difficult to force Python to use
+    # floats in the background; you've gotta start doing stuff like `ctypes`
+    # shenanigans to even have a prayer of it, and even then it's tricky
+    # and might even require custom C extensions.  Anyway, I feel quite good
+    # about these hardcodes.  Not worth the trouble in here, for sure.
     required_xp = [
         0,          # lvl 1
         358,        # lvl 2
