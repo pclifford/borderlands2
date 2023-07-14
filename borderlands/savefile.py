@@ -27,6 +27,7 @@ class Config(argparse.Namespace):
     verbose = True
     force = False
     copy_nvhm_missions = False
+    print_unexplored_levels = False
 
     # Given by the user, strings
     import_items = None
@@ -55,6 +56,7 @@ class Config(argparse.Namespace):
     # Config options interpreted from the above
     endian = '<'
     changes = False
+    show_info = False
 
     def finish(self, parser, app):
         """
@@ -74,17 +76,27 @@ class Config(argparse.Namespace):
         if 'ammo' in self.unlock:
             self.maxammo = True
 
-        # Set our "changes" boolean
+        # Set our "changes" boolean -- first, args which take a value
         if any([var is not None for var in [self.name,
                 self.save_game_id, self.level,
                 self.money, self.eridium, self.moonstone,
                 self.seraph, self.seraph, self.torgue,
                 self.itemlevels, self.backpack, self.bank,
                 self.gunslots, self.maxammo, self.oplevel,
-                self.copy_nvhm_missions]]):
+                ]]):
             self.changes = True
+
+        # Next, boolean args which are set to True
+        if any([self.copy_nvhm_missions]):
+            self.changes = True
+
+        # Finally, any unlocks/challenges we mean to set
         if any([len(var) > 0 for var in [self.unlock, self.challenges]]):
             self.changes = True
+
+        # Now set our "show_info" boolean.  Just a single boolean option, at the moment
+        if any([self.print_unexplored_levels]):
+            self.show_info = True
 
         # Can't read/write to the same file
         if self.input_filename == self.output_filename and self.input_filename != '-':
@@ -941,6 +953,7 @@ class App(object):
         if labels:
             self.notice('Not fully explored levels:\n%s' % ('\n'.join(sorted(labels))))
         self.notice('Total not fully explored levels: %d' % len(unexplored))
+        self.notice('')
 
     def wrap_challenges(self, data):
         """
@@ -1273,11 +1286,31 @@ class App(object):
 
         return bytes(dst)
 
+    def show_save_info(self, data):
+        """
+        Shows information from file data, based on our config object.
+        "data" should be the raw data from a save file.
+
+        Note that if a user is both showing info and making changes,
+        we're parsing the protobuf twice, since modify_save also does
+        that.  Inefficiency!
+        """
+
+        player = self.read_protobuf(self.unwrap_player_data(data))
+        config = self.config
+
+        if config.print_unexplored_levels:
+            self.print_explored_levels(player)
+
     def modify_save(self, data, input_filename=None):
         """
         Performs a set of modifications on file data, based on our
         config object.  "data" should be the raw data from a save
         file.
+
+        Note that if a user is both showing info and making changes,
+        we're parsing the protobuf twice, since show_save_info also does
+        that.  Inefficiency!
         """
 
         player = self.read_protobuf(self.unwrap_player_data(data))
@@ -1652,9 +1685,6 @@ class App(object):
             # Re-wrap the data
             player[15][0][1] = self.wrap_challenges(data)
 
-        if config.print_unexplored_levels:
-            self.print_explored_levels(player)
-
         if config.name is not None and len(config.name) > 0:
             self.debug(' - Setting character name to "%s"' % (config.name))
             data = self.apply_structure(self.read_protobuf(player[19][0][1]), save_structure[19][2])
@@ -2021,6 +2051,14 @@ class App(object):
         if config.changes:
             self.debug('Performing requested changes')
             save_data = self.modify_save(save_data, config.input_filename)
+
+        # Show information if we've been passed any of those args
+        if config.show_info:
+            if config.changes:
+                self.debug('')
+            self.debug('Showing requested save information:')
+            self.debug('')
+            self.show_save_info(save_data)
 
         # Open our output file
         self.debug('')
