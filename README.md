@@ -320,9 +320,8 @@ bonuses:
 
 Some people find that their game starts showing huge negative numbers for their
 challenge variables, caused by the savegame values overflowing the in-game
-datatypes.  (Presumably due to either Cheat Engine shenanigans, or joining
-lobbies of folks doing Cheat Engine shenanigans or the like.)  Some threads
-on the issue: [one](https://steamcommunity.com/app/49520/discussions/0/1327844097129063344/),
+datatypes.  Some threads on the issue:
+[one](https://steamcommunity.com/app/49520/discussions/0/1327844097129063344/),
 [two](https://steamcommunity.com/app/49520/discussions/0/38596748231645372/).
 The `--fix-challenge-overflow` option can fix those up for you, setting them
 instead to the max value:
