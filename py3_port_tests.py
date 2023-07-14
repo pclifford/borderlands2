@@ -14,24 +14,24 @@ if True:
     print('something else that needs checking.')
     sys.exit(0)
 
-class Test(object):
 
+class Test(object):
     games = ['bl2', 'tps']
     executables = {
         'bl2': {
             'two': '/home/pez/git/borderlands2-py2/bl2_save_edit.py',
             'three': '/home/pez/git/borderlands2/bl2_save_edit.py',
-            },
+        },
         'tps': {
             'two': '/home/pez/git/borderlands2-py2/bltps_save_edit.py',
             'three': '/home/pez/git/borderlands2/bltps_save_edit.py',
-            },
-        }
+        },
+    }
     output_dir = 'output'
     suffix = {
-            'two': '.2',
-            'three': '.3',
-        }
+        'two': '.2',
+        'three': '.3',
+    }
 
     def __init__(self, desc, input_file, args, text_output=False, restrict_game=False):
         self.desc = desc
@@ -51,9 +51,9 @@ class Test(object):
                 executable = self.executables[game][version]
                 suffix = self.suffix[version]
                 full_output = os.path.join(
-                        self.output_dir,
-                        '{}-{}{}'.format(game, self.desc, suffix),
-                        )
+                    self.output_dir,
+                    '{}-{}{}'.format(game, self.desc, suffix),
+                )
                 output_files.append(full_output)
                 commandline = [executable]
                 commandline.extend(self.args)
@@ -73,15 +73,12 @@ class Test(object):
                 except FileNotFoundError as e:
                     output_data.append('{} {} result does not exist'.format(game, executable))
             if output_data[0] != output_data[1]:
-                print('{} {}: files {} and {} do not match'.format(
-                    game,
-                    self.desc,
-                    output_files[0],
-                    output_files[1]))
+                print('{} {}: files {} and {} do not match'.format(game, self.desc, output_files[0], output_files[1]))
             else:
                 print('{} {}: good!'.format(game, self.desc))
                 os.unlink(output_files[0])
                 os.unlink(output_files[1])
+
 
 # First clear out our output directory
 print('Cleaning output directory')
@@ -89,41 +86,41 @@ for filename in os.listdir(Test.output_dir):
     os.unlink(os.path.join(Test.output_dir, filename))
 
 tests = [
-        Test('noargs', 'toptier.sav', []),
-        Test('copy', 'toptier.sav', ['-o', 'savegame']),
-        Test('decoded', 'toptier.sav', ['-o', 'decoded']),
-        Test('decodedjson', 'toptier.sav', ['-o', 'decodedjson'], text_output=True),
-        Test('json', 'toptier.sav', ['-o', 'json'], text_output=True),
-        Test('items', 'toptier.sav', ['-o', 'items'], text_output=True),
-        Test('jsoninput', 'toptier.json', ['-j']),
-        Test('decodedjsoninput', 'toptier_decoded.json', ['-j']),
-        # Can't actually test this one, item IDs are randomly generated on insert.
-        # Manually made sure this works by hardcoding IDs, though.
-        #Test('itemimport', 'early.sav', ['-i', 'items.txt']),
-        Test('charname', 'early.sav', ['--name', 'Fred']),
-        Test('saveid', 'early.sav', ['--save-game-id', '42']),
-        Test('level', 'early.sav', ['--level', '42']),
-        Test('money', 'early.sav', ['--money', '42000']),
-        Test('eridium', 'early.sav', ['--eridium', '42'], restrict_game='bl2'),
-        Test('moonstone', 'early.sav', ['--moonstone', '42'], restrict_game='tps'),
-        Test('seraph', 'early.sav', ['--seraph', '42'], restrict_game='bl2'),
-        Test('torgue', 'early.sav', ['--torgue', '42'], restrict_game='bl2'),
-        Test('itemlevels', 'toptier.sav', ['--itemlevels', '2']),
-        Test('backpack', 'early.sav', ['--backpack', '30']),
-        Test('bank', 'early.sav', ['--bank', '20']),
-        Test('gunslots', 'early.sav', ['--gunslots', '4']),
-        Test('slaughter', 'early_noslaughterdome.sav', ['--unlock', 'slaughterdome'], restrict_game='bl2'),
-        Test('tvhm', 'early.sav', ['--unlock', 'tvhm']),
-        # This test can't be manually tested without adding in the same Challenge
-        # sorting on the py2 version which we now do in py3.  (Not committing that
-        # on the py2 branch for Reasons.)
-        #Test('challenges', 'early.sav', ['--unlock', 'challenges']),
-        Test('ammo', 'early.sav', ['--unlock', 'ammo']),
-        Test('zerochallenge', 'early.sav', ['--challenges', 'zero']),
-        Test('maxchallenge', 'early.sav', ['--challenges', 'max']),
-        Test('bonuschallenge', 'early.sav', ['--challenges', 'bonus']),
-        Test('maxammo', 'early.sav', ['--maxammo']),
-        ]
+    Test('noargs', 'toptier.sav', []),
+    Test('copy', 'toptier.sav', ['-o', 'savegame']),
+    Test('decoded', 'toptier.sav', ['-o', 'decoded']),
+    Test('decodedjson', 'toptier.sav', ['-o', 'decodedjson'], text_output=True),
+    Test('json', 'toptier.sav', ['-o', 'json'], text_output=True),
+    Test('items', 'toptier.sav', ['-o', 'items'], text_output=True),
+    Test('jsoninput', 'toptier.json', ['-j']),
+    Test('decodedjsoninput', 'toptier_decoded.json', ['-j']),
+    # Can't actually test this one, item IDs are randomly generated on insert.
+    # Manually made sure this works by hardcoding IDs, though.
+    # Test('itemimport', 'early.sav', ['-i', 'items.txt']),
+    Test('charname', 'early.sav', ['--name', 'Fred']),
+    Test('saveid', 'early.sav', ['--save-game-id', '42']),
+    Test('level', 'early.sav', ['--level', '42']),
+    Test('money', 'early.sav', ['--money', '42000']),
+    Test('eridium', 'early.sav', ['--eridium', '42'], restrict_game='bl2'),
+    Test('moonstone', 'early.sav', ['--moonstone', '42'], restrict_game='tps'),
+    Test('seraph', 'early.sav', ['--seraph', '42'], restrict_game='bl2'),
+    Test('torgue', 'early.sav', ['--torgue', '42'], restrict_game='bl2'),
+    Test('itemlevels', 'toptier.sav', ['--itemlevels', '2']),
+    Test('backpack', 'early.sav', ['--backpack', '30']),
+    Test('bank', 'early.sav', ['--bank', '20']),
+    Test('gunslots', 'early.sav', ['--gunslots', '4']),
+    Test('slaughter', 'early_noslaughterdome.sav', ['--unlock', 'slaughterdome'], restrict_game='bl2'),
+    Test('tvhm', 'early.sav', ['--unlock', 'tvhm']),
+    # This test can't be manually tested without adding in the same Challenge
+    # sorting on the py2 version which we now do in py3.  (Not committing that
+    # on the py2 branch for Reasons.)
+    # Test('challenges', 'early.sav', ['--unlock', 'challenges']),
+    Test('ammo', 'early.sav', ['--unlock', 'ammo']),
+    Test('zerochallenge', 'early.sav', ['--challenges', 'zero']),
+    Test('maxchallenge', 'early.sav', ['--challenges', 'max']),
+    Test('bonuschallenge', 'early.sav', ['--challenges', 'bonus']),
+    Test('maxammo', 'early.sav', ['--maxammo']),
+]
 
 for test in tests:
     test.run()

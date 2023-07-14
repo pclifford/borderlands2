@@ -14,6 +14,7 @@ import os
 import copy
 import base64
 
+
 class Config(argparse.Namespace):
     """
     Class to hold our configuration information.  Note that
@@ -52,7 +53,7 @@ class Config(argparse.Namespace):
     oplevel = None
     unlock = {}
     challenges = {}
-    
+
     # Config options interpreted from the above
     endian = '<'
     changes = False
@@ -68,7 +69,7 @@ class Config(argparse.Namespace):
 
         # Endianness
         if self.bigendian:
-            self.endian = '>' 
+            self.endian = '>'
         else:
             self.endian = '<'
 
@@ -77,13 +78,28 @@ class Config(argparse.Namespace):
             self.maxammo = True
 
         # Set our "changes" boolean -- first, args which take a value
-        if any([var is not None for var in [self.name,
-                self.save_game_id, self.level,
-                self.money, self.eridium, self.moonstone,
-                self.seraph, self.seraph, self.torgue,
-                self.itemlevels, self.backpack, self.bank,
-                self.gunslots, self.maxammo, self.oplevel,
-                ]]):
+        if any(
+            [
+                var is not None
+                for var in [
+                    self.name,
+                    self.save_game_id,
+                    self.level,
+                    self.money,
+                    self.eridium,
+                    self.moonstone,
+                    self.seraph,
+                    self.seraph,
+                    self.torgue,
+                    self.itemlevels,
+                    self.backpack,
+                    self.bank,
+                    self.gunslots,
+                    self.maxammo,
+                    self.oplevel,
+                ]
+            ]
+        ):
             self.changes = True
 
         # Next, boolean args which are set to True
@@ -137,12 +153,14 @@ class Config(argparse.Namespace):
                 elif self.bank < app.min_bank_size:
                     self.bank = app.min_bank_size
 
+
 class DictAction(argparse.Action):
     """
     Custom argparse action to put list-like arguments into
     a dict (where the value will be True) rather than a list.
     This is probably implemented fairly shoddily.
     """
+
     def __init__(self, option_strings, dest, nargs=None, **kwargs):
         """
         Constructor, taken right from https://docs.python.org/2.7/library/argparse.html#action
@@ -161,11 +179,12 @@ class DictAction(argparse.Action):
         arg_value[values] = True
         setattr(namespace, self.dest, arg_value)
 
-class BorderlandsError(Exception): pass
+
+class BorderlandsError(Exception):
+    pass
 
 
 class ReadBitstream(object):
-
     def __init__(self, s):
         self.s = s
         self.i = 0
@@ -181,9 +200,9 @@ class ReadBitstream(object):
         s = self.s
         i = self.i
         end = i + n
-        chunk = s[i >> 3: (end + 7) >> 3]
-        value = chunk[0] &~ (0xff00 >> (i & 7))
-        for c in chunk[1: ]:
+        chunk = s[i >> 3 : (end + 7) >> 3]
+        value = chunk[0] & ~(0xFF00 >> (i & 7))
+        for c in chunk[1:]:
             value = (value << 8) | c
         if (end & 7) != 0:
             value = value >> (8 - (end & 7))
@@ -197,12 +216,12 @@ class ReadBitstream(object):
         if (i & 7) == 0:
             return byte
         byte = (byte << 8) | self.s[(i >> 3) + 1]
-        return (byte >> (8 - (i & 7))) & 0xff
+        return (byte >> (8 - (i & 7))) & 0xFF
+
 
 class WriteBitstream(object):
-
     def __init__(self):
-        self.s = bytearray() 
+        self.s = bytearray()
         self.byte = 0
         self.i = 7
 
@@ -225,7 +244,7 @@ class WriteBitstream(object):
             shift = n - (i + 1)
             n = n - (i + 1)
             byte = byte | (b >> shift)
-            b = b &~ (byte << shift)
+            b = b & ~(byte << shift)
             s.append(byte)
             byte = 0
             i = 7
@@ -242,7 +261,7 @@ class WriteBitstream(object):
             self.s.append(b)
         else:
             self.s.append(self.byte | (b >> (7 - i)))
-            self.byte = (b << (i + 1)) & 0xff
+            self.byte = (b << (i + 1)) & 0xFF
 
     def getvalue(self):
         if self.i != 7:
@@ -251,6 +270,7 @@ class WriteBitstream(object):
             return bytes(ret_s)
         else:
             return bytes(self.s)
+
 
 class ChallengeCat(object):
     """
@@ -265,6 +285,7 @@ class ChallengeCat(object):
             self.is_from_dlc = 0
         else:
             self.is_from_dlc = 1
+
 
 class Challenge(object):
     """
@@ -295,53 +316,101 @@ class Challenge(object):
         challenge.
         """
         if self.bonus:
-            return self.levels[self.bonus-1] - 1
+            return self.levels[self.bonus - 1] - 1
         else:
             return None
 
     def __lt__(self, other):
         return self.id_text.lower() < other.id_text.lower()
 
+
 class App(object):
     """
     Our main application class.
     """
+
     save_structure = None
 
     # These seem to be the same for both BL2 and BLTPS
     item_sizes = (
         (8, 17, 20, 11, 7, 7, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16),
-        (8, 13, 20, 11, 7, 7, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17)
+        (8, 13, 20, 11, 7, 7, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17),
     )
 
     # Ditto
     item_header_sizes = (
         (("type", 8), ("balance", 10), ("manufacturer", 7)),
-        (("type", 6), ("balance", 10), ("manufacturer", 7))
+        (("type", 6), ("balance", 10), ("manufacturer", 7)),
     )
 
     # Ditto
     clz_table = (
-        32, 0, 1, 26, 2, 23, 27, 0, 3, 16, 24, 30, 28, 11, 0, 13, 4,
-        7, 17, 0, 25, 22, 31, 15, 29, 10, 12, 6, 0, 21, 14, 9, 5,
-        20, 8, 19, 18
+        32,
+        0,
+        1,
+        26,
+        2,
+        23,
+        27,
+        0,
+        3,
+        16,
+        24,
+        30,
+        28,
+        11,
+        0,
+        13,
+        4,
+        7,
+        17,
+        0,
+        25,
+        22,
+        31,
+        15,
+        29,
+        10,
+        12,
+        6,
+        0,
+        21,
+        14,
+        9,
+        5,
+        20,
+        8,
+        19,
+        18,
     )
 
-    min_backpack_size=12
-    max_backpack_size=39
-    min_bank_size=6
-    max_bank_size=24
+    min_backpack_size = 12
+    max_backpack_size = 39
+    min_bank_size = 6
+    max_bank_size = 24
 
     # "laser" in here doesn't apply to B2, but it won't hurt anything
     # because we process ammo pools based off the black market values,
     # which won't include lasers for B2
     ammo_resources = {
         'rifle': ('D_Resources.AmmoResources.Ammo_Combat_Rifle', 'D_Resourcepools.AmmoPools.Ammo_Combat_Rifle_Pool'),
-        'shotgun': ('D_Resources.AmmoResources.Ammo_Combat_Shotgun', 'D_Resourcepools.AmmoPools.Ammo_Combat_Shotgun_Pool'),
-        'grenade': ('D_Resources.AmmoResources.Ammo_Grenade_Protean', 'D_Resourcepools.AmmoPools.Ammo_Grenade_Protean_Pool'),
+        'shotgun': (
+            'D_Resources.AmmoResources.Ammo_Combat_Shotgun',
+            'D_Resourcepools.AmmoPools.Ammo_Combat_Shotgun_Pool',
+        ),
+        'grenade': (
+            'D_Resources.AmmoResources.Ammo_Grenade_Protean',
+            'D_Resourcepools.AmmoPools.Ammo_Grenade_Protean_Pool',
+        ),
         'smg': ('D_Resources.AmmoResources.Ammo_Patrol_SMG', 'D_Resourcepools.AmmoPools.Ammo_Patrol_SMG_Pool'),
-        'pistol': ('D_Resources.AmmoResources.Ammo_Repeater_Pistol', 'D_Resourcepools.AmmoPools.Ammo_Repeater_Pistol_Pool'),
-        'launcher': ('D_Resources.AmmoResources.Ammo_Rocket_Launcher', 'D_Resourcepools.AmmoPools.Ammo_Rocket_Launcher_Pool'),
+        'pistol': (
+            'D_Resources.AmmoResources.Ammo_Repeater_Pistol',
+            'D_Resourcepools.AmmoPools.Ammo_Repeater_Pistol_Pool',
+        ),
+        'launcher': (
+            'D_Resources.AmmoResources.Ammo_Rocket_Launcher',
+            'D_Resourcepools.AmmoPools.Ammo_Rocket_Launcher_Pool',
+        ),
         'sniper': ('D_Resources.AmmoResources.Ammo_Sniper_Rifle', 'D_Resourcepools.AmmoPools.Ammo_Sniper_Rifle_Pool'),
         'laser': ('D_Resources.AmmoResources.Ammo_Combat_Laser', 'D_Resourcepools.AmmoPools.Ammo_Combat_Laser_Pool'),
     }
@@ -378,86 +447,86 @@ class App(object):
     # and might even require custom C extensions.  Anyway, I feel quite good
     # about these hardcodes.  Not worth the trouble in here, for sure.
     required_xp = [
-        0,          # lvl 1
-        358,        # lvl 2
-        1241,       # lvl 3
-        2850,       # lvl 4
-        5376,       # lvl 5
-        8997,       # lvl 6
-        13886,      # lvl 7
-        20208,      # lvl 8
-        28126,      # lvl 9
-        37798,      # lvl 10
-        49377,      # lvl 11
-        63016,      # lvl 12
-        78861,      # lvl 13
-        97061,      # lvl 14
-        117757,     # lvl 15
-        141092,     # lvl 16
-        167206,     # lvl 17
-        196238,     # lvl 18
-        228322,     # lvl 19
-        263595,     # lvl 20
-        302190,     # lvl 21
-        344238,     # lvl 22
-        389873,     # lvl 23
-        439222,     # lvl 24
-        492414,     # lvl 25
-        549578,     # lvl 26
-        610840,     # lvl 27
-        676325,     # lvl 28
-        746158,     # lvl 29
-        820463,     # lvl 30
-        899363,     # lvl 31
-        982980,     # lvl 32
-        1071435,    # lvl 33
-        1164850,    # lvl 34
-        1263343,    # lvl 35
-        1367034,    # lvl 36
-        1476041,    # lvl 37
-        1590483,    # lvl 38
-        1710476,    # lvl 39
-        1836137,    # lvl 40
-        1967582,    # lvl 41
-        2104926,    # lvl 42
-        2248285,    # lvl 43
-        2397772,    # lvl 44
-        2553501,    # lvl 45
-        2715586,    # lvl 46
-        2884139,    # lvl 47
-        3059273,    # lvl 48
-        3241098,    # lvl 49
-        3429728,    # lvl 50
-        3625271,    # lvl 51
-        3827840,    # lvl 52
-        4037543,    # lvl 53
-        4254491,    # lvl 54
-        4478792,    # lvl 55
-        4710556,    # lvl 56
-        4949890,    # lvl 57
-        5196902,    # lvl 58
-        5451701,    # lvl 59
-        5714393,    # lvl 60
-        5985086,    # lvl 61
-        6263885,    # lvl 62
-        6550897,    # lvl 63
-        6846227,    # lvl 64
-        7149982,    # lvl 65
-        7462266,    # lvl 66
-        7783184,    # lvl 67
-        8112840,    # lvl 68
-        8451340,    # lvl 69
-        8798786,    # lvl 70
-        9155282,    # lvl 71
-        9520931,    # lvl 72
-        9895837,    # lvl 73
-        10280103,    # lvl 74
-        10673830,    # lvl 75
-        11077120,    # lvl 76
-        11490077,    # lvl 77
-        11912801,    # lvl 78
-        12345393,    # lvl 79
-        12787955,    # lvl 80
+        0,  # lvl 1
+        358,  # lvl 2
+        1241,  # lvl 3
+        2850,  # lvl 4
+        5376,  # lvl 5
+        8997,  # lvl 6
+        13886,  # lvl 7
+        20208,  # lvl 8
+        28126,  # lvl 9
+        37798,  # lvl 10
+        49377,  # lvl 11
+        63016,  # lvl 12
+        78861,  # lvl 13
+        97061,  # lvl 14
+        117757,  # lvl 15
+        141092,  # lvl 16
+        167206,  # lvl 17
+        196238,  # lvl 18
+        228322,  # lvl 19
+        263595,  # lvl 20
+        302190,  # lvl 21
+        344238,  # lvl 22
+        389873,  # lvl 23
+        439222,  # lvl 24
+        492414,  # lvl 25
+        549578,  # lvl 26
+        610840,  # lvl 27
+        676325,  # lvl 28
+        746158,  # lvl 29
+        820463,  # lvl 30
+        899363,  # lvl 31
+        982980,  # lvl 32
+        1071435,  # lvl 33
+        1164850,  # lvl 34
+        1263343,  # lvl 35
+        1367034,  # lvl 36
+        1476041,  # lvl 37
+        1590483,  # lvl 38
+        1710476,  # lvl 39
+        1836137,  # lvl 40
+        1967582,  # lvl 41
+        2104926,  # lvl 42
+        2248285,  # lvl 43
+        2397772,  # lvl 44
+        2553501,  # lvl 45
+        2715586,  # lvl 46
+        2884139,  # lvl 47
+        3059273,  # lvl 48
+        3241098,  # lvl 49
+        3429728,  # lvl 50
+        3625271,  # lvl 51
+        3827840,  # lvl 52
+        4037543,  # lvl 53
+        4254491,  # lvl 54
+        4478792,  # lvl 55
+        4710556,  # lvl 56
+        4949890,  # lvl 57
+        5196902,  # lvl 58
+        5451701,  # lvl 59
+        5714393,  # lvl 60
+        5985086,  # lvl 61
+        6263885,  # lvl 62
+        6550897,  # lvl 63
+        6846227,  # lvl 64
+        7149982,  # lvl 65
+        7462266,  # lvl 66
+        7783184,  # lvl 67
+        8112840,  # lvl 68
+        8451340,  # lvl 69
+        8798786,  # lvl 70
+        9155282,  # lvl 71
+        9520931,  # lvl 72
+        9895837,  # lvl 73
+        10280103,  # lvl 74
+        10673830,  # lvl 75
+        11077120,  # lvl 76
+        11490077,  # lvl 77
+        11912801,  # lvl 78
+        12345393,  # lvl 79
+        12787955,  # lvl 80
     ]
 
     def read_huffman_tree(self, b):
@@ -480,7 +549,7 @@ class App(object):
         """
         This is a bit of a hack because I don't feel like rewriting `make_huffman_tree`
         entirely.  Basically the current implementation relies on Python 2 behavior
-        where lists and ints can be compared directly with comparison operators. 
+        where lists and ints can be compared directly with comparison operators.
         Python 3 forbids this, so the call to `bisect.insort()` inside
         `make_huffman_tree` fails once it encounters an "regular" two-element list
         with two ints, and another whose second element is a nested structure.
@@ -528,8 +597,8 @@ class App(object):
         nodes.sort()
 
         while len(nodes) > 1:
-            l, r = nodes[: 2]
-            nodes = nodes[2: ]
+            l, r = nodes[:2]
+            nodes = nodes[2:]
             insort(nodes, self.HuffmanNode(l.weight + r.weight, [l, r]))
 
         return nodes[0].to_list()
@@ -544,7 +613,7 @@ class App(object):
             return d
 
     def huffman_decompress(self, tree, bitstream, size):
-        output = bytearray() 
+        output = bytearray()
         while len(output) < size:
             node = tree
             while 1:
@@ -560,7 +629,6 @@ class App(object):
             code, nbits = encoding[c]
             bitstream.write_bits(code, nbits)
 
-
     def pack_item_values(self, is_weapon, values):
         i = 0
         itembytes = bytearray(32)
@@ -570,13 +638,13 @@ class App(object):
             j = i >> 3
             value = value << (i & 7)
             while value != 0:
-                itembytes[j] |= value & 0xff
+                itembytes[j] |= value & 0xFF
                 value = value >> 8
                 j = j + 1
             i = i + size
         if (i & 7) != 0:
-            value = 0xff << (i & 7)
-            itembytes[i >> 3] |= (value & 0xff)
+            value = 0xFF << (i & 7)
+            itembytes[i >> 3] |= value & 0xFF
         return bytes(itembytes[: (i + 7) >> 3])
 
     def unpack_item_values(self, is_weapon, data):
@@ -590,50 +658,50 @@ class App(object):
                 values.append(None)
                 continue
             value = 0
-            for b in data[j >> 3: (i >> 3) - 1: -1]:
+            for b in data[j >> 3 : (i >> 3) - 1 : -1]:
                 value = (value << 8) | b
-            values.append((value >> (i & 7)) &~ (0xff << size))
+            values.append((value >> (i & 7)) & ~(0xFF << size))
             i = j
         return values
 
     def rotate_data_right(self, data, steps):
         steps = steps % len(data)
-        return data[-steps: ] + data[: -steps]
+        return data[-steps:] + data[:-steps]
 
     def rotate_data_left(self, data, steps):
         steps = steps % len(data)
-        return data[steps: ] + data[: steps]
+        return data[steps:] + data[:steps]
 
     def xor_data(self, data, key):
-        key = key & 0xffffffff
+        key = key & 0xFFFFFFFF
         output = bytearray()
         for c in data:
             key = (key * 279470273) % 4294967291
-            output.append((c ^ key) & 0xff)
+            output.append((c ^ key) & 0xFF)
         return bytes(output)
 
     def wrap_item(self, is_weapon, values, key):
         item = self.pack_item_values(is_weapon, values)
         header = struct.pack(">Bi", (is_weapon << 7) | self.item_struct_version, key)
         padding = b"\xff" * (33 - len(item))
-        h = binascii.crc32(header + b"\xff\xff" + item + padding) & 0xffffffff
-        checksum = struct.pack(">H", ((h >> 16) ^ h) & 0xffff)
+        h = binascii.crc32(header + b"\xff\xff" + item + padding) & 0xFFFFFFFF
+        checksum = struct.pack(">H", ((h >> 16) ^ h) & 0xFFFF)
         body = self.xor_data(self.rotate_data_left(checksum + item, key & 31), key >> 5)
         return header + body
 
     def unwrap_item(self, data):
-        version_type, key = struct.unpack(">Bi", data[: 5])
+        version_type, key = struct.unpack(">Bi", data[:5])
         is_weapon = version_type >> 7
-        raw = self.rotate_data_right(self.xor_data(data[5: ], key >> 5), key & 31)
-        return is_weapon, self.unpack_item_values(is_weapon, raw[2: ]), key
+        raw = self.rotate_data_right(self.xor_data(data[5:], key >> 5), key & 31)
+        return is_weapon, self.unpack_item_values(is_weapon, raw[2:]), key
 
     def replace_raw_item_key(self, data, key):
-        old_key = struct.unpack(">i", data[1: 5])[0]
-        item = self.rotate_data_right(self.xor_data(data[5: ], old_key >> 5), old_key & 31)[2: ]
+        old_key = struct.unpack(">i", data[1:5])[0]
+        item = self.rotate_data_right(self.xor_data(data[5:], old_key >> 5), old_key & 31)[2:]
         header = struct.pack(">Bi", data[0], key)
         padding = b"\xff" * (33 - len(item))
-        h = binascii.crc32(header + b"\xff\xff" + item + padding) & 0xffffffff
-        checksum = struct.pack(">H", ((h >> 16) ^ h) & 0xffff)
+        h = binascii.crc32(header + b"\xff\xff" + item + padding) & 0xFFFFFFFF
+        checksum = struct.pack(">H", ((h >> 16) ^ h) & 0xFFFF)
         body = self.xor_data(self.rotate_data_left(checksum + item, key & 31), key >> 5)
         return header + body
 
@@ -642,15 +710,15 @@ class App(object):
         offset = 0
         while 1:
             b = ord(f.read(1))
-            value |= (b & 0x7f) << offset
+            value |= (b & 0x7F) << offset
             if (b & 0x80) == 0:
                 break
             offset = offset + 7
         return value
 
     def write_varint(self, f, i):
-        while i > 0x7f:
-            f.write(bytes([0x80 | (i & 0x7f)]))
+        while i > 0x7F:
+            f.write(bytes([0x80 | (i & 0x7F)]))
             i = i >> 7
         f.write(bytes([i]))
 
@@ -767,7 +835,7 @@ class App(object):
             fields["_raw"] = {}
             for k, values in raw.items():
                 safe_values = []
-                for (wire_type, v) in values:
+                for wire_type, v in values:
                     if wire_type == 2:
                         v = list(v)
                     safe_values.append([wire_type, v])
@@ -789,7 +857,7 @@ class App(object):
                 continue
             mapping = inv.get(k)
             if mapping is None:
-                raise BorderlandsError("Unknown key %r in data" % (k, ))
+                raise BorderlandsError("Unknown key %r in data" % (k,))
             elif type(mapping) is int:
                 pbdata[mapping] = [[self.guess_wire_type(value), value]]
                 continue
@@ -838,7 +906,7 @@ class App(object):
                 if type(v[2]) is dict:
                     inv[v[0]] = (k, v[1], self.invert_structure(v[2]))
                 else:
-                    inv[v[0]] = (k, ) + v[1: ]
+                    inv[v[0]] = (k,) + v[1:]
             else:
                 inv[v] = k
         return inv
@@ -902,7 +970,7 @@ class App(object):
         for completed challenges is no longer accurate.
 
         """
-        
+
         challenges = self.challenges
 
         (unknown, size_in_bytes, num_challenges) = struct.unpack('%sIIH' % (self.config.endian), data[:10])
@@ -910,21 +978,26 @@ class App(object):
 
         # Sanity check on size reported
         if (size_in_bytes + 8) != len(data):
-            raise BorderlandsError('Challenge data reported as %d bytes, but %d bytes found' % (
-                size_in_bytes, len(data)-8))
-        
+            raise BorderlandsError(
+                'Challenge data reported as %d bytes, but %d bytes found' % (size_in_bytes, len(data) - 8)
+            )
+
         # Sanity check on number of challenges reported
         if (num_challenges * 12) != (size_in_bytes - 2):
-            raise BorderlandsError('%d challenges reported, but %d bytes of data found' % (
-                num_challenges, size_in_bytes - 2))
+            raise BorderlandsError(
+                '%d challenges reported, but %d bytes of data found' % (num_challenges, size_in_bytes - 2)
+            )
 
         # Now read them in
         mydict['challenges'] = []
         for challenge in range(num_challenges):
-            idx = 10+(challenge*12)
-            challenge_dict = dict(zip(
-                ['id', 'first_one', 'total_value', 'second_one', 'previous_value'],
-                struct.unpack('%sHBIBI' % (self.config.endian), data[idx:idx+12])))
+            idx = 10 + (challenge * 12)
+            challenge_dict = dict(
+                zip(
+                    ['id', 'first_one', 'total_value', 'second_one', 'previous_value'],
+                    struct.unpack('%sHBIBI' % (self.config.endian), data[idx : idx + 12]),
+                )
+            )
             mydict['challenges'].append(challenge_dict)
 
             if challenge_dict['id'] in challenges:
@@ -977,38 +1050,45 @@ class App(object):
         in our data structure and setting size_in_bytes and num_challenges to match.
         Change the number of challenges at your own risk!
         """
-        
+
         b = BytesIO()
-        b.write(struct.pack('%sIIH' % (self.config.endian), data['unknown'], (len(data['challenges'])*12)+2, len(data['challenges'])))
+        b.write(
+            struct.pack(
+                '%sIIH' % (self.config.endian),
+                data['unknown'],
+                (len(data['challenges']) * 12) + 2,
+                len(data['challenges']),
+            )
+        )
         save_challenges = data['challenges']
         for challenge in save_challenges:
-            b.write(struct.pack('%sHBIBI' % (self.config.endian), challenge['id'],
-                challenge['first_one'],
-                challenge['total_value'],
-                challenge['second_one'],
-                challenge['previous_value']))
+            b.write(
+                struct.pack(
+                    '%sHBIBI' % (self.config.endian),
+                    challenge['id'],
+                    challenge['first_one'],
+                    challenge['total_value'],
+                    challenge['second_one'],
+                    challenge['previous_value'],
+                )
+            )
         return b.getvalue()
 
     def unwrap_item_info(self, value):
         is_weapon, item, key = self.unwrap_item(value)
-        data = {
-            "is_weapon": is_weapon,
-            "key": key,
-            "set": item[0],
-            "level": [item[4], item[5]]
-        }
+        data = {"is_weapon": is_weapon, "key": key, "set": item[0], "level": [item[4], item[5]]}
         for i, (k, bits) in enumerate(self.item_header_sizes[is_weapon]):
             lib = item[1 + i] >> bits
-            asset = item[1 + i] &~ (lib << bits)
+            asset = item[1 + i] & ~(lib << bits)
             data[k] = {"lib": lib, "asset": asset}
         bits = 10 + is_weapon
         parts = []
-        for value in item[6: ]:
+        for value in item[6:]:
             if value is None:
                 parts.append(None)
             else:
                 lib = value >> bits
-                asset = value &~ (lib << bits)
+                asset = value & ~(lib << bits)
                 parts.append({"lib": lib, "asset": asset})
         data["parts"] = parts
         return data
@@ -1027,7 +1107,6 @@ class App(object):
                 item.append((v["lib"] << bits) | v["asset"])
         return self.wrap_item(value["is_weapon"], item, value["key"])
 
-
     def unwrap_player_data(self, data):
         """
         The endianness on the few struct calls here appears to actually be
@@ -1036,27 +1115,29 @@ class App(object):
         I suspect this might actually be wrong, though, and just happens to
         work.
         """
-        if data[: 4] == "CON ":
-            raise BorderlandsError("You need to use a program like Horizon or Modio to extract the SaveGame.sav file first")
+        if data[:4] == "CON ":
+            raise BorderlandsError(
+                "You need to use a program like Horizon or Modio to extract the SaveGame.sav file first"
+            )
 
-        if data[: 20] != hashlib.sha1(data[20: ]).digest():
+        if data[:20] != hashlib.sha1(data[20:]).digest():
             raise BorderlandsError("Invalid save file")
 
-        data = self.lzo1x_decompress(b'\xf0' + data[20: ])
-        size, wsg, version = struct.unpack('>I3sI', data[: 11])
+        data = self.lzo1x_decompress(b'\xf0' + data[20:])
+        size, wsg, version = struct.unpack('>I3sI', data[:11])
         if version != 2 and version != 0x02000000:
             raise BorderlandsError('Unknown save version {}'.format(version))
 
         if version == 2:
-            crc, size = struct.unpack(">II", data[11: 19])
+            crc, size = struct.unpack(">II", data[11:19])
         else:
-            crc, size = struct.unpack("<II", data[11: 19])
+            crc, size = struct.unpack("<II", data[11:19])
 
-        bitstream = ReadBitstream(data[19: ])
+        bitstream = ReadBitstream(data[19:])
         tree = self.read_huffman_tree(bitstream)
         player = self.huffman_decompress(tree, bitstream, size)
 
-        if (binascii.crc32(player) & 0xffffffff) != crc:
+        if (binascii.crc32(player) & 0xFFFFFFFF) != crc:
             raise BorderlandsError("CRC check failed")
 
         return player
@@ -1067,7 +1148,7 @@ class App(object):
         unwrap_player_data above, so we're leaving that hardcoded for now.
         I suspect that it's wrong to be doing so, though.
         """
-        crc = binascii.crc32(player) & 0xffffffff
+        crc = binascii.crc32(player) & 0xFFFFFFFF
 
         bitstream = WriteBitstream()
         tree = self.make_huffman_tree(player)
@@ -1078,7 +1159,7 @@ class App(object):
         header = struct.pack(">I3s", len(data) + 15, b'WSG')
         header = header + struct.pack("%sIII" % (self.config.endian), 2, crc, len(player))
 
-        data = self.lzo1x_1_compress(header + data)[1: ]
+        data = self.lzo1x_1_compress(header + data)[1:]
 
         return hashlib.sha1(data).digest() + data
 
@@ -1093,7 +1174,7 @@ class App(object):
         i = len(b) - offset
         end = i + n
         while i < end:
-            chunk = b[i: i + n]
+            chunk = b[i : i + n]
             i = i + len(chunk)
             n = n - len(chunk)
             b.extend(chunk)
@@ -1103,60 +1184,77 @@ class App(object):
         src = bytearray(s)
         ip = 5
 
-        t = src[ip]; ip += 1
+        t = src[ip]
+        ip += 1
         if t > 17:
             t = t - 17
-            dst.extend(src[ip: ip + t]); ip += t
-            t = src[ip]; ip += 1
+            dst.extend(src[ip : ip + t])
+            ip += t
+            t = src[ip]
+            ip += 1
         elif t < 16:
             if t == 0:
                 t, ip = self.expand_zeroes(src, ip, 15)
-            dst.extend(src[ip: ip + t + 3]); ip += t + 3
-            t = src[ip]; ip += 1
+            dst.extend(src[ip : ip + t + 3])
+            ip += t + 3
+            t = src[ip]
+            ip += 1
 
         while 1:
             while 1:
                 if t >= 64:
-                    self.copy_earlier(dst, 1 + ((t >> 2) & 7) + (src[ip] << 3), (t >> 5) + 1); ip += 1
+                    self.copy_earlier(dst, 1 + ((t >> 2) & 7) + (src[ip] << 3), (t >> 5) + 1)
+                    ip += 1
                 elif t >= 32:
                     count = t & 31
                     if count == 0:
                         count, ip = self.expand_zeroes(src, ip, 31)
                     t = src[ip]
-                    self.copy_earlier(dst, 1 + ((t | (src[ip + 1] << 8)) >> 2), count + 2); ip += 2
+                    self.copy_earlier(dst, 1 + ((t | (src[ip + 1] << 8)) >> 2), count + 2)
+                    ip += 2
                 elif t >= 16:
                     offset = (t & 8) << 11
                     count = t & 7
                     if count == 0:
                         count, ip = self.expand_zeroes(src, ip, 7)
                     t = src[ip]
-                    offset += (t | (src[ip + 1] << 8)) >> 2; ip += 2
+                    offset += (t | (src[ip + 1] << 8)) >> 2
+                    ip += 2
                     if offset == 0:
                         return bytes(dst)
                     self.copy_earlier(dst, offset + 0x4000, count + 2)
                 else:
-                    self.copy_earlier(dst, 1 + (t >> 2) + (src[ip] << 2), 2); ip += 1
+                    self.copy_earlier(dst, 1 + (t >> 2) + (src[ip] << 2), 2)
+                    ip += 1
 
                 t = t & 3
                 if t == 0:
                     break
-                dst.extend(src[ip: ip + t]); ip += t
-                t = src[ip]; ip += 1
+                dst.extend(src[ip : ip + t])
+                ip += t
+                t = src[ip]
+                ip += 1
 
             while 1:
-                t = src[ip]; ip += 1
+                t = src[ip]
+                ip += 1
                 if t < 16:
                     if t == 0:
                         t, ip = self.expand_zeroes(src, ip, 15)
-                    dst.extend(src[ip: ip + t + 3]); ip += t + 3
-                    t = src[ip]; ip += 1
+                    dst.extend(src[ip : ip + t + 3])
+                    ip += t + 3
+                    t = src[ip]
+                    ip += 1
                 if t < 16:
-                    self.copy_earlier(dst, 1 + 0x0800 + (t >> 2) + (src[ip] << 2), 3); ip += 1
+                    self.copy_earlier(dst, 1 + 0x0800 + (t >> 2) + (src[ip] << 2), 3)
+                    ip += 1
                     t = t & 3
                     if t == 0:
                         continue
-                    dst.extend(src[ip: ip + t]); ip += t
-                    t = src[ip]; ip += 1
+                    dst.extend(src[ip : ip + t])
+                    ip += t
+                    t = src[ip]
+                    ip += 1
                 break
 
     def read_xor32(self, src, p1, p2):
@@ -1179,24 +1277,25 @@ class App(object):
             while 1:
                 if ip >= ip_end:
                     return in_end - (ii - ti)
-                dv = src[ip: ip + 4]
+                dv = src[ip : ip + 4]
                 dindex = dv[0] | (dv[1] << 8) | (dv[2] << 16) | (dv[3] << 24)
-                dindex = ((0x1824429d * dindex) >> 18) & 0x3fff
+                dindex = ((0x1824429D * dindex) >> 18) & 0x3FFF
                 m_pos = ip_start + dict_entries[dindex]
-                dict_entries[dindex] = (ip - ip_start) & 0xffff
-                if dv == src[m_pos: m_pos + 4]:
+                dict_entries[dindex] = (ip - ip_start) & 0xFFFF
+                if dv == src[m_pos : m_pos + 4]:
                     break
                 ip += 1 + ((ip - ii) >> 5)
 
-            ii -= ti; ti = 0
+            ii -= ti
+            ti = 0
             t = ip - ii
             if t != 0:
                 if t <= 3:
                     dst[-2] |= t
-                    dst.extend(src[ii: ii + t])
+                    dst.extend(src[ii : ii + t])
                 elif t <= 16:
                     dst.append(t - 3)
-                    dst.extend(src[ii: ii + t])
+                    dst.extend(src[ii : ii + t])
                 else:
                     if t <= 18:
                         dst.append(t - 3)
@@ -1206,7 +1305,7 @@ class App(object):
                         n, tt = divmod(tt, 255)
                         dst.extend(b"\x00" * n)
                         dst.append(tt)
-                    dst.extend(src[ii: ii + t])
+                    dst.extend(src[ii : ii + t])
                     ii += t
 
             m_len = 4
@@ -1240,20 +1339,20 @@ class App(object):
                     n, m_len = divmod(m_len, 255)
                     dst.extend(b"\x00" * n)
                     dst.append(m_len)
-                dst.append((m_off << 2) & 0xff)
-                dst.append((m_off >> 6) & 0xff)
+                dst.append((m_off << 2) & 0xFF)
+                dst.append((m_off >> 6) & 0xFF)
             else:
                 m_off -= 0x4000
                 if m_len <= 9:
-                    dst.append(0xff & (16 | ((m_off >> 11) & 8) | (m_len - 2)))
+                    dst.append(0xFF & (16 | ((m_off >> 11) & 8) | (m_len - 2)))
                 else:
                     m_len -= 9
-                    dst.append(0xff & (16 | ((m_off >> 11) & 8)))
+                    dst.append(0xFF & (16 | ((m_off >> 11) & 8)))
                     n, m_len = divmod(m_len, 255)
                     dst.extend(b"\x00" * n)
                     dst.append(m_len)
-                dst.append((m_off << 2) & 0xff)
-                dst.append((m_off >> 6) & 0xff)
+                dst.append((m_off << 2) & 0xFF)
+                dst.append((m_off >> 6) & 0xFF)
 
     def lzo1x_1_compress(self, s):
         src = bytearray(s)
@@ -1264,10 +1363,10 @@ class App(object):
         t = 0
 
         dst.append(240)
-        dst.append((l >> 24) & 0xff)
-        dst.append((l >> 16) & 0xff)
-        dst.append((l >>  8) & 0xff)
-        dst.append( l        & 0xff)
+        dst.append((l >> 24) & 0xFF)
+        dst.append((l >> 16) & 0xFF)
+        dst.append((l >> 8) & 0xFF)
+        dst.append(l & 0xFF)
 
         while l > 20 and t + l > 31:
             ll = min(49152, l)
@@ -1291,7 +1390,7 @@ class App(object):
                 n, tt = divmod(tt, 255)
                 dst.extend(b"\x00" * n)
                 dst.append(tt)
-            dst.extend(src[ii: ii + t])
+            dst.extend(src[ii : ii + t])
 
         dst.append(16 | 1)
         dst.append(0)
@@ -1386,7 +1485,7 @@ class App(object):
                     field_data = self.read_protobuf(field[1])
                     is_weapon, item, key = self.unwrap_item(field_data[1][0][1])
                     if config.forceitemlevels or item[4] > 1:
-                        item = item[: 4] + [level, level] + item[6: ]
+                        item = item[:4] + [level, level] + item[6:]
                         field_data[1][0][1] = self.wrap_item(is_weapon, item, key)
                         field[1] = self.write_protobuf(field_data)
                     else:
@@ -1410,9 +1509,8 @@ class App(object):
             # value in as the same format we got it.  So: awesome.  Endianness
             # shouldn't actually matter here so long as it's consistent.
             new_field_data = struct.unpack(
-                    '>Q',
-                    struct.pack('>q', -(4 | (max(0, min(config.oplevel, 0x7FFFFF)) << 8)))
-                    )[0]
+                '>Q', struct.pack('>q', -(4 | (max(0, min(config.oplevel, 0x7FFFFF)) << 8)))
+            )[0]
 
             # Now actually get on with it
             if config.oplevel > 0:
@@ -1436,11 +1534,13 @@ class App(object):
                 # own in
                 self.debug('   - Creating new OP Level "virtual" item')
                 # More magic from Gibbed's code
-                base_data = b"\x07\x00\x00\x00\x00\x39\x2a\xff" + \
-                        b"\x00\x00\x00\x00\x00\x00\x00\x00" + \
-                        b"\x00\x00\x00\x00\x00\x00\x00\x00" + \
-                        b"\x00\x00\x00\x00\x00\x00\x00\x00" + \
-                        b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                base_data = (
+                    b"\x07\x00\x00\x00\x00\x39\x2a\xff"
+                    + b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                    + b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                    + b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                    + b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                )
                 entry = {}
                 entry[1] = [[2, base_data]]
                 entry[2] = [[0, new_field_data]]
@@ -1460,7 +1560,7 @@ class App(object):
             slots[1][0][1] = new_size
             player[13][0][1] = self.write_protobuf(slots)
             s = self.read_repeated_protobuf_value(player[36][0][1], 0)
-            player[36][0][1] = self.write_repeated_protobuf_value(s[: 7] + [sdus] + s[8: ], 0)
+            player[36][0][1] = self.write_repeated_protobuf_value(s[:7] + [sdus] + s[8:], 0)
 
         if config.bank is not None:
             self.debug(' - Setting bank size to %d' % (config.bank))
@@ -1477,7 +1577,7 @@ class App(object):
             s = self.read_repeated_protobuf_value(player[36][0][1], 0)
             if len(s) < 9:
                 s = s + (9 - len(s)) * [0]
-            player[36][0][1] = self.write_repeated_protobuf_value(s[: 8] + [sdus] + s[9: ], 0)
+            player[36][0][1] = self.write_repeated_protobuf_value(s[:8] + [sdus] + s[9:], 0)
 
         if config.gunslots is not None:
             self.debug(' - Setting available gun slots to %d' % (config.gunslots))
@@ -1509,18 +1609,18 @@ class App(object):
 
         if False:
             MSTAT = {
-                    0: 'Not Started',
-                    1: 'Active',
-                    2: 'Required Objectives Complete',
-                    3: 'Ready to Turn In',
-                    4: 'Completed',
-                    5: 'Failed',
-                    }
-            #print('')
-            #print('Last-visited teleporter: {}'.format(player[17][0][1].decode('latin1')))
+                0: 'Not Started',
+                1: 'Active',
+                2: 'Required Objectives Complete',
+                3: 'Ready to Turn In',
+                4: 'Completed',
+                5: 'Failed',
+            }
+            # print('')
+            # print('Last-visited teleporter: {}'.format(player[17][0][1].decode('latin1')))
             nvhm_proto = self.read_protobuf(player[18][0][1])
             cur_mission = nvhm_proto[2][0][1].decode('latin1')
-            #print('All active missions:')
+            # print('All active missions:')
             active_missions = []
             turnin_missions = []
 
@@ -1543,15 +1643,17 @@ class App(object):
                             active_missions.append(mission_name)
                         elif mission_status < 4:
                             turnin_missions.append(mission_name)
-                            #print( ' * {} (level {}): {}'.format(mission_name, gamestage, MSTAT[mission_status]))
-                            #if cur_mission == mission_name:
+                            # print( ' * {} (level {}): {}'.format(mission_name, gamestage, MSTAT[mission_status]))
+                            # if cur_mission == mission_name:
                             #    print('   ^^^^^^^^ currently-active mission')
-            print('{}|{}|{}|{}'.format(
-                input_filename,
-                last_visited,
-                ','.join(active_missions),
-                ','.join(turnin_missions),
-                ))
+            print(
+                '{}|{}|{}|{}'.format(
+                    input_filename,
+                    last_visited,
+                    ','.join(active_missions),
+                    ','.join(turnin_missions),
+                )
+            )
 
         if len(config.unlock) > 0:
             if 'slaughterdome' in config.unlock:
@@ -1577,17 +1679,32 @@ class App(object):
                     player[7][0][1] = 1
             if 'challenges' in config.unlock:
                 self.debug(' - Unlocking all non-level-specific challenges')
-                challenge_unlocks = [self.apply_structure(self.read_protobuf(d[1]), save_structure[38][2]) for d in player[38]]
+                challenge_unlocks = [
+                    self.apply_structure(self.read_protobuf(d[1]), save_structure[38][2]) for d in player[38]
+                ]
                 inverted_structure = self.invert_structure(save_structure[38][2])
                 seen_challenges = {}
                 for unlock in challenge_unlocks:
                     seen_challenges[unlock['name'].decode('latin1')] = True
                 for challenge in sorted(self.challenges.values()):
                     if challenge.id_text not in seen_challenges:
-                        player[38].append([2, self.write_protobuf(self.remove_structure(dict([
-                            ('dlc_id', challenge.cat.dlc),
-                            ('is_from_dlc', challenge.cat.is_from_dlc),
-                            ('name', challenge.id_text)]), inverted_structure))])
+                        player[38].append(
+                            [
+                                2,
+                                self.write_protobuf(
+                                    self.remove_structure(
+                                        dict(
+                                            [
+                                                ('dlc_id', challenge.cat.dlc),
+                                                ('is_from_dlc', challenge.cat.is_from_dlc),
+                                                ('name', challenge.id_text),
+                                            ]
+                                        ),
+                                        inverted_structure,
+                                    )
+                                ),
+                            ]
+                        )
             if 'ammo' in config.unlock:
                 self.debug(' - Unlocking ammo capacity')
                 s = self.read_repeated_protobuf_value(player[36][0][1], 0)
@@ -1612,7 +1729,7 @@ class App(object):
                 if ammo_type in self.black_market_ammo:
                     ammo_values = self.black_market_ammo[ammo_type]
                     if len(ammo_values) - 1 < ammo_level:
-                        max_ammo[ammo_type] = (len(ammo_values)-1, ammo_values[-1])
+                        max_ammo[ammo_type] = (len(ammo_values) - 1, ammo_values[-1])
                     else:
                         max_ammo[ammo_type] = (ammo_level, ammo_values[ammo_level])
 
@@ -1627,7 +1744,6 @@ class App(object):
                     ammo_type = self.ammo_resource_lookup[resource]
                     seen_ammo[ammo_type] = True
                     if ammo_type in max_ammo:
-
                         # Set the data in the structure
                         data['level'] = max_ammo[ammo_type][0]
                         data['amount'] = float(max_ammo[ammo_type][1])
@@ -1676,9 +1792,13 @@ class App(object):
                     if do_zero:
                         save_challenge['total_value'] = save_challenge['previous_value']
                     if do_max:
-                        save_challenge['total_value'] = save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_max()
+                        save_challenge['total_value'] = (
+                            save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_max()
+                        )
                     if do_bonus and self.challenges[save_challenge['id']].bonus:
-                        bonus_value = save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_bonus()
+                        bonus_value = (
+                            save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_bonus()
+                        )
                         if do_max or do_zero or save_challenge['total_value'] < bonus_value:
                             save_challenge['total_value'] = bonus_value
 
@@ -1702,7 +1822,9 @@ class App(object):
             self.debug(' - Setting character name to "%s"' % (config.name))
             data = self.apply_structure(self.read_protobuf(player[19][0][1]), save_structure[19][2])
             data['name'] = config.name
-            player[19][0][1] = self.write_protobuf(self.remove_structure(data, self.invert_structure(save_structure[19][2])))
+            player[19][0][1] = self.write_protobuf(
+                self.remove_structure(data, self.invert_structure(save_structure[19][2]))
+            )
 
         if config.save_game_id is not None and config.save_game_id > 0:
             self.debug(' - Setting save slot ID to %d' % (config.save_game_id))
@@ -1750,7 +1872,7 @@ class App(object):
             self.debug(' - %s exported: %d' % (name, count))
         # Don't bother reporting on skipped items, actually, since I now
         # know what they're actually used for.
-        #self.debug(' - Empty items skipped: %d' % (skipped_count))
+        # self.debug(' - Empty items skipped: %d' % (skipped_count))
 
     def import_items(self, data, codelist):
         """
@@ -1759,7 +1881,7 @@ class App(object):
         """
         player = self.read_protobuf(self.unwrap_player_data(data))
 
-        prefix_length = len(self.item_prefix)+1
+        prefix_length = len(self.item_prefix) + 1
 
         bank_count = 0
         weapon_count = 0
@@ -1769,16 +1891,16 @@ class App(object):
         for line in codelist.splitlines():
             line = line.strip()
             if line.startswith(";"):
-                name = line[1: ].strip().lower()
+                name = line[1:].strip().lower()
                 if name == "bank":
                     to_bank = True
                 elif name in ("items", "weapons"):
                     to_bank = False
                 continue
-            elif line[: prefix_length] + line[-1: ] != '%s()' % (self.item_prefix):
+            elif line[:prefix_length] + line[-1:] != '%s()' % (self.item_prefix):
                 continue
 
-            code = line[prefix_length: -1]
+            code = line[prefix_length:-1]
             try:
                 raw = base64.b64decode(code)
             except binascii.Error:
@@ -1817,7 +1939,7 @@ class App(object):
         self.ammo_resource_lookup = {}
         for shortname, (resource, pool) in self.ammo_resources.items():
             self.ammo_resource_lookup[resource] = shortname
-        
+
         # Parse Arguments
         self.parse_args(args)
 
@@ -1839,145 +1961,173 @@ class App(object):
         self.config = Config()
         config = self.config
 
-        parser = argparse.ArgumentParser(description='Modify %s Save Files' % (self.game_name),
-                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        parser = argparse.ArgumentParser(
+            description='Modify %s Save Files' % (self.game_name),
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
 
         # Optional args
 
-        parser.add_argument('-o', '--output',
-                choices=['savegame', 'decoded', 'decodedjson', 'json', 'items', 'none'],
-                default='savegame',
-                help="""
+        parser.add_argument(
+            '-o',
+            '--output',
+            choices=['savegame', 'decoded', 'decodedjson', 'json', 'items', 'none'],
+            default='savegame',
+            help="""
                     Output file format.  The most useful to humans are: savegame, json, and items.
                     If no output file is specified, this will revert to `none`.
                     """,
-                )
+        )
 
-        parser.add_argument('-i', '--import-items',
-                dest='import_items',
-                help='read in codes for items and add them to the bank and inventory',
-                )
+        parser.add_argument(
+            '-i',
+            '--import-items',
+            dest='import_items',
+            help='read in codes for items and add them to the bank and inventory',
+        )
 
-        parser.add_argument('-j', '--json',
-                action='store_true',
-                help='read savegame data from JSON format, rather than savegame',
-                )
+        parser.add_argument(
+            '-j',
+            '--json',
+            action='store_true',
+            help='read savegame data from JSON format, rather than savegame',
+        )
 
-        parser.add_argument('-b', '--bigendian',
-                action='store_true',
-                help='change the output format to big-endian, to write PS/xbox save files',
-                )
+        parser.add_argument(
+            '-b',
+            '--bigendian',
+            action='store_true',
+            help='change the output format to big-endian, to write PS/xbox save files',
+        )
 
-        parser.add_argument('-q', '--quiet',
-                dest='verbose',
-                action='store_false',
-                help='quiet output (should generate no output unless there are errors)',
-                )
+        parser.add_argument(
+            '-q',
+            '--quiet',
+            dest='verbose',
+            action='store_false',
+            help='quiet output (should generate no output unless there are errors)',
+        )
 
-        parser.add_argument('-f', '--force',
-                action='store_true',
-                help='force output file overwrite, if the destination file exists',
-                )
+        parser.add_argument(
+            '-f',
+            '--force',
+            action='store_true',
+            help='force output file overwrite, if the destination file exists',
+        )
 
         # More optional args - used to be the "modify" option
 
-        parser.add_argument('--name',
-                help='Set the name of the character',
-                )
+        parser.add_argument(
+            '--name',
+            help='Set the name of the character',
+        )
 
-        parser.add_argument('--save-game-id',
-                dest='save_game_id',
-                type=int,
-                help='Set the save game slot ID of the character (probably not actually needed ever)',
-                )
+        parser.add_argument(
+            '--save-game-id',
+            dest='save_game_id',
+            type=int,
+            help='Set the save game slot ID of the character (probably not actually needed ever)',
+        )
 
-        parser.add_argument('--level',
-                type=int,
-                help='Set the character to this level (from 1 to {})'.format(self.max_level),
-                )
+        parser.add_argument(
+            '--level',
+            type=int,
+            help='Set the character to this level (from 1 to {})'.format(self.max_level),
+        )
 
-        parser.add_argument('--money',
-                type=int,
-                help='Money to set for character',
-                )
+        parser.add_argument(
+            '--money',
+            type=int,
+            help='Money to set for character',
+        )
 
         # B2 and TPS have different currency types, so this function is
         # implemented in the implementing classes.
         self.setup_currency_args(parser)
 
-        parser.add_argument('--itemlevels',
-                type=int,
-                help='Set item levels (to set to current player level, specify 0).'
-                    'Skips level 1 items unless --forceitemlevels is specified too',
-                )
+        parser.add_argument(
+            '--itemlevels',
+            type=int,
+            help='Set item levels (to set to current player level, specify 0).'
+            'Skips level 1 items unless --forceitemlevels is specified too',
+        )
 
-        parser.add_argument('--forceitemlevels',
-                action='store_true',
-                help='Set item levels even if the item is at level 1',
-                )
+        parser.add_argument(
+            '--forceitemlevels',
+            action='store_true',
+            help='Set item levels even if the item is at level 1',
+        )
 
-        parser.add_argument('--backpack',
-                help='Set size of backpack (maximum is %d, "max" may be specified)' % (self.max_backpack_size),
-                )
+        parser.add_argument(
+            '--backpack',
+            help='Set size of backpack (maximum is %d, "max" may be specified)' % (self.max_backpack_size),
+        )
 
-        parser.add_argument('--bank',
-                help='Set size of bank (maximum is %d, "max" may be specified)' % (self.max_bank_size),
-                )
+        parser.add_argument(
+            '--bank',
+            help='Set size of bank (maximum is %d, "max" may be specified)' % (self.max_bank_size),
+        )
 
-        parser.add_argument('--gunslots',
-                type=int,
-                choices=[2,3,4],
-                help='Set number of gun slots open',
-                )
+        parser.add_argument(
+            '--gunslots',
+            type=int,
+            choices=[2, 3, 4],
+            help='Set number of gun slots open',
+        )
 
-        parser.add_argument('--copy-nvhm-missions',
-                dest='copy_nvhm_missions',
-                action='store_true',
-                help='Copies NVHM mission state to both TVHM and UVHM modes.  Also unlocks TVHM/UVHM',
-                )
+        parser.add_argument(
+            '--copy-nvhm-missions',
+            dest='copy_nvhm_missions',
+            action='store_true',
+            help='Copies NVHM mission state to both TVHM and UVHM modes.  Also unlocks TVHM/UVHM',
+        )
 
-        parser.add_argument('--unlock',
-                action=DictAction,
-                choices=self.unlock_choices,
-                default={},
-                help='Game features to unlock',
-                )
+        parser.add_argument(
+            '--unlock',
+            action=DictAction,
+            choices=self.unlock_choices,
+            default={},
+            help='Game features to unlock',
+        )
 
-        parser.add_argument('--challenges',
-                action=DictAction,
-                choices=['zero', 'max', 'bonus'],
-                default={},
-                help='Levels to set on challenge data',
-                )
+        parser.add_argument(
+            '--challenges',
+            action=DictAction,
+            choices=['zero', 'max', 'bonus'],
+            default={},
+            help='Levels to set on challenge data',
+        )
 
-        parser.add_argument('--maxammo',
-                action='store_true',
-                help='Fill all ammo pools to their maximum',
-                )
+        parser.add_argument(
+            '--maxammo',
+            action='store_true',
+            help='Fill all ammo pools to their maximum',
+        )
 
-        parser.add_argument('--fix-challenge-overflow',
-                action='store_true',
-                help='Fix values for challenges which appear as huge negative numbers',
-                )
+        parser.add_argument(
+            '--fix-challenge-overflow',
+            action='store_true',
+            help='Fix values for challenges which appear as huge negative numbers',
+        )
 
-        parser.add_argument('--print-unexplored-levels',
-                            action='store_true',
-                            help='Print level names that are not fully explored by player',
-                            )
+        parser.add_argument(
+            '--print-unexplored-levels',
+            action='store_true',
+            help='Print level names that are not fully explored by player',
+        )
 
         # Positional args
 
-        parser.add_argument('input_filename',
-                help='Input filename, can be "-" to specify STDIN'
-                )
+        parser.add_argument('input_filename', help='Input filename, can be "-" to specify STDIN')
 
-        parser.add_argument('output_filename',
-                nargs='?',
-                help="""
+        parser.add_argument(
+            'output_filename',
+            nargs='?',
+            help="""
                     Output filename, can be "-" to specify STDOUT.  Can be optional, in
                     which case no output file is produced.
                     """,
-                )
+        )
 
         # Additional game-specific arguments
         self.setup_game_specific_args(parser)
@@ -1990,7 +2140,6 @@ class App(object):
 
         # Some sanity checking with output type and output_filename
         if config.output_filename is None:
-
             # If we requested any changes, the only sensible course is to write them out
             if config.changes:
                 parser.error("No output_filename was specified, but changes were requested")
@@ -2006,7 +2155,6 @@ class App(object):
             config.output = 'none'
 
         else:
-
             # If we have an output filename but `none` output, complain about it.
             if config.output == 'none':
                 parser.error("Output filename specified but with `none` output")
@@ -2105,11 +2253,9 @@ class App(object):
 
         # If we have an output file, write to it!
         if config.output_filename is None:
-
             self.debug('No output file specified.  Exiting!')
 
         else:
-
             # Open our output file
             self.debug('')
             if config.output_filename == '-':
@@ -2122,8 +2268,10 @@ class App(object):
                         self.debug('Overwriting output file "%s"' % (config.output_filename))
                     else:
                         if config.input_filename == '-':
-                            raise BorderlandsError('Output filename "%s" exists and --force not specified, aborting' %
-                                (config.output_filename))
+                            raise BorderlandsError(
+                                'Output filename "%s" exists and --force not specified, aborting'
+                                % (config.output_filename)
+                            )
                         else:
                             self.notice('')
                             self.notice('Output filename "%s" exists' % (config.output_filename))
