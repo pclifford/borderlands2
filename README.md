@@ -44,6 +44,13 @@ without making any changes, like so:
 
     python bl2_save_edit.py save0001.sav save0002.sav
 
+As of July 2023, there's an option which *just* prints out some savegame info
+to the console, so having an output file in that case would be kind of pointless.
+In those situations, you can leave out the output filename to have the editor
+just print out the info and exit.  For instance:
+
+    python bl2_save_edit.py --print-unexplored-levels save0001.sav
+
 # Input and Output
 
 By default, the utility saves in a format usable by Borderlands, but you can
@@ -91,6 +98,10 @@ a little more closely:
 * **`decodedjson`** - A midway point between `decoded` and `json`, this will generate
   a JSON file, so it'll be technically editable by hand, but most of the internal
   data structures will be present as raw protobuf strings.
+* **`none`** - This output won't write a file at all.  There's generally no need
+  to specify this manually.  If you run the utility without an output file, it'll
+  switch to this mode automatically (though it will error out if you were also
+  specifying an option which would change the savefile in some way).
 
 # Modifying Savegames (JSON Method)
 
@@ -344,11 +355,10 @@ also unlock TVHM/UVHM if need be.
 # Printing out not-fully-explored levels
 
 The utility also includes an option to print out levels which the user has not
-fully explored.  At the moment, the editor doesn't actually have an "only show
-me information" mode, so you have to pretend to be doing a save edit even if
-you only want this option, at the moment:
+fully explored.  Since this option doesn't actually change the save in any way,
+you can omit the output filename when running it:
 
-    bl2_save_edit.py --print-unexplored-levels old.sav dummy
+    bl2_save_edit.py --print-unexplored-levels old.sav
 
 That will result something like the following output printed on the console
 as the editor processes the save:

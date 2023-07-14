@@ -1832,9 +1832,12 @@ class App(object):
         # Optional args
 
         parser.add_argument('-o', '--output',
-                choices=['savegame', 'decoded', 'decodedjson', 'json', 'items'],
+                choices=['savegame', 'decoded', 'decodedjson', 'json', 'items', 'none'],
                 default='savegame',
-                help='Output file format.  The most useful to humans are: savegame, json, and items',
+                help="""
+                    Output file format.  The most useful to humans are: savegame, json, and items.
+                    If no output file is specified, this will revert to `none`.
+                    """,
                 )
 
         parser.add_argument('-i', '--import-items',
@@ -1956,7 +1959,11 @@ class App(object):
                 )
 
         parser.add_argument('output_filename',
-                help='Output filename, can be "-" to specify STDOUT'
+                nargs='?',
+                help="""
+                    Output filename, can be "-" to specify STDOUT.  Can be optional, in
+                    which case no output file is produced.
+                    """,
                 )
 
         # Additional game-specific arguments
@@ -1967,6 +1974,29 @@ class App(object):
 
         # Do some extra fiddling
         config.finish(parser, self)
+
+        # Some sanity checking with output type and output_filename
+        if config.output_filename is None:
+
+            # If we requested any changes, the only sensible course is to write them out
+            if config.changes:
+                parser.error("No output_filename was specified, but changes were requested")
+
+            # If we manually specified an output type, we'll also need an output filename.
+            # It's possible in this case that the user explicitly set `savegame` as the
+            # output, rather than just leaving it at the default, but I don't think it's
+            # worth the shenanigans necessary to detect that.
+            if config.output not in {'savegame', 'none'}:
+                parser.error("No output_filename was specified, but output type '%s' was specified" % (config.output,))
+
+            # If we got here, we're probably good, but force ourselve to `none` output
+            config.output = 'none'
+
+        else:
+
+            # If we have an output filename but `none` output, complain about it.
+            if config.output == 'none':
+                parser.error("Output filename specified but with `none` output")
 
     def notice(self, output):
         """
@@ -2060,62 +2090,69 @@ class App(object):
             self.debug('')
             self.show_save_info(save_data)
 
-        # Open our output file
-        self.debug('')
-        if config.output_filename == '-':
-            self.debug('Using STDOUT for output file')
-            output_file = sys.stdout
+        # If we have an output file, write to it!
+        if config.output_filename is None:
+
+            self.debug('No output file specified.  Exiting!')
+
         else:
-            self.debug('Opening %s for output file' % (config.output_filename))
-            if os.path.exists(config.output_filename):
-                if config.force:
-                    self.debug('Overwriting output file "%s"' % (config.output_filename))
-                else:
-                    if config.input_filename == '-':
-                        raise BorderlandsError('Output filename "%s" exists and --force not specified, aborting' %
-                            (config.output_filename))
+
+            # Open our output file
+            self.debug('')
+            if config.output_filename == '-':
+                self.debug('Using STDOUT for output file')
+                output_file = sys.stdout
+            else:
+                self.debug('Opening %s for output file' % (config.output_filename))
+                if os.path.exists(config.output_filename):
+                    if config.force:
+                        self.debug('Overwriting output file "%s"' % (config.output_filename))
                     else:
-                        self.notice('')
-                        self.notice('Output filename "%s" exists' % (config.output_filename))
-                        sys.stderr.write('Continue and overwrite? [y|N] ')
-                        sys.stderr.flush()
-                        answer = sys.stdin.readline()
-                        if answer[0].lower() == 'y':
-                            self.notice('')
-                            self.notice('Continuing!')
+                        if config.input_filename == '-':
+                            raise BorderlandsError('Output filename "%s" exists and --force not specified, aborting' %
+                                (config.output_filename))
                         else:
                             self.notice('')
-                            self.notice('Exiting!')
-                            return
-            if config.output == 'savegame' or config.output == 'decoded':
-                mode = 'wb'
+                            self.notice('Output filename "%s" exists' % (config.output_filename))
+                            sys.stderr.write('Continue and overwrite? [y|N] ')
+                            sys.stderr.flush()
+                            answer = sys.stdin.readline()
+                            if answer[0].lower() == 'y':
+                                self.notice('')
+                                self.notice('Continuing!')
+                            else:
+                                self.notice('')
+                                self.notice('Exiting!')
+                                return
+                if config.output == 'savegame' or config.output == 'decoded':
+                    mode = 'wb'
+                else:
+                    mode = 'w'
+                output_file = open(config.output_filename, mode)
+
+            # Now output based on what we've been told to do
+            if config.output == 'items':
+                self.debug('Exporting items')
+                self.export_items(save_data, output_file)
+            elif config.output == 'savegame':
+                self.debug('Writing savegame file')
+                output_file.write(save_data)
             else:
-                mode = 'w'
-            output_file = open(config.output_filename, mode)
+                self.debug('Preparing decoded savegame file')
+                player = self.unwrap_player_data(save_data)
+                if config.output == 'decodedjson' or config.output == 'json':
+                    self.debug('Converting to JSON for more human-readable output')
+                    data = self.read_protobuf(player)
+                    if config.output == 'json':
+                        self.debug('Parsing protobuf data for even more human-readable output')
+                        data = self.apply_structure(data, self.save_structure)
+                    player = json.dumps(self.conv_binary_to_str(data), sort_keys=True, indent=4)
+                self.debug('Writing decoded savegame file')
+                output_file.write(player)
 
-        # Now output based on what we've been told to do
-        if config.output == 'items':
-            self.debug('Exporting items')
-            self.export_items(save_data, output_file)
-        elif config.output == 'savegame':
-            self.debug('Writing savegame file')
-            output_file.write(save_data)
-        else:
-            self.debug('Preparing decoded savegame file')
-            player = self.unwrap_player_data(save_data)
-            if config.output == 'decodedjson' or config.output == 'json':
-                self.debug('Converting to JSON for more human-readable output')
-                data = self.read_protobuf(player)
-                if config.output == 'json':
-                    self.debug('Parsing protobuf data for even more human-readable output')
-                    data = self.apply_structure(data, self.save_structure)
-                player = json.dumps(self.conv_binary_to_str(data), sort_keys=True, indent=4)
-            self.debug('Writing decoded savegame file')
-            output_file.write(player)
-
-        # Close the output file
-        if config.output_filename != '-':
-            output_file.close()
+            # Close the output file
+            if config.output_filename != '-':
+                output_file.close()
 
         # ... aaand we're done.
         self.debug('')
