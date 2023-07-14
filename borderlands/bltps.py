@@ -1,7 +1,4 @@
-#! /usr/bin/env python
-
-import argparse
-from .savefile import App, ChallengeCat, Challenge, Config, DictAction
+from borderlands.savefile import App, ChallengeCat, Challenge
 
 
 class AppTPS(App):

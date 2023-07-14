@@ -1,8 +1,6 @@
-#! /usr/bin/env python
-
 import argparse
 
-from .savefile import App, ChallengeCat, Challenge
+from borderlands.savefile import App, ChallengeCat, Challenge
 
 
 class AppBL2(App):

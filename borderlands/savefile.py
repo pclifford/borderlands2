@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 import binascii
 from bisect import insort
 from io import BytesIO
@@ -133,7 +131,7 @@ class Config(argparse.Namespace):
                 try:
                     self.backpack = int(self.backpack)
                 except ValueError:
-                    parser.error('Backpack value "%s" is not a number' % (self.backpack))
+                    parser.error(f'Backpack value "{self.backpack}" is not a number')
                 if self.backpack > app.max_backpack_size:
                     self.backpack = app.max_backpack_size
                 elif self.backpack < app.min_backpack_size:
@@ -147,7 +145,7 @@ class Config(argparse.Namespace):
                 try:
                     self.bank = int(self.bank)
                 except ValueError:
-                    parser.error('Backpack value "%s" is not a number' % (self.bank))
+                    parser.error(f'Backpack value "{self.bank}" is not a number')
                 if self.bank > app.max_bank_size:
                     self.bank = app.max_bank_size
                 elif self.bank < app.min_bank_size:
@@ -830,7 +828,7 @@ class App(object):
                 values = [self.apply_structure(self.read_protobuf(d[1]), child_s) for d in data]
                 fields[key] = values if repeated else values[0]
             else:
-                raise Exception("Invalid mapping %r for %r: %r" % (mapping, k, data))
+                raise Exception(f"Invalid mapping {mapping!r} for {k!r}: {data!r}")
         if len(raw) != 0:
             fields["_raw"] = {}
             for k, values in raw.items():
@@ -857,7 +855,7 @@ class App(object):
                 continue
             mapping = inv.get(k)
             if mapping is None:
-                raise BorderlandsError("Unknown key %r in data" % (k,))
+                raise BorderlandsError(f"Unknown key {k!r} in data")
             elif type(mapping) is int:
                 pbdata[mapping] = [[self.guess_wire_type(value), value]]
                 continue
@@ -890,7 +888,7 @@ class App(object):
                     values.append([2, self.write_protobuf(d)])
                 pbdata[key] = values
             else:
-                raise Exception("Invalid mapping %r for %r: %r" % (mapping, k, value))
+                raise Exception(f"Invalid mapping {mapping!r} for {k!r}: {value!r}")
         return pbdata
 
     def guess_wire_type(self, value):
@@ -973,20 +971,16 @@ class App(object):
 
         challenges = self.challenges
 
-        (unknown, size_in_bytes, num_challenges) = struct.unpack('%sIIH' % (self.config.endian), data[:10])
+        (unknown, size_in_bytes, num_challenges) = struct.unpack('{}IIH'.format(self.config.endian), data[:10])
         mydict = {'unknown': unknown}
 
         # Sanity check on size reported
         if (size_in_bytes + 8) != len(data):
-            raise BorderlandsError(
-                'Challenge data reported as %d bytes, but %d bytes found' % (size_in_bytes, len(data) - 8)
-            )
+            raise BorderlandsError(f'Challenge data reported as {size_in_bytes} bytes, but {len(data) - 8} bytes found')
 
         # Sanity check on number of challenges reported
         if (num_challenges * 12) != (size_in_bytes - 2):
-            raise BorderlandsError(
-                '%d challenges reported, but %d bytes of data found' % (num_challenges, size_in_bytes - 2)
-            )
+            raise BorderlandsError(f'{num_challenges} challenges reported, but {size_in_bytes - 2} bytes of data found')
 
         # Now read them in
         mydict['challenges'] = []
@@ -995,7 +989,7 @@ class App(object):
             challenge_dict = dict(
                 zip(
                     ['id', 'first_one', 'total_value', 'second_one', 'previous_value'],
-                    struct.unpack('%sHBIBI' % (self.config.endian), data[idx : idx + 12]),
+                    struct.unpack('{}HBIBI'.format(self.config.endian), data[idx : idx + 12]),
                 )
             )
             mydict['challenges'].append(challenge_dict)
@@ -1023,7 +1017,7 @@ class App(object):
 
     def print_explored_levels(self, player) -> None:
         if not self.LEVELS_TO_TRAVEL_STATION_MAP:
-            self.error('LEVELS_TO_TRAVEL_STATION_MAP is empty in class %s' % (self.__class__.__name__,))
+            self.error(f'LEVELS_TO_TRAVEL_STATION_MAP is empty in class {self.__class__.__name__}')
             return
 
         unique_names = set(self.LEVELS_TO_TRAVEL_STATION_MAP.keys())
@@ -1032,13 +1026,14 @@ class App(object):
         labels = []
         for name in unexplored:
             travel_station = self.LEVELS_TO_TRAVEL_STATION_MAP.get(name, name)
-            label = '  %s (%s)' % (travel_station, name)
+            label = f'  {travel_station} ({name})'
             if name in self.NO_EXPLORATION_CHALLENGE_LEVELS:
-                label = '%s (does not contribute to Explorer-of-X achievement)' % (label)
+                label += ' (does not contribute to Explorer-of-X achievement)'
             labels.append(label)
         if labels:
-            self.notice('Not fully explored levels:\n%s' % ('\n'.join(sorted(labels))))
-        self.notice('Total not fully explored levels: %d' % len(unexplored))
+            self.notice('Not fully explored levels:')
+            self.notice('\n'.join(sorted(labels)))
+        self.notice(f'Total not fully explored levels: {len(unexplored)}')
         self.notice('')
 
     def wrap_challenges(self, data):
@@ -1054,7 +1049,7 @@ class App(object):
         b = BytesIO()
         b.write(
             struct.pack(
-                '%sIIH' % (self.config.endian),
+                f'{self.config.endian}IIH',
                 data['unknown'],
                 (len(data['challenges']) * 12) + 2,
                 len(data['challenges']),
@@ -1064,7 +1059,7 @@ class App(object):
         for challenge in save_challenges:
             b.write(
                 struct.pack(
-                    '%sHBIBI' % (self.config.endian),
+                    f'{self.config.endian}HBIBI',
                     challenge['id'],
                     challenge['first_one'],
                     challenge['total_value'],
@@ -1157,7 +1152,7 @@ class App(object):
         data = bitstream.getvalue() + b"\x00\x00\x00\x00"
 
         header = struct.pack(">I3s", len(data) + 15, b'WSG')
-        header = header + struct.pack("%sIII" % (self.config.endian), 2, crc, len(player))
+        header = header + struct.pack(f"{self.config.endian}III", 2, crc, len(player))
 
         data = self.lzo1x_1_compress(header + data)[1:]
 
@@ -1431,19 +1426,19 @@ class App(object):
 
         if config.level is not None:
             if config.level < 1 or config.level > len(self.required_xp):
-                self.error('Invalid character level specified: %d' % (config.level))
+                self.error(f'Invalid character level specified: {config.level}')
             else:
-                self.debug(' - Updating to level %d' % (config.level))
+                self.debug(f' - Updating to level {config.level}')
                 lower = self.required_xp[config.level - 1]
                 if config.level == len(self.required_xp):
                     if player[3][0][1] != lower:
                         player[3][0][1] = lower
-                        self.debug('   - Also updating XP to %d' % (lower))
+                        self.debug(f'   - Also updating XP to {lower}')
                 else:
                     upper = self.required_xp[config.level]
                     if player[3][0][1] < lower or player[3][0][1] >= upper:
                         player[3][0][1] = lower
-                        self.debug('   - Also updating XP to %d' % (lower))
+                        self.debug(f'   - Also updating XP to {lower}')
                 player[2] = [[0, config.level]]
 
         if any([x is not None for x in [config.money, config.eridium, config.moonstone, config.seraph, config.torgue]]):
@@ -1453,19 +1448,19 @@ class App(object):
             while b.tell() < len(raw):
                 values.append(self.read_protobuf_value(b, 0))
             if config.money is not None:
-                self.debug(' - Setting available money to %d' % (config.money))
+                self.debug(f' - Setting available money to {config.money}')
                 values[0] = config.money
             if config.eridium is not None:
-                self.debug(' - Setting available eridium to %d' % (config.eridium))
+                self.debug(f' - Setting available eridium to {config.eridium}')
                 values[1] = config.eridium
             if config.moonstone is not None:
-                self.debug(' - Setting available moonstone to %d' % (config.moonstone))
+                self.debug(f' - Setting available moonstone to {config.moonstone}')
                 values[1] = config.moonstone
             if config.seraph is not None:
-                self.debug(' - Setting available Seraph Crystals to %d' % (config.seraph))
+                self.debug(f' - Setting available Seraph Crystals to {config.seraph}')
                 values[2] = config.seraph
             if config.torgue is not None:
-                self.debug(' - Setting available Torgue Tokens to %d' % (config.torgue))
+                self.debug(f' - Setting available Torgue Tokens to {config.torgue}')
                 values[4] = config.torgue
             player[6][0] = [0, values]
 
@@ -1475,11 +1470,11 @@ class App(object):
         seen_level_1_warning = False
         if config.itemlevels is not None:
             if config.itemlevels > 0:
-                self.debug(' - Setting all items to level %d' % (config.itemlevels))
+                self.debug(f' - Setting all items to level {config.itemlevels}')
                 level = config.itemlevels
             else:
                 level = player[2][0][1]
-                self.debug(' - Setting all items to character level (%d)' % (level))
+                self.debug(f' - Setting all items to character level ({level})')
             for field_number in (53, 54):
                 for field in player[field_number]:
                     field_data = self.read_protobuf(field[1])
@@ -1501,7 +1496,7 @@ class App(object):
         # it may trigger an unlock of UVHM if that wasn't already specified.
         if config.oplevel is not None:
             set_op_level = False
-            self.debug(' - Setting OP Level to %d' % (config.oplevel))
+            self.debug(f' - Setting OP Level to {config.oplevel}')
 
             # Constructing the new value ahead of time since we'll need it
             # no matter what else happens below.
@@ -1549,13 +1544,13 @@ class App(object):
                 player[53].append([2, self.write_protobuf(entry)])
 
         if config.backpack is not None:
-            self.debug(' - Setting backpack size to %d' % (config.backpack))
+            self.debug(f' - Setting backpack size to {config.backpack}')
             size = config.backpack
             sdus = int(math.ceil((size - self.min_backpack_size) / 3.0))
-            self.debug('   - Setting SDU size to %d' % (sdus))
+            self.debug(f'   - Setting SDU size to {sdus}')
             new_size = self.min_backpack_size + (sdus * 3)
             if size != new_size:
-                self.debug('   - Resetting backpack size to %d to match SDU count' % (new_size))
+                self.debug(f'   - Resetting backpack size to {new_size} to match SDU count')
             slots = self.read_protobuf(player[13][0][1])
             slots[1][0][1] = new_size
             player[13][0][1] = self.write_protobuf(slots)
@@ -1563,13 +1558,13 @@ class App(object):
             player[36][0][1] = self.write_repeated_protobuf_value(s[:7] + [sdus] + s[8:], 0)
 
         if config.bank is not None:
-            self.debug(' - Setting bank size to %d' % (config.bank))
+            self.debug(f' - Setting bank size to {config.bank}')
             size = config.bank
             sdus = int(min(255, math.ceil((size - self.min_bank_size) / 2.0)))
-            self.debug('   - Setting SDU size to %d' % (sdus))
+            self.debug(f'   - Setting SDU size to {sdus}')
             new_size = self.min_bank_size + (sdus * 2)
             if size != new_size:
-                self.debug('   - Resetting bank size to %d to match SDU count' % (new_size))
+                self.debug(f'   - Resetting bank size to {new_size} to match SDU count')
             if 56 in player:
                 player[56][0][1] = new_size
             else:
@@ -1580,7 +1575,7 @@ class App(object):
             player[36][0][1] = self.write_repeated_protobuf_value(s[:8] + [sdus] + s[9:], 0)
 
         if config.gunslots is not None:
-            self.debug(' - Setting available gun slots to %d' % (config.gunslots))
+            self.debug(f' - Setting available gun slots to {config.gunslots}')
             n = config.gunslots
             slots = self.read_protobuf(player[13][0][1])
             slots[2][0][1] = n
@@ -1752,9 +1747,9 @@ class App(object):
                         player[11][idx][1] = self.write_protobuf(self.remove_structure(data, inverted_structure))
 
                     else:
-                        self.error('Ammo type "%s" / pool "%s" not found!' % (ammo_type, data['pool']))
+                        self.error(f'Ammo type "{ammo_type}" / pool "{data["pool"]}" not found!')
                 else:
-                    self.error('Ammo pool "%s" not found!' % (resource))
+                    self.error(f'Ammo pool "{resource}" not found!')
 
             # Also, early in the game there isn't an entry in here for, for instance,
             # rocket launchers.  So let's make sure that all our known ammo exists.
@@ -1819,7 +1814,7 @@ class App(object):
             player[15][0][1] = self.wrap_challenges(data)
 
         if config.name is not None and len(config.name) > 0:
-            self.debug(' - Setting character name to "%s"' % (config.name))
+            self.debug(f' - Setting character name to "{config.name}"')
             data = self.apply_structure(self.read_protobuf(player[19][0][1]), save_structure[19][2])
             data['name'] = config.name
             player[19][0][1] = self.write_protobuf(
@@ -1827,7 +1822,7 @@ class App(object):
             )
 
         if config.save_game_id is not None and config.save_game_id > 0:
-            self.debug(' - Setting save slot ID to %d' % (config.save_game_id))
+            self.debug(f' - Setting save slot ID to {config.save_game_id}')
             player[20][0][1] = config.save_game_id
 
         return self.wrap_player_data(self.write_protobuf(player))
@@ -1867,12 +1862,13 @@ class App(object):
                 else:
                     count += 1
                     raw = self.replace_raw_item_key(raw, 0)
-                    code = '%s(%s)' % (self.item_prefix, base64.b64encode(raw).decode('latin1'))
+                    printable = base64.b64encode(raw).decode("latin1")
+                    code = f'{self.item_prefix}({printable})'
                     print(code, file=output)
-            self.debug(' - %s exported: %d' % (name, count))
+            self.debug(f' - {name} exported: {count}')
         # Don't bother reporting on skipped items, actually, since I now
         # know what they're actually used for.
-        # self.debug(' - Empty items skipped: %d' % (skipped_count))
+        # self.debug(f' - Empty items skipped: {skipped_count}')
 
     def import_items(self, data, codelist):
         """
@@ -1897,7 +1893,7 @@ class App(object):
                 elif name in ("items", "weapons"):
                     to_bank = False
                 continue
-            elif line[:prefix_length] + line[-1:] != '%s()' % (self.item_prefix):
+            elif not (line.startswith(self.item_prefix + '(') and line.endswith(')')):
                 continue
 
             code = line[prefix_length:-1]
@@ -1923,9 +1919,9 @@ class App(object):
 
             player.setdefault(field, []).append([2, self.write_protobuf(entry)])
 
-        self.debug(' - Bank imported: %d' % (bank_count))
-        self.debug(' - Items imported: %d' % (item_count))
-        self.debug(' - Weapons imported: %d' % (weapon_count))
+        self.debug(f' - Bank imported: {bank_count}')
+        self.debug(f' - Items imported: {item_count}')
+        self.debug(f' - Weapons imported: {weapon_count}')
 
         return self.wrap_player_data(self.write_protobuf(player))
 
@@ -1962,7 +1958,7 @@ class App(object):
         config = self.config
 
         parser = argparse.ArgumentParser(
-            description='Modify %s Save Files' % (self.game_name),
+            description=f'Modify {self.game_name} Save Files',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
 
@@ -2060,12 +2056,12 @@ class App(object):
 
         parser.add_argument(
             '--backpack',
-            help='Set size of backpack (maximum is %d, "max" may be specified)' % (self.max_backpack_size),
+            help=f'Set size of backpack (maximum is {self.max_backpack_size}, "max" may be specified)',
         )
 
         parser.add_argument(
             '--bank',
-            help='Set size of bank (maximum is %d, "max" may be specified)' % (self.max_bank_size),
+            help=f'Set size of bank (maximum is {self.max_bank_size}, "max" may be specified)',
         )
 
         parser.add_argument(
@@ -2149,7 +2145,7 @@ class App(object):
             # output, rather than just leaving it at the default, but I don't think it's
             # worth the shenanigans necessary to detect that.
             if config.output not in {'savegame', 'none'}:
-                parser.error("No output_filename was specified, but output type '%s' was specified" % (config.output,))
+                parser.error(f"No output_filename was specified, but output type '{config.output}' was specified")
 
             # If we got here, we're probably good, but force ourselve to `none` output
             config.output = 'none'
@@ -2213,7 +2209,7 @@ class App(object):
             self.debug('Using STDIN for input file')
             input_file = sys.stdin
         else:
-            self.debug('Opening %s for input file' % (config.input_filename))
+            self.debug(f'Opening {config.input_filename} for input file')
             input_file = open(config.input_filename, 'rb')
         self.debug('')
 
@@ -2233,7 +2229,7 @@ class App(object):
 
         # If we've been told to import items, do so.
         if config.import_items:
-            self.debug('Importing items from %s' % (config.import_items))
+            self.debug(f'Importing items from {config.import_items}')
             itemlist = open(config.import_items, 'r')
             save_data = self.import_items(save_data, itemlist.read())
             itemlist.close()
@@ -2262,19 +2258,18 @@ class App(object):
                 self.debug('Using STDOUT for output file')
                 output_file = sys.stdout
             else:
-                self.debug('Opening %s for output file' % (config.output_filename))
+                self.debug(f'Opening {config.output_filename} for output file')
                 if os.path.exists(config.output_filename):
                     if config.force:
-                        self.debug('Overwriting output file "%s"' % (config.output_filename))
+                        self.debug(f'Overwriting output file "{config.output_filename}"')
                     else:
                         if config.input_filename == '-':
                             raise BorderlandsError(
-                                'Output filename "%s" exists and --force not specified, aborting'
-                                % (config.output_filename)
+                                f'Output filename "{config.output_filename}" exists and --force not specified, aborting'
                             )
                         else:
                             self.notice('')
-                            self.notice('Output filename "%s" exists' % (config.output_filename))
+                            self.notice(f'Output filename "{config.output_filename}" exists')
                             sys.stderr.write('Continue and overwrite? [y|N] ')
                             sys.stderr.flush()
                             answer = sys.stdin.readline()
