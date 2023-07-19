@@ -98,7 +98,7 @@ class Config(argparse.Namespace):
 
         # Set our "changes" boolean -- first, args which take a value
         if any(
-            x is not None
+            bool(x)
             for x in [
                 self.backpack,
                 self.bank,
@@ -124,7 +124,7 @@ class Config(argparse.Namespace):
             self.changes = True
 
         # Finally, any unlocks/challenges we mean to set
-        if any(bool(var) for var in [self.unlock, self.challenges]):
+        if any(bool(var) for var in (self.unlock, self.challenges)):
             self.changes = True
 
         # Now set our "show_info" boolean.  Just a single boolean option, at the moment
