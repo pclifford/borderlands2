@@ -1,0 +1,2 @@
+class BorderlandsError(RuntimeError):
+    pass

@@ -1,18 +1,11 @@
 #!/usr/bin/env python
-# vim: set expandtab tabstop=4 shiftwidth=4:
-
+"""
+NOTE: cleanup tests code
+"""
 import os
-import sys
 import subprocess
-
-if True:
-    print('This was just a utility I used when porting to Python 3, to compare')
-    print('the outputs to the Python 2 version (to ensure that nothing was')
-    print('subtly broken.  Really some unit tests would have been the long-term')
-    print('better way to go, but whatever.  Anyway, not really for general use,')
-    print('though I figured I would commit it anyway, in case I think of')
-    print('something else that needs checking.')
-    sys.exit(0)
+import sys
+from typing import Optional
 
 
 class Test(object):
@@ -33,7 +26,7 @@ class Test(object):
         'three': '.3',
     }
 
-    def __init__(self, desc, input_file, args, text_output=False, restrict_game=False):
+    def __init__(self, desc, input_file, args, text_output=False, restrict_game: Optional[str] = None):
         self.desc = desc
         self.input_file = input_file
         self.args = args
@@ -42,7 +35,7 @@ class Test(object):
 
     def run(self):
         for game in self.games:
-            if self.restrict_game and game != self.restrict_game:
+            if self.restrict_game is not None and game != self.restrict_game:
                 print('{} {}: skipping'.format(game, self.desc))
                 continue
             output_files = []
@@ -70,7 +63,7 @@ class Test(object):
                     else:
                         with open(full_output, 'rb') as df:
                             output_data.append(df.read())
-                except FileNotFoundError as e:
+                except FileNotFoundError:
                     output_data.append('{} {} result does not exist'.format(game, executable))
             if output_data[0] != output_data[1]:
                 print('{} {}: files {} and {} do not match'.format(game, self.desc, output_files[0], output_files[1]))
@@ -79,11 +72,6 @@ class Test(object):
                 os.unlink(output_files[0])
                 os.unlink(output_files[1])
 
-
-# First clear out our output directory
-print('Cleaning output directory')
-for filename in os.listdir(Test.output_dir):
-    os.unlink(os.path.join(Test.output_dir, filename))
 
 tests = [
     Test('noargs', 'toptier.sav', []),
@@ -122,5 +110,26 @@ tests = [
     Test('maxammo', 'early.sav', ['--maxammo']),
 ]
 
-for test in tests:
-    test.run()
+
+def main():
+    # First clear out our output directory
+    print('Cleaning output directory')
+    for filename in os.listdir(Test.output_dir):
+        os.unlink(os.path.join(Test.output_dir, filename))
+
+    for test in tests:
+        test.run()
+
+
+if __name__ == '__main__':
+    if True:
+        print('This was just a utility I used when porting to Python 3, to compare')
+        print('the outputs to the Python 2 version (to ensure that nothing was')
+        print('subtly broken.  Really some unit tests would have been the long-term')
+        print('better way to go, but whatever.  Anyway, not really for general use,')
+        print('though I figured I would commit it anyway, in case I think of')
+        print('something else that needs checking.')
+        sys.exit(0)
+
+    # noinspection PyUnreachableCode
+    main()
