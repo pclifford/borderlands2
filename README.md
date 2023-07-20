@@ -414,11 +414,25 @@ you can omit the output filename when running it:
 That will result something like the following output printed on the console
 as the editor processes the save:
 
-	Not fully explored levels:
-	  Mines of Avarice (Mines_P) (does not contribute to Explorer-of-X achievement)
-	  Rotgut Distillery (Distillery_P) (does not contribute to Explorer-of-X achievement)
-	  The Raid on Digistruct Peak (TestingZone_P)
-	Total not fully explored levels: 3
+    World Traveler - Partially (32/36)
+    More details: https://www.playstationtrophies.org/forum/topic/161466-complete-world-map-world-traveler-trophy/
+    Incomplete maps (4):
+      Natural Selection Annex
+      Southern Shelf - Bay
+      The Highlands
+      Thousand Cuts
+    
+    Arctic Explorer - Complete
+    Urban Explorer - Complete
+    Highlands Explorer - Partially (2/4)
+    More details: https://www.trueachievements.com/a167559/highlands-explorer-achievement
+    Incomplete maps (2):
+      The Highlands
+      Thousand Cuts
+    
+    Blight Explorer - Complete
+    Gadabout - Complete
+    Been There - Complete
 
 # Combining Commandline Options
 
