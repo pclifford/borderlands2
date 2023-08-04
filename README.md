@@ -6,6 +6,13 @@ simple way to perform common actions on a character, such as setting money,
 unlocking Black Market SDUs, and can also generate a hand-editable JSON file
 which can then be converted back into a savegame.
 
+**Note:** As of July 2023, Github user [loot-midget](https://github.com/loot-midget)
+has forked this project and done a lot of really nice cleanup on it, which
+you can see at [`https://github.com/loot-midget/borderlands2`](https://github.com/loot-midget/borderlands2).
+I'm planning on trying to keep this repository up-to-date with that repo,
+but you may want to just head over there and use that repo instead, since
+it's likely to end up ahead of this repo.
+
 Note the following before trying to use it:
 
 * It has no graphical interface and is not easy to use
