@@ -213,9 +213,65 @@ class AppBL2(BaseApp):
             dest='op_level',
             help='OP Level to unlock (will also unlock TVHM/UVHM if not already unlocked)',
         )
+        parser.add_argument(
+            '--diagnose-challenge-accepted',
+            action='store_true',
+            help='print challenges that have to be completed up to level 1 in order to finish Challenge Accepted',
+        )
 
     def report_explorer_achievements_progress(self, player: PlayerDict) -> None:
         fully_explored_maps = self.get_fully_explored_areas(player)
         report = create_explorer_achievements_report(fully_explored_maps)
         for line in report:
             self.notice(line)
+
+    def _show_save_info(self, player: PlayerDict) -> None:
+        super()._show_save_info(player)
+
+        if self.config.diagnose_challenge_accepted:
+            self._diagnose_challenge_accepted(player)
+
+    def _diagnose_challenge_accepted(self, player: PlayerDict) -> None:
+        self.notice('Challenge Accepted achievement progress:')
+        data = self.unwrap_challenges(player[15][0][1])
+
+        challenges = data['challenges']
+        max_signed_int32 = 2147483647
+
+        problems = []
+        for save_challenge in challenges:
+            if save_challenge['id'] not in self.challenges:
+                continue
+
+            challenge = self.challenges[save_challenge['id']]
+            if not challenge.bl2_is_in_challenge_accepted:
+                continue
+
+            current_value = save_challenge['total_value']
+            if current_value > max_signed_int32:
+                message1 = '%s: %s: current value (%d) is too huge / corrupted / will show negative in the game.' % (
+                    challenge.category.name,
+                    challenge.name,
+                    current_value,
+                )
+                problems.append(message1 + ' Please use --fix-challenge-overflow option to fix it.')
+                continue
+
+            first_level = challenge.levels[0]
+            if current_value < first_level:
+                problems.append(
+                    '%s: %s: first level is incomplete, progress %d/%d'
+                    % (challenge.category.name, challenge.name, current_value, first_level)
+                )
+                continue
+
+        if problems:
+            problems.sort()
+            for p in problems:
+                self.notice('- ' + p)
+
+            self.notice('Challenge Accepted: %d problems found' % len(problems))
+        else:
+            self.notice('Challenge Accepted: no problems found. It looks like Challenge Accepted already achieved.')
+
+        self.notice('')

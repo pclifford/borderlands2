@@ -1,6 +1,6 @@
 import argparse
 import os
-from typing import Union, Optional, List, Callable
+from typing import Union, Optional, List, Callable, Any, Dict
 
 
 def adjust_value(*, prev: Optional[Union[str, int]], min_value: int, max_value: int, label: str) -> Optional[int]:
@@ -60,14 +60,13 @@ class Config(argparse.Namespace):
     gun_slots = None
     max_ammo = None
     op_level = None
-    unlock = {}
-    challenges = {}
+    unlock: Dict[str, Any] = {}
+    challenges: Dict[str, Any] = {}
     fix_challenge_overflow = False
 
     # Config options interpreted from the above
     endian = '<'
     changes = False
-    show_info = False
 
     def finish(
         self,
@@ -126,10 +125,6 @@ class Config(argparse.Namespace):
         # Finally, any unlocks/challenges we mean to set
         if any(bool(var) for var in (self.unlock, self.challenges)):
             self.changes = True
-
-        # Now set our "show_info" boolean.  Just a single boolean option, at the moment
-        if self.print_unexplored_levels:
-            self.show_info = True
 
         # Can't read/write to the same file
         if (
@@ -258,6 +253,7 @@ def parse_args(
         help='change the output format to big-endian, to write PS/xbox save files',
     )
 
+    # TODO: rewrite with "-v/--verbose"
     parser.add_argument(
         '-q',
         '--quiet',
@@ -421,7 +417,7 @@ def parse_args(
         if config.output not in {'savegame', 'none'}:
             parser.error(f"No output_filename was specified, but output type '{config.output}' was specified")
 
-        # If we got here, we're probably good, but force ourselve to `none` output
+        # If we got here, we're probably good, but force ourselves to `none` output
         config.output = 'none'
 
     else:

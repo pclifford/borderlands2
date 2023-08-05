@@ -64,6 +64,7 @@ two.
     * [Copying mission data from NVHM to TVHM+UVHM](#copying-mission-data-from-nvhm-to-tvhmuvhm)
 * [Getting Savegame Information](#getting-savegame-information)
     * [Printing out not-fully-explored levels](#printing-out-not-fully-explored-levels)
+    * [Challenge Accepted achievement progress](#challenge-accepted-achievement-progress)
 * [Combining Commandline Options](#combining-commandline-options)
 * [Working with Savegames to/from Consoles](#working-with-savegames-tofrom-consoles)
 * [Exporting character items](#exporting-character-items)
@@ -433,6 +434,22 @@ as the editor processes the save:
     Blight Explorer - Complete
     Gadabout - Complete
     Been There - Complete
+
+## Challenge Accepted achievement progress
+
+To avoid scrolling challenges in game user could use dedicated option
+for printing data:
+
+    bl2_save_edit.py --diagnose-challenge-accepted old.sav
+
+That will result something like the following output printed on the console
+as the program processes the save:
+
+	Challenge Accepted achievement progress:
+	- Miscellaneous: JEEEEENKINSSSSSS!!!: first level is incomplete, progress 0/1
+	- Shields: Ammo Eater: first level is incomplete, progress 19/20
+	- Vehicle: Blue Sparks: first level is incomplete, progress 2/5
+	Challenge Accepted: 3 problems found
 
 # Combining Commandline Options
 

@@ -1,3 +1,4 @@
+import sys
 from typing import Final, Optional, Tuple
 
 CLZ_TABLE: Final = (
@@ -254,7 +255,10 @@ def lzo1x_1_compress(s: bytes) -> bytes:
 
     while len_ > 20 and t + len_ > 31:
         ll = min(49152, len_)
-        t = lzo1x_1_compress_core(src=src, dst=dst, ti=t, ip_start=ip, ip_len=ll)
+        temp = lzo1x_1_compress_core(src=src, dst=dst, ti=t, ip_start=ip, ip_len=ll)
+        if temp is None:
+            sys.exit('None from lzo1x_1_compress_core')
+        t = temp
         ip += ll
         len_ -= ll
     t += len_

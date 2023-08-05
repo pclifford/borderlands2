@@ -6,6 +6,7 @@ from typing import List
 
 from borderlands.bl2 import AppBL2
 from borderlands.bltps import AppTPS
+from borderlands.savefile import BaseApp
 
 MIN_PYTHON = (3, 9)
 
@@ -30,16 +31,16 @@ def python_version_check():
 def run(*, game_name: str, args: List[str]) -> None:
     python_version_check()
 
-    if game_name == 'BL2':
-        app_class = AppBL2
-    elif game_name == 'TPS':
-        app_class = AppTPS
-    else:
-        raise RuntimeError(f'unknown game: {game_name!r}')
-
     # noinspection PyBroadException
     try:
-        app = app_class(args)
+        app: BaseApp
+        if game_name == 'BL2':
+            app = AppBL2(args)
+        elif game_name == 'TPS':
+            app = AppTPS(args)
+        else:
+            raise RuntimeError(f'unknown game: {game_name!r}')
+
         app.run()
     except Exception:
         print(ERROR_TEMPLATE.format(repr(args)), file=sys.stderr)

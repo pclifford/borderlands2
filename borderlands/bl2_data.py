@@ -1,6 +1,6 @@
 from typing import Dict
 
-from borderlands.challenges import Challenge, ChallengeCategory
+from borderlands.challenges import Challenge, ChallengeCategory, create_bl2_challenge_that_is_accepted
 
 
 def create_bl2_challenges() -> Dict[int, Challenge]:
@@ -326,7 +326,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Enemies
-    challenges[1632] = Challenge(
+    challenges[1632] = create_bl2_challenge_that_is_accepted(
         position=24,
         identifier=1632,
         id_text="GD_Challenges.enemies.Enemies_KillSkags",
@@ -335,7 +335,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill skags",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1675] = Challenge(
+    challenges[1675] = create_bl2_challenge_that_is_accepted(
         position=84,
         identifier=1675,
         id_text="GD_Challenges.enemies.Enemies_KillConstructors",
@@ -344,7 +344,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill constructors",
         levels=(5, 12, 20, 30, 50),
     )
-    challenges[1655] = Challenge(
+    challenges[1655] = create_bl2_challenge_that_is_accepted(
         position=80,
         identifier=1655,
         id_text="GD_Challenges.enemies.Enemies_KillLoaders",
@@ -354,7 +354,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(20, 100, 500, 1000, 1500),
         bonus=3,
     )
-    challenges[1651] = Challenge(
+    challenges[1651] = create_bl2_challenge_that_is_accepted(
         position=76,
         identifier=1651,
         id_text="GD_Challenges.enemies.Enemies_KillBullymongs",
@@ -363,7 +363,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill bullymongs",
         levels=(25, 50, 150, 300, 750),
     )
-    challenges[1652] = Challenge(
+    challenges[1652] = create_bl2_challenge_that_is_accepted(
         position=77,
         identifier=1652,
         id_text="GD_Challenges.enemies.Enemies_KillCrystalisks",
@@ -372,7 +372,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill crystalisks",
         levels=(10, 25, 50, 80, 120),
     )
-    challenges[1653] = Challenge(
+    challenges[1653] = create_bl2_challenge_that_is_accepted(
         position=78,
         identifier=1653,
         id_text="GD_Challenges.enemies.Enemies_KillGoliaths",
@@ -381,7 +381,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill goliaths",
         levels=(10, 25, 50, 80, 120),
     )
-    challenges[1654] = Challenge(
+    challenges[1654] = create_bl2_challenge_that_is_accepted(
         position=79,
         identifier=1654,
         id_text="GD_Challenges.enemies.Enemies_KillEngineers",
@@ -390,7 +390,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill Hyperion personnel",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1658] = Challenge(
+    challenges[1658] = create_bl2_challenge_that_is_accepted(
         position=83,
         identifier=1658,
         id_text="GD_Challenges.enemies.Enemies_KillSurveyors",
@@ -399,7 +399,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill surveyors",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1694] = Challenge(
+    challenges[1694] = create_bl2_challenge_that_is_accepted(
         position=87,
         identifier=1694,
         id_text="GD_Challenges.enemies.Enemies_KillNomads",
@@ -408,7 +408,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill nomads",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1695] = Challenge(
+    challenges[1695] = create_bl2_challenge_that_is_accepted(
         position=88,
         identifier=1695,
         id_text="GD_Challenges.enemies.Enemies_KillPsychos",
@@ -417,7 +417,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill psychos",
         levels=(50, 100, 150, 300, 500),
     )
-    challenges[1696] = Challenge(
+    challenges[1696] = create_bl2_challenge_that_is_accepted(
         position=89,
         identifier=1696,
         id_text="GD_Challenges.enemies.Enemies_KillRats",
@@ -426,7 +426,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill rats.  Yes, really.",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1791] = Challenge(
+    challenges[1791] = create_bl2_challenge_that_is_accepted(
         position=93,
         identifier=1791,
         id_text="GD_Challenges.enemies.Enemies_KillSpiderants",
@@ -435,7 +435,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill spiderants",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1792] = Challenge(
+    challenges[1792] = create_bl2_challenge_that_is_accepted(
         position=94,
         identifier=1792,
         id_text="GD_Challenges.enemies.Enemies_KillStalkers",
@@ -444,7 +444,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill stalkers",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1793] = Challenge(
+    challenges[1793] = create_bl2_challenge_that_is_accepted(
         position=95,
         identifier=1793,
         id_text="GD_Challenges.enemies.Enemies_KillThreshers",
@@ -453,17 +453,17 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill threshers",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1693] = Challenge(
+    challenges[1693] = create_bl2_challenge_that_is_accepted(
         position=86,
         identifier=1693,
         id_text="GD_Challenges.enemies.Enemies_KillMarauders",
         category=challenge_cat_enemies,
-        name="Marauder? I Hardly Know 'Er",
+        name="Marauder? I Hardly Know 'Er!",
         description="Kill marauders",
         levels=(20, 100, 500, 1000, 1500),
         bonus=3,
     )
-    challenges[1794] = Challenge(
+    challenges[1794] = create_bl2_challenge_that_is_accepted(
         position=96,
         identifier=1794,
         id_text="GD_Challenges.enemies.Enemies_KillVarkid",
@@ -472,7 +472,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill varkids",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1795] = Challenge(
+    challenges[1795] = create_bl2_challenge_that_is_accepted(
         position=97,
         identifier=1795,
         id_text="GD_Challenges.enemies.Enemies_KillGyros",
@@ -481,7 +481,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill buzzards",
         levels=(10, 25, 45, 70, 100),
     )
-    challenges[1796] = Challenge(
+    challenges[1796] = create_bl2_challenge_that_is_accepted(
         position=98,
         identifier=1796,
         id_text="GD_Challenges.enemies.Enemies_KillMidgets",
@@ -490,7 +490,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill midgets",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1895] = Challenge(
+    challenges[1895] = create_bl2_challenge_that_is_accepted(
         position=249,
         identifier=1895,
         id_text="GD_Challenges.enemies.Enemies_ShootBullymongProjectiles",
@@ -499,7 +499,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Shoot bullymong-tossed projectiles out of midair",
         levels=(10, 25, 50, 125, 250),
     )
-    challenges[1896] = Challenge(
+    challenges[1896] = create_bl2_challenge_that_is_accepted(
         position=250,
         identifier=1896,
         id_text="GD_Challenges.enemies.Enemies_ReleaseChainedMidgets",
@@ -508,7 +508,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Shoot chains to release midgets from shields",
         levels=(1, 5, 15, 30, 50),
     )
-    challenges[1934] = Challenge(
+    challenges[1934] = create_bl2_challenge_that_is_accepted(
         position=99,
         identifier=1934,
         id_text="GD_Challenges.enemies.Enemies_KillBruisers",
@@ -517,7 +517,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill bruisers",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1732] = Challenge(
+    challenges[1732] = create_bl2_challenge_that_is_accepted(
         position=91,
         identifier=1732,
         id_text="GD_Challenges.enemies.Enemies_KillVarkidPods",
@@ -528,7 +528,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Elemental
-    challenges[1873] = Challenge(
+    challenges[1873] = create_bl2_challenge_that_is_accepted(
         position=225,
         identifier=1873,
         id_text="GD_Challenges.elemental.Elemental_SetEnemiesOnFire",
@@ -537,7 +537,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Ignite enemies",
         levels=(25, 100, 400, 1000, 2000),
     )
-    challenges[1642] = Challenge(
+    challenges[1642] = create_bl2_challenge_that_is_accepted(
         position=40,
         identifier=1642,
         id_text="GD_Challenges.elemental.Elemental_KillEnemiesCorrosive",
@@ -546,7 +546,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies with corrode damage",
         levels=(20, 75, 250, 600, 1000),
     )
-    challenges[1645] = Challenge(
+    challenges[1645] = create_bl2_challenge_that_is_accepted(
         position=43,
         identifier=1645,
         id_text="GD_Challenges.elemental.Elemental_KillEnemiesExplosive",
@@ -556,7 +556,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(20, 75, 250, 600, 1000),
         bonus=3,
     )
-    challenges[1877] = Challenge(
+    challenges[1877] = create_bl2_challenge_that_is_accepted(
         position=229,
         identifier=1877,
         id_text="GD_Challenges.elemental.Elemental_DealFireDOTDamage",
@@ -566,7 +566,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(2500, 20000, 100000, 500000, 1000000),
         bonus=5,
     )
-    challenges[1878] = Challenge(
+    challenges[1878] = create_bl2_challenge_that_is_accepted(
         position=230,
         identifier=1878,
         id_text="GD_Challenges.elemental.Elemental_DealCorrosiveDOTDamage",
@@ -575,7 +575,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Deal corrode damage",
         levels=(2500, 20000, 100000, 500000, 1000000),
     )
-    challenges[1879] = Challenge(
+    challenges[1879] = create_bl2_challenge_that_is_accepted(
         position=231,
         identifier=1879,
         id_text="GD_Challenges.elemental.Elemental_DealShockDOTDamage",
@@ -584,7 +584,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Deal electrocute damage",
         levels=(5000, 20000, 100000, 500000, 1000000),
     )
-    challenges[1880] = Challenge(
+    challenges[1880] = create_bl2_challenge_that_is_accepted(
         position=232,
         identifier=1880,
         id_text="GD_Challenges.elemental.Elemental_DealBonusSlagDamage",
@@ -596,7 +596,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Loot
-    challenges[1898] = Challenge(
+    challenges[1898] = create_bl2_challenge_that_is_accepted(
         position=251,
         identifier=1898,
         id_text="GD_Challenges.Pickups.Inventory_PickupWhiteItems",
@@ -605,7 +605,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Loot or purchase white items",
         levels=(50, 125, 250, 400, 600),
     )
-    challenges[1899] = Challenge(
+    challenges[1899] = create_bl2_challenge_that_is_accepted(
         position=252,
         identifier=1899,
         id_text="GD_Challenges.Pickups.Inventory_PickupGreenItems",
@@ -615,7 +615,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(20, 50, 75, 125, 200),
         bonus=3,
     )
-    challenges[1900] = Challenge(
+    challenges[1900] = create_bl2_challenge_that_is_accepted(
         position=253,
         identifier=1900,
         id_text="GD_Challenges.Pickups.Inventory_PickupBlueItems",
@@ -624,7 +624,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Loot or purchase blue items",
         levels=(5, 12, 20, 30, 45),
     )
-    challenges[1901] = Challenge(
+    challenges[1901] = create_bl2_challenge_that_is_accepted(
         position=254,
         identifier=1901,
         id_text="GD_Challenges.Pickups.Inventory_PickupPurpleItems",
@@ -633,7 +633,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Loot or purchase purple items",
         levels=(2, 4, 7, 12, 20),
     )
-    challenges[1902] = Challenge(
+    challenges[1902] = create_bl2_challenge_that_is_accepted(
         position=255,
         identifier=1902,
         id_text="GD_Challenges.Pickups.Inventory_PickupOrangeItems",
@@ -643,7 +643,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(1, 3, 6, 10, 15),
         bonus=5,
     )
-    challenges[1669] = Challenge(
+    challenges[1669] = create_bl2_challenge_that_is_accepted(
         position=108,
         identifier=1669,
         id_text="GD_Challenges.Loot.Loot_OpenChests",
@@ -652,7 +652,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Open treasure chests",
         levels=(5, 25, 50, 125, 250),
     )
-    challenges[1670] = Challenge(
+    challenges[1670] = create_bl2_challenge_that_is_accepted(
         position=109,
         identifier=1670,
         id_text="GD_Challenges.Loot.Loot_OpenLootables",
@@ -662,7 +662,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(50, 250, 750, 1500, 2500),
         bonus=3,
     )
-    challenges[1630] = Challenge(
+    challenges[1630] = create_bl2_challenge_that_is_accepted(
         position=8,
         identifier=1630,
         id_text="GD_Challenges.Loot.Loot_PickUpWeapons",
@@ -673,7 +673,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Money
-    challenges[1858] = Challenge(
+    challenges[1858] = create_bl2_challenge_that_is_accepted(
         position=118,
         identifier=1858,
         id_text="GD_Challenges.Economy.Economy_MoneySaved",
@@ -683,7 +683,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(10000, 50000, 250000, 1000000, 3000000),
         bonus=3,
     )
-    challenges[1859] = Challenge(
+    challenges[1859] = create_bl2_challenge_that_is_accepted(
         position=119,
         identifier=1859,
         id_text="GD_Challenges.Economy.General_MoneyFromCashDrops",
@@ -692,7 +692,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Collect dollars from cash drops",
         levels=(5000, 25000, 125000, 500000, 1000000),
     )
-    challenges[1678] = Challenge(
+    challenges[1678] = create_bl2_challenge_that_is_accepted(
         position=112,
         identifier=1678,
         id_text="GD_Challenges.Economy.Economy_SellItems",
@@ -701,7 +701,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Sell items to vending machines",
         levels=(10, 25, 150, 300, 750),
     )
-    challenges[1860] = Challenge(
+    challenges[1860] = create_bl2_challenge_that_is_accepted(
         position=113,
         identifier=1860,
         id_text="GD_Challenges.Economy.Economy_PurchaseItemsOfTheDay",
@@ -710,7 +710,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Buy Items of the Day",
         levels=(1, 5, 15, 30, 50),
     )
-    challenges[1810] = Challenge(
+    challenges[1810] = create_bl2_challenge_that_is_accepted(
         position=111,
         identifier=1810,
         id_text="GD_Challenges.Economy.Economy_BuyItemsWithEridium",
@@ -720,7 +720,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(2, 5, 9, 14, 20),
         bonus=4,
     )
-    challenges[1805] = Challenge(
+    challenges[1805] = create_bl2_challenge_that_is_accepted(
         position=214,
         identifier=1805,
         id_text="GD_Challenges.Economy.Trade_ItemsWithPlayers",
@@ -731,7 +731,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Vehicle
-    challenges[1640] = Challenge(
+    challenges[1640] = create_bl2_challenge_that_is_accepted(
         position=37,
         identifier=1640,
         id_text="GD_Challenges.Vehicles.Vehicles_KillByRamming",
@@ -740,7 +740,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies by ramming them with a vehicle",
         levels=(5, 10, 50, 100, 200),
     )
-    challenges[1920] = Challenge(
+    challenges[1920] = create_bl2_challenge_that_is_accepted(
         position=275,
         identifier=1920,
         id_text="GD_Challenges.Vehicles.Vehicles_KillByPowerSlide",
@@ -750,7 +750,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(5, 15, 30, 50, 75),
         bonus=3,
     )
-    challenges[1641] = Challenge(
+    challenges[1641] = create_bl2_challenge_that_is_accepted(
         position=38,
         identifier=1641,
         id_text="GD_Challenges.Vehicles.Vehicles_KillsWithVehicleWeapon",
@@ -759,7 +759,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies using a turret or vehicle-mounted weapon",
         levels=(10, 25, 150, 300, 750),
     )
-    challenges[1922] = Challenge(
+    challenges[1922] = create_bl2_challenge_that_is_accepted(
         position=277,
         identifier=1922,
         id_text="GD_Challenges.Vehicles.Vehicles_VehicleKillsVehicle",
@@ -768,7 +768,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill vehicles while in a vehicle",
         levels=(5, 10, 50, 100, 200),
     )
-    challenges[1919] = Challenge(
+    challenges[1919] = create_bl2_challenge_that_is_accepted(
         position=274,
         identifier=1919,
         id_text="GD_Challenges.Vehicles.Vehicles_KillsWhilePassenger",
@@ -779,7 +779,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Health
-    challenges[1917] = Challenge(
+    challenges[1917] = create_bl2_challenge_that_is_accepted(
         position=270,
         identifier=1917,
         id_text="GD_Challenges.Player.Player_PointsHealed",
@@ -788,7 +788,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Recover health",
         levels=(1000, 25000, 150000, 1000000, 5000000),
     )
-    challenges[1865] = Challenge(
+    challenges[1865] = create_bl2_challenge_that_is_accepted(
         position=200,
         identifier=1865,
         id_text="GD_Challenges.Player.Player_SecondWind",
@@ -797,7 +797,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Get Second Winds by killing an enemy",
         levels=(5, 10, 50, 100, 200),
     )
-    challenges[1866] = Challenge(
+    challenges[1866] = create_bl2_challenge_that_is_accepted(
         position=201,
         identifier=1866,
         id_text="GD_Challenges.Player.Player_SecondWindFromBadass",
@@ -807,17 +807,17 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(1, 5, 15, 30, 50),
         bonus=5,
     )
-    challenges[1868] = Challenge(
+    challenges[1868] = create_bl2_challenge_that_is_accepted(
         position=204,
         identifier=1868,
         id_text="GD_Challenges.Player.Player_CoopRevivesOfFriends",
         category=challenge_cat_health,
-        name="This is No Time for Lazy!",
+        name="This Is No Time for Lazy!",
         description="Revive a co-op partner",
         levels=(5, 10, 50, 100, 200),
         bonus=5,
     )
-    challenges[1834] = Challenge(
+    challenges[1834] = create_bl2_challenge_that_is_accepted(
         position=198,
         identifier=1834,
         id_text="GD_Challenges.Player.Player_SecondWindFromFire",
@@ -826,7 +826,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Get Second Winds by killing enemies with a burn DoT (damage over time)",
         levels=(1, 5, 15, 30, 50),
     )
-    challenges[1833] = Challenge(
+    challenges[1833] = create_bl2_challenge_that_is_accepted(
         position=197,
         identifier=1833,
         id_text="GD_Challenges.Player.Player_SecondWindFromCorrosive",
@@ -835,7 +835,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Get Second Winds by killing enemies with a corrosive DoT (damage over time)",
         levels=(1, 5, 15, 30, 50),
     )
-    challenges[1835] = Challenge(
+    challenges[1835] = create_bl2_challenge_that_is_accepted(
         position=199,
         identifier=1835,
         id_text="GD_Challenges.Player.Player_SecondWindFromShock",
@@ -846,7 +846,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Grenades
-    challenges[1639] = Challenge(
+    challenges[1639] = create_bl2_challenge_that_is_accepted(
         position=31,
         identifier=1639,
         id_text="GD_Challenges.Grenades.Grenade_Kills",
@@ -856,7 +856,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(10, 25, 150, 300, 750),
         bonus=3,
     )
-    challenges[1886] = Challenge(
+    challenges[1886] = create_bl2_challenge_that_is_accepted(
         position=238,
         identifier=1886,
         id_text="GD_Challenges.Grenades.Grenade_KillsSingularityType",
@@ -865,7 +865,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies with Singularity grenades",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1885] = Challenge(
+    challenges[1885] = create_bl2_challenge_that_is_accepted(
         position=237,
         identifier=1885,
         id_text="GD_Challenges.Grenades.Grenade_KillsMirvType",
@@ -875,7 +875,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(10, 25, 75, 150, 300),
         bonus=3,
     )
-    challenges[1883] = Challenge(
+    challenges[1883] = create_bl2_challenge_that_is_accepted(
         position=235,
         identifier=1883,
         id_text="GD_Challenges.Grenades.Grenade_KillsAoEoTType",
@@ -884,7 +884,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies with Area-of-Effect grenades",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1884] = Challenge(
+    challenges[1884] = create_bl2_challenge_that_is_accepted(
         position=236,
         identifier=1884,
         id_text="GD_Challenges.Grenades.Grenade_KillsBouncing",
@@ -893,7 +893,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies with Bouncing Betty grenades",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1918] = Challenge(
+    challenges[1918] = create_bl2_challenge_that_is_accepted(
         position=239,
         identifier=1918,
         id_text="GD_Challenges.Grenades.Grenade_KillsTransfusionType",
@@ -904,7 +904,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Shields
-    challenges[1889] = Challenge(
+    challenges[1889] = create_bl2_challenge_that_is_accepted(
         position=243,
         identifier=1889,
         id_text="GD_Challenges.Shields.Shields_KillsNova",
@@ -914,7 +914,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(5, 10, 50, 100, 200),
         bonus=3,
     )
-    challenges[1890] = Challenge(
+    challenges[1890] = create_bl2_challenge_that_is_accepted(
         position=244,
         identifier=1890,
         id_text="GD_Challenges.Shields.Shields_KillsRoid",
@@ -923,7 +923,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description='Kill enemies while buffed by a "Maylay" shield',
         levels=(5, 10, 50, 100, 200),
     )
-    challenges[1891] = Challenge(
+    challenges[1891] = create_bl2_challenge_that_is_accepted(
         position=245,
         identifier=1891,
         id_text="GD_Challenges.Shields.Shields_KillsSpikes",
@@ -932,7 +932,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies with reflected damage from a Spike shield",
         levels=(5, 10, 50, 100, 200),
     )
-    challenges[1892] = Challenge(
+    challenges[1892] = create_bl2_challenge_that_is_accepted(
         position=246,
         identifier=1892,
         id_text="GD_Challenges.Shields.Shields_KillsImpact",
@@ -941,7 +941,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies while buffed by an Amplify shield",
         levels=(5, 10, 50, 100, 200),
     )
-    challenges[1930] = Challenge(
+    challenges[1930] = create_bl2_challenge_that_is_accepted(
         position=222,
         identifier=1930,
         id_text="GD_Challenges.Shields.Shields_AbsorbAmmo",
@@ -953,7 +953,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Rocket Launchers
-    challenges[1762] = Challenge(
+    challenges[1762] = create_bl2_challenge_that_is_accepted(
         position=32,
         identifier=1762,
         id_text="GD_Challenges.Weapons.Launcher_Kills",
@@ -963,7 +963,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(10, 50, 100, 250, 500),
         bonus=3,
     )
-    challenges[1828] = Challenge(
+    challenges[1828] = create_bl2_challenge_that_is_accepted(
         position=192,
         identifier=1828,
         id_text="GD_Challenges.Weapons.Launcher_SecondWinds",
@@ -972,7 +972,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Get Second Winds with rocket launchers",
         levels=(2, 5, 15, 30, 50),
     )
-    challenges[1870] = Challenge(
+    challenges[1870] = create_bl2_challenge_that_is_accepted(
         position=224,
         identifier=1870,
         id_text="GD_Challenges.Weapons.Launcher_KillsSplashDamage",
@@ -981,7 +981,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies with rocket launcher splash damage",
         levels=(5, 10, 50, 100, 200),
     )
-    challenges[1869] = Challenge(
+    challenges[1869] = create_bl2_challenge_that_is_accepted(
         position=223,
         identifier=1869,
         id_text="GD_Challenges.Weapons.Launcher_KillsDirectHit",
@@ -991,7 +991,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(5, 10, 50, 100, 200),
         bonus=5,
     )
-    challenges[1871] = Challenge(
+    challenges[1871] = create_bl2_challenge_that_is_accepted(
         position=54,
         identifier=1871,
         id_text="GD_Challenges.Weapons.Launcher_KillsFullShieldEnemy",
@@ -1000,7 +1000,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill shielded enemies with one rocket each",
         levels=(5, 15, 35, 75, 125),
     )
-    challenges[1808] = Challenge(
+    challenges[1808] = create_bl2_challenge_that_is_accepted(
         position=52,
         identifier=1808,
         id_text="GD_Challenges.Weapons.Launcher_KillsLongRange",
@@ -1011,7 +1011,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Sniper Rifles
-    challenges[1636] = Challenge(
+    challenges[1636] = create_bl2_challenge_that_is_accepted(
         position=28,
         identifier=1636,
         id_text="GD_Challenges.Weapons.SniperRifle_Kills",
@@ -1021,7 +1021,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(20, 100, 500, 2500, 5000),
         bonus=3,
     )
-    challenges[1666] = Challenge(
+    challenges[1666] = create_bl2_challenge_that_is_accepted(
         position=178,
         identifier=1666,
         id_text="GD_Challenges.Weapons.Sniper_CriticalHits",
@@ -1030,7 +1030,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Get critical hits with sniper rifles",
         levels=(25, 100, 400, 1000, 2000),
     )
-    challenges[1824] = Challenge(
+    challenges[1824] = create_bl2_challenge_that_is_accepted(
         position=188,
         identifier=1824,
         id_text="GD_Challenges.Weapons.Sniper_SecondWinds",
@@ -1039,7 +1039,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Get Second Winds with sniper rifles",
         levels=(2, 5, 15, 30, 50),
     )
-    challenges[1844] = Challenge(
+    challenges[1844] = create_bl2_challenge_that_is_accepted(
         position=59,
         identifier=1844,
         id_text="GD_Challenges.Weapons.Sniper_CriticalHitKills",
@@ -1048,7 +1048,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies with critical hits using sniper rifles",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1798] = Challenge(
+    challenges[1798] = create_bl2_challenge_that_is_accepted(
         position=47,
         identifier=1798,
         id_text="GD_Challenges.Weapons.SniperRifle_KillsFromHip",
@@ -1057,7 +1057,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies with sniper rifles without using ironsights",
         levels=(5, 10, 50, 100, 200),
     )
-    challenges[1881] = Challenge(
+    challenges[1881] = create_bl2_challenge_that_is_accepted(
         position=233,
         identifier=1881,
         id_text="GD_Challenges.Weapons.SniperRifle_KillsUnaware",
@@ -1066,7 +1066,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill unaware enemies with sniper rifles",
         levels=(5, 10, 50, 100, 200),
     )
-    challenges[1872] = Challenge(
+    challenges[1872] = create_bl2_challenge_that_is_accepted(
         position=55,
         identifier=1872,
         id_text="GD_Challenges.Weapons.SniperRifle_KillsFullShieldEnemy",
@@ -1078,7 +1078,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Assault Rifles
-    challenges[1637] = Challenge(
+    challenges[1637] = create_bl2_challenge_that_is_accepted(
         position=29,
         identifier=1637,
         id_text="GD_Challenges.Weapons.AssaultRifle_Kills",
@@ -1088,7 +1088,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(25, 100, 400, 1000, 2000),
         bonus=3,
     )
-    challenges[1667] = Challenge(
+    challenges[1667] = create_bl2_challenge_that_is_accepted(
         position=179,
         identifier=1667,
         id_text="GD_Challenges.Weapons.AssaultRifle_CriticalHits",
@@ -1097,7 +1097,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Get critical hits with assault rifles",
         levels=(25, 100, 400, 1000, 2000),
     )
-    challenges[1825] = Challenge(
+    challenges[1825] = create_bl2_challenge_that_is_accepted(
         position=189,
         identifier=1825,
         id_text="GD_Challenges.Weapons.AssaultRifle_SecondWinds",
@@ -1106,16 +1106,16 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Get Second Winds with assault rifles",
         levels=(5, 15, 30, 50, 75),
     )
-    challenges[1845] = Challenge(
+    challenges[1845] = create_bl2_challenge_that_is_accepted(
         position=60,
         identifier=1845,
         id_text="GD_Challenges.Weapons.AssaultRifle_CriticalHitKills",
         category=challenge_cat_ar,
-        name="... This Is My Gun",
+        name="...This Is My Gun",
         description="Kill enemies with critical hits using assault rifles",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1797] = Challenge(
+    challenges[1797] = create_bl2_challenge_that_is_accepted(
         position=46,
         identifier=1797,
         id_text="GD_Challenges.Weapons.AssaultRifle_KillsCrouched",
@@ -1127,7 +1127,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # SMGs
-    challenges[1635] = Challenge(
+    challenges[1635] = create_bl2_challenge_that_is_accepted(
         position=27,
         identifier=1635,
         id_text="GD_Challenges.Weapons.SMG_Kills",
@@ -1137,7 +1137,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(25, 100, 400, 1000, 2000),
         bonus=3,
     )
-    challenges[1665] = Challenge(
+    challenges[1665] = create_bl2_challenge_that_is_accepted(
         position=177,
         identifier=1665,
         id_text="GD_Challenges.Weapons.SMG_CriticalHits",
@@ -1146,7 +1146,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Get critical hits with SMGs",
         levels=(25, 100, 400, 1000, 2000),
     )
-    challenges[1843] = Challenge(
+    challenges[1843] = create_bl2_challenge_that_is_accepted(
         position=58,
         identifier=1843,
         id_text="GD_Challenges.Weapons.SMG_CriticalHitKills",
@@ -1155,7 +1155,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies with critical hits using SMGs",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1823] = Challenge(
+    challenges[1823] = create_bl2_challenge_that_is_accepted(
         position=187,
         identifier=1823,
         id_text="GD_Challenges.Weapons.SMG_SecondWinds",
@@ -1166,7 +1166,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Shotguns
-    challenges[1634] = Challenge(
+    challenges[1634] = create_bl2_challenge_that_is_accepted(
         position=26,
         identifier=1634,
         id_text="GD_Challenges.Weapons.Shotgun_Kills",
@@ -1176,7 +1176,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(25, 100, 400, 1000, 2000),
         bonus=3,
     )
-    challenges[1664] = Challenge(
+    challenges[1664] = create_bl2_challenge_that_is_accepted(
         position=176,
         identifier=1664,
         id_text="GD_Challenges.Weapons.Shotgun_CriticalHits",
@@ -1185,7 +1185,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Get critical hits with shotguns",
         levels=(50, 250, 1000, 2500, 5000),
     )
-    challenges[1822] = Challenge(
+    challenges[1822] = create_bl2_challenge_that_is_accepted(
         position=186,
         identifier=1822,
         id_text="GD_Challenges.Weapons.Shotgun_SecondWinds",
@@ -1194,7 +1194,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Get Second Winds with shotguns",
         levels=(2, 5, 15, 30, 50),
     )
-    challenges[1806] = Challenge(
+    challenges[1806] = create_bl2_challenge_that_is_accepted(
         position=50,
         identifier=1806,
         id_text="GD_Challenges.Weapons.Shotgun_KillsPointBlank",
@@ -1203,7 +1203,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies from point-blank range with shotguns",
         levels=(10, 25, 150, 300, 750),
     )
-    challenges[1807] = Challenge(
+    challenges[1807] = create_bl2_challenge_that_is_accepted(
         position=51,
         identifier=1807,
         id_text="GD_Challenges.Weapons.Shotgun_KillsLongRange",
@@ -1212,7 +1212,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies from long range with shotguns",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1842] = Challenge(
+    challenges[1842] = create_bl2_challenge_that_is_accepted(
         position=57,
         identifier=1842,
         id_text="GD_Challenges.Weapons.Shotgun_CriticalHitKills",
@@ -1223,7 +1223,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Pistols
-    challenges[1633] = Challenge(
+    challenges[1633] = create_bl2_challenge_that_is_accepted(
         position=25,
         identifier=1633,
         id_text="GD_Challenges.Weapons.Pistol_Kills",
@@ -1233,7 +1233,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(25, 100, 400, 1000, 2000),
         bonus=3,
     )
-    challenges[1663] = Challenge(
+    challenges[1663] = create_bl2_challenge_that_is_accepted(
         position=175,
         identifier=1663,
         id_text="GD_Challenges.Weapons.Pistol_CriticalHits",
@@ -1242,7 +1242,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Get critical hits with pistols",
         levels=(25, 100, 400, 1000, 2000),
     )
-    challenges[1821] = Challenge(
+    challenges[1821] = create_bl2_challenge_that_is_accepted(
         position=185,
         identifier=1821,
         id_text="GD_Challenges.Weapons.Pistol_SecondWinds",
@@ -1251,7 +1251,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Get Second Winds with pistols",
         levels=(2, 5, 15, 30, 50),
     )
-    challenges[1841] = Challenge(
+    challenges[1841] = create_bl2_challenge_that_is_accepted(
         position=56,
         identifier=1841,
         id_text="GD_Challenges.Weapons.Pistol_CriticalHitKills",
@@ -1260,7 +1260,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies with critical hits using pistols",
         levels=(10, 25, 75, 150, 300),
     )
-    challenges[1800] = Challenge(
+    challenges[1800] = create_bl2_challenge_that_is_accepted(
         position=49,
         identifier=1800,
         id_text="GD_Challenges.Weapons.Pistol_KillsQuickshot",
@@ -1272,7 +1272,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Melee
-    challenges[1650] = Challenge(
+    challenges[1650] = create_bl2_challenge_that_is_accepted(
         position=75,
         identifier=1650,
         id_text="GD_Challenges.Melee.Melee_Kills",
@@ -1282,7 +1282,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(25, 100, 400, 1000, 2000),
         bonus=3,
     )
-    challenges[1893] = Challenge(
+    challenges[1893] = create_bl2_challenge_that_is_accepted(
         position=247,
         identifier=1893,
         id_text="GD_Challenges.Melee.Melee_KillsBladed",
@@ -1293,7 +1293,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # General Combat
-    challenges[1621] = Challenge(
+    challenges[1621] = create_bl2_challenge_that_is_accepted(
         position=0,
         identifier=1621,
         id_text="GD_Challenges.GeneralCombat.General_RoundsFired",
@@ -1303,7 +1303,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(1000, 5000, 10000, 25000, 50000),
         bonus=5,
     )
-    challenges[1702] = Challenge(
+    challenges[1702] = create_bl2_challenge_that_is_accepted(
         position=90,
         identifier=1702,
         id_text="GD_Challenges.GeneralCombat.Player_KillsWithActionSkill",
@@ -1313,7 +1313,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(20, 75, 250, 600, 1000),
         bonus=5,
     )
-    challenges[1916] = Challenge(
+    challenges[1916] = create_bl2_challenge_that_is_accepted(
         position=269,
         identifier=1916,
         id_text="GD_Challenges.GeneralCombat.Kills_AtNight",
@@ -1322,7 +1322,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies at night",
         levels=(10, 25, 150, 300, 750),
     )
-    challenges[1915] = Challenge(
+    challenges[1915] = create_bl2_challenge_that_is_accepted(
         position=268,
         identifier=1915,
         id_text="GD_Challenges.GeneralCombat.Kills_AtDay",
@@ -1331,7 +1331,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Kill enemies during the day",
         levels=(50, 250, 1000, 2500, 5000),
     )
-    challenges[1908] = Challenge(
+    challenges[1908] = create_bl2_challenge_that_is_accepted(
         position=261,
         identifier=1908,
         id_text="GD_Challenges.GeneralCombat.Tediore_KillWithReload",
@@ -1341,7 +1341,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(5, 10, 50, 100, 200),
         bonus=5,
     )
-    challenges[1909] = Challenge(
+    challenges[1909] = create_bl2_challenge_that_is_accepted(
         position=262,
         identifier=1909,
         id_text="GD_Challenges.GeneralCombat.Tediore_DamageFromReloads",
@@ -1350,7 +1350,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Deal damage with Tediore reloads",
         levels=(5000, 20000, 100000, 500000, 1000000),
     )
-    challenges[1912] = Challenge(
+    challenges[1912] = create_bl2_challenge_that_is_accepted(
         position=265,
         identifier=1912,
         id_text="GD_Challenges.GeneralCombat.Barrels_KillEnemies",
@@ -1360,7 +1360,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         levels=(10, 25, 45, 70, 100),
         bonus=3,
     )
-    challenges[1646] = Challenge(
+    challenges[1646] = create_bl2_challenge_that_is_accepted(
         position=44,
         identifier=1646,
         id_text="GD_Challenges.GeneralCombat.Kills_FromCrits",
@@ -1371,7 +1371,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     )
 
     # Miscellaneous
-    challenges[1659] = Challenge(
+    challenges[1659] = create_bl2_challenge_that_is_accepted(
         position=104,
         identifier=1659,
         id_text="GD_Challenges.Dueling.DuelsWon_HatersGonnaHate",
@@ -1380,7 +1380,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Win duels",
         levels=(1, 5, 15, 30, 50),
     )
-    challenges[1804] = Challenge(
+    challenges[1804] = create_bl2_challenge_that_is_accepted(
         position=211,
         identifier=1804,
         id_text="GD_Challenges.Miscellaneous.Missions_SideMissionsCompleted",
@@ -1389,7 +1389,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Complete side missions",
         levels=(5, 15, 30, 55, 90),
     )
-    challenges[1803] = Challenge(
+    challenges[1803] = create_bl2_challenge_that_is_accepted(
         position=210,
         identifier=1803,
         id_text="GD_Challenges.Miscellaneous.Missions_OptionalObjectivesCompleted",
@@ -1398,7 +1398,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Complete optional mission objectives",
         levels=(10, 25, 45, 70, 100),
     )
-    challenges[1698] = Challenge(
+    challenges[1698] = create_bl2_challenge_that_is_accepted(
         position=173,
         identifier=1698,
         id_text="GD_Challenges.Miscellaneous.Misc_CompleteChallenges",
@@ -1407,7 +1407,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         description="Complete many, many challenges",
         levels=(5, 25, 50, 100, 200),
     )
-    challenges[1940] = Challenge(
+    challenges[1940] = create_bl2_challenge_that_is_accepted(
         position=100,
         identifier=1940,
         id_text="GD_Challenges.Miscellaneous.Misc_JimmyJenkins",

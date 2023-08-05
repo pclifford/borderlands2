@@ -80,17 +80,16 @@ def write_varint(f: io.BytesIO, i: int) -> None:
 
 def read_protobuf_value(b: io.BytesIO, wire_type: int) -> Any:
     if wire_type == 0:
-        value = read_varint(b)
+        return read_varint(b)
     elif wire_type == 1:
-        value = struct.unpack("<Q", b.read(8))[0]
+        return struct.unpack("<Q", b.read(8))[0]
     elif wire_type == 2:
         length = read_varint(b)
-        value = b.read(length)
+        return b.read(length)
     elif wire_type == 5:
-        value = struct.unpack("<I", b.read(4))[0]
+        return struct.unpack("<I", b.read(4))[0]
     else:
         raise BorderlandsError("Unsupported wire type " + str(wire_type))
-    return value
 
 
 def read_repeated_protobuf_value(data: bytes, wire_type: int) -> list:
@@ -127,7 +126,7 @@ def write_repeated_protobuf_value(data: list, wire_type: int) -> bytes:
 
 
 def read_protobuf(data: bytes) -> PlayerDict:
-    fields = {}
+    fields: PlayerDict = {}
     end_position = len(data)
     bytestream = io.BytesIO(data)
     while bytestream.tell() < end_position:

@@ -9,12 +9,12 @@ import os
 import random
 import struct
 import sys
-from typing import List, Tuple, Dict, Any, Optional, Union
+from typing import List, Tuple, Dict, Any, Optional
 
 from borderlands.challenges import Challenge
 from borderlands.config import parse_args
 from borderlands.datautil.bitstreams import ReadBitstream, WriteBitstream
-from borderlands.datautil.common import conv_binary_to_str, rotate_data_right, rotate_data_left, xor_data
+from borderlands.datautil.common import conv_binary_to_str, rotate_data_right, xor_data, create_body
 from borderlands.datautil.common import invert_structure, replace_raw_item_key
 from borderlands.datautil.data_types import PlayerDict
 from borderlands.datautil.errors import BorderlandsError
@@ -294,30 +294,26 @@ class BaseApp:
     def unpack_item_values(self, is_weapon: int, data: bytes) -> List[Optional[int]]:
         i = 8
         data = b' ' + data
-        values = []
         end = len(data) * 8
+        result: List[Optional[int]] = []
         for size in self.item_sizes[is_weapon]:
             j = i + size
             if j > end:
-                values.append(None)
+                result.append(None)
                 continue
             value = 0
             for b in data[j >> 3 : (i >> 3) - 1 : -1]:
                 value = (value << 8) | b
-            values.append((value >> (i & 7)) & ~(0xFF << size))
+            result.append((value >> (i & 7)) & ~(0xFF << size))
             i = j
-        return values
+        return result
 
     def wrap_item(self, *, is_weapon: int, values: list, key: int) -> bytes:
         item = self.pack_item_values(is_weapon, values)
         header = struct.pack(">Bi", (is_weapon << 7) | self.item_struct_version, key)
-        padding = b"\xff" * (33 - len(item))
-        h = binascii.crc32(header + b"\xff\xff" + item + padding) & 0xFFFFFFFF
-        checksum = struct.pack(">H", ((h >> 16) ^ h) & 0xFFFF)
-        body = xor_data(rotate_data_left(checksum + item, key & 31), key >> 5)
-        return header + body
+        return header + create_body(item=item, header=header, key=key)
 
-    def unwrap_item(self, data: PlayerDict) -> Tuple[int, List[Optional[int]], int]:
+    def unwrap_item(self, data: bytes) -> Tuple[int, List[Optional[int]], int]:
         version_type, key = struct.unpack(">Bi", data[:5])
         is_weapon = version_type >> 7
         raw = rotate_data_right(xor_data(data[5:], key >> 5), key & 31)
@@ -437,21 +433,24 @@ class BaseApp:
             )
         return b.getvalue()
 
-    def unwrap_item_info(self, value: PlayerDict) -> dict:
+    def unwrap_item_info(self, value: bytes) -> dict:
         is_weapon, item, key = self.unwrap_item(value)
-        data = {"is_weapon": is_weapon, "key": key, "set": item[0], "level": [item[4], item[5]]}
+        data: Dict[str, Any] = {"is_weapon": is_weapon, "key": key, "set": item[0], "level": [item[4], item[5]]}
         for i, (k, bits) in enumerate(self.item_header_sizes[is_weapon]):
-            lib = item[1 + i] >> bits
-            asset = item[1 + i] & ~(lib << bits)
+            x = item[1 + i]
+            if x is None:
+                sys.exit('unwrap_item_info got None instead of int')
+            lib = x >> bits
+            asset = x & ~(lib << bits)
             data[k] = {"lib": lib, "asset": asset}
         bits = 10 + is_weapon
-        parts = []
-        for value in item[6:]:
-            if value is None:
+        parts: List[Optional[Dict[str, Any]]] = []
+        for x in item[6:]:
+            if x is None:
                 parts.append(None)
             else:
-                lib = value >> bits
-                asset = value & ~(lib << bits)
+                lib = x >> bits
+                asset = x & ~(lib << bits)
                 parts.append({"lib": lib, "asset": asset})
         data["parts"] = parts
         return data
@@ -536,8 +535,10 @@ class BaseApp:
         we're parsing the protobuf twice, since modify_save also does
         that.  Inefficiency!
         """
-
         player = read_protobuf(self.unwrap_player_data(data))
+        self._show_save_info(player)
+
+    def _show_save_info(self, player: PlayerDict) -> None:
         if self.config.print_unexplored_levels:
             self.report_explorer_achievements_progress(player)
 
@@ -619,15 +620,17 @@ class BaseApp:
                 for field in player[field_number]:
                     field_data = read_protobuf(field[1])
                     is_weapon, item, key = self.unwrap_item(field_data[1][0][1])
-                    if self.config.force_item_levels or item[4] > 1:
-                        item = item[:4] + [level, level] + item[6:]
-                        field_data[1][0][1] = self.wrap_item(is_weapon=is_weapon, values=item, key=key)
-                        field[1] = write_protobuf(field_data)
-                    else:
-                        if item[4] == 1 and not seen_level_1_warning:
-                            seen_level_1_warning = True
-                            self.debug('   NOTICE: At least one item is level 1 and will not be updated.')
-                            self.debug('   Use --forceitemlevels to update these items')
+                    item_4 = item[4]
+                    if item_4 is not None:
+                        if self.config.force_item_levels or item_4 > 1:
+                            item = item[:4] + [level, level] + item[6:]
+                            field_data[1][0][1] = self.wrap_item(is_weapon=is_weapon, values=item, key=key)
+                            field[1] = write_protobuf(field_data)
+                        else:
+                            if item_4 == 1 and not seen_level_1_warning:
+                                seen_level_1_warning = True
+                                self.debug('   NOTICE: At least one item is level 1 and will not be updated.')
+                                self.debug('   Use --forceitemlevels to update these items')
 
         # OP Level is stored in a weird little custom item.
         # See Gibbed.Borderlands2.FileFormats/SaveExpansion.cs for a bit more
@@ -843,9 +846,9 @@ class BaseApp:
             if 'ammo' in self.config.unlock:
                 self.debug(' - Unlocking ammo capacity')
                 s = read_repeated_protobuf_value(player[36][0][1], 0)
-                for idx, (key, value) in enumerate(zip(self.black_market_keys, s)):
-                    if key in self.black_market_ammo:
-                        s[idx] = 7
+                for idx2, (key2, _value) in enumerate(zip(self.black_market_keys, s)):
+                    if key2 in self.black_market_ammo:
+                        s[idx2] = 7
                 player[36][0][1] = write_repeated_protobuf_value(s, 0)
 
         # This should always come after the ammo-unlock section, since our
@@ -874,21 +877,21 @@ class BaseApp:
             inverted_structure = invert_structure(self.save_structure[11][2])
             seen_ammo = {}
             for idx, protobuf in enumerate(player[11]):
-                data = apply_structure(read_protobuf(protobuf[1]), self.save_structure[11][2])
-                resource = data['resource'].decode('latin1')
+                data2 = apply_structure(read_protobuf(protobuf[1]), self.save_structure[11][2])
+                resource = data2['resource'].decode('latin1')
                 if resource in self.ammo_resource_lookup:
                     ammo_type = self.ammo_resource_lookup[resource]
                     seen_ammo[ammo_type] = True
                     if ammo_type in max_ammo:
                         # Set the data in the structure
-                        data['level'] = max_ammo[ammo_type][0]
-                        data['amount'] = float(max_ammo[ammo_type][1])
+                        data2['level'] = max_ammo[ammo_type][0]
+                        data2['amount'] = float(max_ammo[ammo_type][1])
 
                         # And now convert back into a protobuf
-                        player[11][idx][1] = write_protobuf(remove_structure(data, inverted_structure))
+                        player[11][idx][1] = write_protobuf(remove_structure(data2, inverted_structure))
 
                     else:
-                        self.error(f'Ammo type "{ammo_type}" / pool "{data["pool"]}" not found!')
+                        self.error(f'Ammo type "{ammo_type}" / pool "{data2["pool"]}" not found!')
                 else:
                     self.error(f'Ammo pool "{resource}" not found!')
 
@@ -905,7 +908,7 @@ class BaseApp:
                     player[11].append([2, write_protobuf(remove_structure(new_struct, inverted_structure))])
 
         if self.config.challenges:
-            data = self.unwrap_challenges(player[15][0][1])
+            data2 = self.unwrap_challenges(player[15][0][1])
             # You can specify multiple options at once.  Specifying "max" and
             # "bonus" at the same time, for instance, will put everything at its
             # max value, and then potentially lower the ones which have bonuses.
@@ -922,7 +925,7 @@ class BaseApp:
                 if do_bonus:
                     self.debug('   - Setting bonus challenges')
 
-            for save_challenge in data['challenges']:
+            for save_challenge in data2['challenges']:
                 if save_challenge['id'] in self.challenges:
                     if do_zero:
                         save_challenge['total_value'] = save_challenge['previous_value']
@@ -937,25 +940,25 @@ class BaseApp:
                         if do_max or do_zero or save_challenge['total_value'] < bonus_value:
                             save_challenge['total_value'] = bonus_value
 
-            player[15][0][1] = self.wrap_challenges(data)
+            player[15][0][1] = self.wrap_challenges(data2)
 
         if self.config.fix_challenge_overflow:
             self.notice('Fix challenge overflow')
-            data = self.unwrap_challenges(player[15][0][1])
+            data2 = self.unwrap_challenges(player[15][0][1])
 
-            for save_challenge in data['challenges']:
+            for save_challenge in data2['challenges']:
                 if save_challenge['id'] in self.challenges:
                     if save_challenge['total_value'] >= 2000000000:
                         self.notice(f'fix overflow in: {save_challenge["_name"]}')
                         save_challenge['total_value'] = self.challenges[save_challenge['id']].get_max() + 1
 
-            player[15][0][1] = self.wrap_challenges(data)
+            player[15][0][1] = self.wrap_challenges(data2)
 
         if self.config.name is not None:
             self.debug(f' - Setting character name to "{self.config.name}"')
-            data = apply_structure(read_protobuf(player[19][0][1]), self.save_structure[19][2])
-            data['name'] = self.config.name
-            player[19][0][1] = write_protobuf(remove_structure(data, invert_structure(self.save_structure[19][2])))
+            data2 = apply_structure(read_protobuf(player[19][0][1]), self.save_structure[19][2])
+            data2['name'] = self.config.name
+            player[19][0][1] = write_protobuf(remove_structure(data2, invert_structure(self.save_structure[19][2])))
 
         if self.config.save_game_id is not None:
             self.debug(f' - Setting save slot ID to {self.config.save_game_id}')
@@ -977,7 +980,7 @@ class BaseApp:
                 continue
             print(f'; {name}', file=output)
             for field in content:
-                raw: Union[PlayerDict, bytes] = read_protobuf(field[1])[1][0][1]
+                raw: bytes = read_protobuf(field[1])[1][0][1]
 
                 # Borderlands uses some sort-of "fake" items to store some DLC
                 # data.  As per the Gibbed sourcecode, this includes:
@@ -1080,10 +1083,7 @@ class BaseApp:
 
     @staticmethod
     def setup_game_specific_args(parser: argparse.ArgumentParser) -> None:
-        """
-        Function to add game-specific arguments. By default it does nothing,
-        must be overridden
-        """
+        """Function to add game-specific arguments."""
         pass
 
     @staticmethod
@@ -1140,13 +1140,7 @@ class BaseApp:
             self.debug('Performing requested changes')
             save_data = self.modify_save(save_data)
 
-        # Show information if we've been passed any of those args
-        if self.config.show_info:
-            if self.config.changes:
-                self.debug('')
-            self.debug('Showing requested save information:')
-            self.debug('')
-            self.show_save_info(save_data)
+        self.show_save_info(save_data)
 
         # If we have an output file, write to it!
         if self.config.output_filename is None:
@@ -1196,16 +1190,13 @@ class BaseApp:
                 self.debug('Writing savegame file')
                 output_file.write(save_data)
             else:
-                self.debug('Preparing decoded savegame file')
                 player = self.unwrap_player_data(save_data)
                 if self.config.output == 'decodedjson' or self.config.output == 'json':
                     self.debug('Converting to JSON for more human-readable output')
                     data = read_protobuf(player)
                     if self.config.output == 'json':
-                        self.debug('Parsing protobuf data for even more human-readable output')
                         data = apply_structure(data, self.save_structure)
                     player = json.dumps(conv_binary_to_str(data), sort_keys=True, indent=4)
-                self.debug('Writing decoded savegame file')
                 output_file.write(player)
 
             # Close the output file

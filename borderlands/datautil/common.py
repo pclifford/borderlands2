@@ -1,6 +1,6 @@
 import binascii
 import struct
-from typing import Any, Union, List
+from typing import Any, Union, List, Dict
 
 
 def wrap_float(v: float) -> List[Union[int, Any]]:
@@ -27,7 +27,7 @@ def guess_wire_type(value: Any) -> int:
 
 
 def invert_structure(structure: dict) -> dict:
-    inv = {}
+    inv: Dict[Any, tuple] = {}
     for k, v in structure.items():
         if isinstance(v, tuple):
             if isinstance(v[2], dict):  # TODO: check len(v)
@@ -76,12 +76,16 @@ def xor_data(data, key: int) -> bytes:
     return bytes(output)
 
 
-def replace_raw_item_key(data: bytes, key: int) -> bytes:
-    old_key = struct.unpack(">i", data[1:5])[0]
-    item = rotate_data_right(xor_data(data[5:], old_key >> 5), old_key & 31)[2:]
-    header = struct.pack(">Bi", data[0], key)
+def create_body(*, item: bytes, header: bytes, key: int) -> bytes:
     padding = b"\xff" * (33 - len(item))
     h = binascii.crc32(header + b"\xff\xff" + item + padding) & 0xFFFFFFFF
     checksum = struct.pack(">H", ((h >> 16) ^ h) & 0xFFFF)
     body = xor_data(rotate_data_left(checksum + item, key & 31), key >> 5)
-    return header + body
+    return body
+
+
+def replace_raw_item_key(data: bytes, key: int) -> bytes:
+    old_key = struct.unpack(">i", data[1:5])[0]
+    item = rotate_data_right(xor_data(data[5:], old_key >> 5), old_key & 31)[2:]
+    header = struct.pack(">Bi", data[0], key)
+    return header + create_body(item=item, header=header, key=key)

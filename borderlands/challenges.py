@@ -32,7 +32,8 @@ class Challenge:
         name: str,
         description: str,
         levels: Tuple[int, ...],
-        bonus: Optional[int] = None
+        bonus: Optional[int] = None,
+        bl2_is_in_challenge_accepted: bool = False,
     ) -> None:
         self.position = position
         self.identifier = identifier
@@ -42,6 +43,7 @@ class Challenge:
         self.description = description
         self.levels = levels
         self.bonus = bonus
+        self.bl2_is_in_challenge_accepted = bl2_is_in_challenge_accepted
 
     def get_max(self) -> int:
         """
@@ -62,3 +64,27 @@ class Challenge:
 
     def __lt__(self, other) -> bool:
         return self.id_text.lower() < other.id_text.lower()
+
+
+def create_bl2_challenge_that_is_accepted(
+    *,
+    position: int,
+    identifier: int,
+    id_text: str,
+    category: ChallengeCategory,
+    name: str,
+    description: str,
+    levels: Tuple[int, ...],
+    bonus: Optional[int] = None,
+) -> Challenge:
+    return Challenge(
+        position=position,
+        identifier=identifier,
+        id_text=id_text,
+        category=category,
+        name=name,
+        description=description,
+        levels=levels,
+        bonus=bonus,
+        bl2_is_in_challenge_accepted=True,
+    )
