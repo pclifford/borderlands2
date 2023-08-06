@@ -244,7 +244,7 @@ class AppBL2(BaseApp):
                 continue
 
             challenge = self.challenges[save_challenge['id']]
-            if not challenge.bl2_is_in_challenge_accepted:
+            if not challenge.category.bl2_is_in_challenge_accepted:
                 continue
 
             current_value = save_challenge['total_value']
