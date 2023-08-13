@@ -321,7 +321,6 @@ class BaseApp:
 
     def unwrap_black_market(self, value: bytes) -> dict:
         sdu_list = read_repeated_protobuf_value(value, 0)
-        assert len(self.black_market_keys) == len(sdu_list)
         return dict(zip(self.black_market_keys, sdu_list))
 
     def wrap_black_market(self, value: dict) -> bytes:
@@ -435,7 +434,14 @@ class BaseApp:
 
     def unwrap_item_info(self, value: bytes) -> dict:
         is_weapon, item, key = self.unwrap_item(value)
-        data: Dict[str, Any] = {"is_weapon": is_weapon, "key": key, "set": item[0], "level": [item[4], item[5]]}
+
+        data: Dict[str, Any] = {
+            'is_weapon': is_weapon,
+            'key': key,
+            'set': item[0],
+            'level': (item[4], item[5]),  # (grade_index, game_stage)
+            '_base64': base64.b64encode(value),
+        }
         for i, (k, bits) in enumerate(self.item_header_sizes[is_weapon]):
             x = item[1 + i]
             if x is None:
@@ -456,18 +462,18 @@ class BaseApp:
         return data
 
     def wrap_item_info(self, value: dict) -> bytes:
-        item = [value["set"]]
+        parts = [value["set"]]
         for key, bits in self.item_header_sizes[value["is_weapon"]]:
             v = value[key]
-            item.append((v["lib"] << bits) | v["asset"])
-        item.extend(value["level"])
+            parts.append((v["lib"] << bits) | v["asset"])
+        parts.extend(value["level"])  # (grade_index, game_stage)
         bits = 10 + value["is_weapon"]
         for v in value["parts"]:
             if v is None:
-                item.append(None)
+                parts.append(None)
             else:
-                item.append((v["lib"] << bits) | v["asset"])
-        return self.wrap_item(is_weapon=value["is_weapon"], values=item, key=value["key"])
+                parts.append((v["lib"] << bits) | v["asset"])
+        return self.wrap_item(is_weapon=value["is_weapon"], values=parts, key=value["key"])
 
     @staticmethod
     def unwrap_player_data(data: bytes) -> bytes:
