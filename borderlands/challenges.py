@@ -7,9 +7,10 @@ class ChallengeCategory:
     categories.  Mostly just a glorified dict.
     """
 
-    def __init__(self, name: str, dlc: int = 0) -> None:
+    def __init__(self, name: str, dlc: int = 0, bl2_is_in_challenge_accepted: bool = False) -> None:
         self.name = name
         self.dlc = dlc
+        self.bl2_is_in_challenge_accepted = bl2_is_in_challenge_accepted
         if self.dlc == 0:
             self.is_from_dlc = 0
         else:
@@ -32,7 +33,8 @@ class Challenge:
         name: str,
         description: str,
         levels: Tuple[int, ...],
-        bonus: Optional[int] = None
+        bonus: Optional[int] = None,
+        bl2_is_in_challenge_accepted: bool = False,
     ) -> None:
         self.position = position
         self.identifier = identifier
@@ -42,6 +44,7 @@ class Challenge:
         self.description = description
         self.levels = levels
         self.bonus = bonus
+        self.bl2_is_in_challenge_accepted = bl2_is_in_challenge_accepted
 
     def get_max(self) -> int:
         """

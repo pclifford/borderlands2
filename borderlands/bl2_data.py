@@ -1,6 +1,6 @@
 from typing import Dict
 
-from borderlands.challenges import Challenge, ChallengeCategory
+from borderlands.challenges import ChallengeCategory, Challenge
 
 
 def create_bl2_challenges() -> Dict[int, Challenge]:
@@ -9,23 +9,23 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
     challenge_cat_dlc3 = ChallengeCategory("Campaign of Carnage", 3)
     challenge_cat_dlc9 = ChallengeCategory("Dragon Keep", 9)
     challenge_cat_dlc1 = ChallengeCategory("Pirate's Booty", 1)
-    challenge_cat_enemies = ChallengeCategory("Enemies")
-    challenge_cat_elemental = ChallengeCategory("Elemental")
-    challenge_cat_loot = ChallengeCategory("Loot")
-    challenge_cat_money = ChallengeCategory("Money and Trading")
-    challenge_cat_vehicle = ChallengeCategory("Vehicle")
-    challenge_cat_health = ChallengeCategory("Health and Recovery")
-    challenge_cat_grenades = ChallengeCategory("Grenades")
-    challenge_cat_shields = ChallengeCategory("Shields")
-    challenge_cat_rockets = ChallengeCategory("Rocket Launcher")
-    challenge_cat_sniper = ChallengeCategory("Sniper Rifle")
-    challenge_cat_ar = ChallengeCategory("Assault Rifle")
-    challenge_cat_smg = ChallengeCategory("SMG")
-    challenge_cat_shotgun = ChallengeCategory("Shotgun")
-    challenge_cat_pistol = ChallengeCategory("Pistol")
-    challenge_cat_melee = ChallengeCategory("Melee")
-    challenge_cat_combat = ChallengeCategory("General Combat")
-    challenge_cat_misc = ChallengeCategory("Miscellaneous")
+    challenge_cat_enemies = ChallengeCategory("Enemies", bl2_is_in_challenge_accepted=True)
+    challenge_cat_elemental = ChallengeCategory("Elemental", bl2_is_in_challenge_accepted=True)
+    challenge_cat_loot = ChallengeCategory("Loot", bl2_is_in_challenge_accepted=True)
+    challenge_cat_money = ChallengeCategory("Money and Trading", bl2_is_in_challenge_accepted=True)
+    challenge_cat_vehicle = ChallengeCategory("Vehicle", bl2_is_in_challenge_accepted=True)
+    challenge_cat_health = ChallengeCategory("Health and Recovery", bl2_is_in_challenge_accepted=True)
+    challenge_cat_grenades = ChallengeCategory("Grenades", bl2_is_in_challenge_accepted=True)
+    challenge_cat_shields = ChallengeCategory("Shields", bl2_is_in_challenge_accepted=True)
+    challenge_cat_rockets = ChallengeCategory("Rocket Launcher", bl2_is_in_challenge_accepted=True)
+    challenge_cat_sniper = ChallengeCategory("Sniper Rifle", bl2_is_in_challenge_accepted=True)
+    challenge_cat_ar = ChallengeCategory("Assault Rifle", bl2_is_in_challenge_accepted=True)
+    challenge_cat_smg = ChallengeCategory("SMG", bl2_is_in_challenge_accepted=True)
+    challenge_cat_shotgun = ChallengeCategory("Shotgun", bl2_is_in_challenge_accepted=True)
+    challenge_cat_pistol = ChallengeCategory("Pistol", bl2_is_in_challenge_accepted=True)
+    challenge_cat_melee = ChallengeCategory("Melee", bl2_is_in_challenge_accepted=True)
+    challenge_cat_combat = ChallengeCategory("General Combat", bl2_is_in_challenge_accepted=True)
+    challenge_cat_misc = ChallengeCategory("Miscellaneous", bl2_is_in_challenge_accepted=True)
 
     # There are two possible ways of uniquely identifying challenges in this file:
     # via their numeric position in the list, or by what looks like an internal
@@ -458,7 +458,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         identifier=1693,
         id_text="GD_Challenges.enemies.Enemies_KillMarauders",
         category=challenge_cat_enemies,
-        name="Marauder? I Hardly Know 'Er",
+        name="Marauder? I Hardly Know 'Er!",
         description="Kill marauders",
         levels=(20, 100, 500, 1000, 1500),
         bonus=3,
@@ -812,7 +812,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         identifier=1868,
         id_text="GD_Challenges.Player.Player_CoopRevivesOfFriends",
         category=challenge_cat_health,
-        name="This is No Time for Lazy!",
+        name="This Is No Time for Lazy!",
         description="Revive a co-op partner",
         levels=(5, 10, 50, 100, 200),
         bonus=5,
@@ -1111,7 +1111,7 @@ def create_bl2_challenges() -> Dict[int, Challenge]:
         identifier=1845,
         id_text="GD_Challenges.Weapons.AssaultRifle_CriticalHitKills",
         category=challenge_cat_ar,
-        name="... This Is My Gun",
+        name="...This Is My Gun",
         description="Kill enemies with critical hits using assault rifles",
         levels=(10, 25, 75, 150, 300),
     )
