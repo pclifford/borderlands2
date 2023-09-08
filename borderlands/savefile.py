@@ -603,25 +603,7 @@ class BaseApp:
             values[4] = self.config.torgue
         player[6][0] = [0, values]
 
-    def modify_save(self, data: bytes) -> bytes:
-        """
-        Performs a set of modifications on file data, based on our
-        config object.  "data" should be the raw data from a save
-        file.
-
-        Note that if a user is both showing info and making changes,
-        we're parsing the protobuf twice, since show_save_info also does
-        that.  Inefficiency!
-        """
-
-        player = read_protobuf(self.unwrap_player_data(data))
-
-        self._set_level(player)
-        self._set_money(player)
-
-        # Note that this block should always come *after* the block which sets
-        # character level, in case we've been instructed to set items to the
-        # character's level.
+    def _set_item_level(self, player: PlayerDict) -> None:
         seen_level_1_warning = False
         if self.config.item_levels is not None:
             if self.config.item_levels > 0:
@@ -646,11 +628,7 @@ class BaseApp:
                                 self.debug('   NOTICE: At least one item is level 1 and will not be updated.')
                                 self.debug('   Use --forceitemlevels to update these items')
 
-        # OP Level is stored in a weird little custom item.
-        # See Gibbed.Borderlands2.FileFormats/SaveExpansion.cs for a bit more
-        # rigorous example of how to process those properly.
-        # Note that this needs to happen before the unlock section, since
-        # it may trigger an unlock of UVHM if that wasn't already specified.
+    def _set_overpowered_level(self, player: PlayerDict) -> None:
         if self.config.op_level is not None:
             set_op_level = False
             self.debug(f' - Setting OP Level to {self.config.op_level}')
@@ -701,6 +679,34 @@ class BaseApp:
                 entry[3] = [[0, 0]]
                 entry[4] = [[0, 0]]
                 player[53].append([2, write_protobuf(entry)])
+
+    def modify_save(self, data: bytes) -> bytes:
+        """
+        Performs a set of modifications on file data, based on our
+        config object.  "data" should be the raw data from a save
+        file.
+
+        Note that if a user is both showing info and making changes,
+        we're parsing the protobuf twice, since show_save_info also does
+        that.  Inefficiency!
+        """
+
+        player = read_protobuf(self.unwrap_player_data(data))
+
+        self._set_level(player)
+        self._set_money(player)
+
+        # Note that this block should always come *after* the block which sets
+        # character level, in case we've been instructed to set items to the
+        # character's level.
+        self._set_item_level(player)
+
+        # OP Level is stored in a weird little custom item.
+        # See Gibbed.Borderlands2.FileFormats/SaveExpansion.cs for a bit more
+        # rigorous example of how to process those properly.
+        # Note that this needs to happen before the unlock section, since
+        # it may trigger an unlock of UVHM if that wasn't already specified.
+        self._set_overpowered_level(player)
 
         if self.config.backpack is not None:
             self.debug(f' - Setting backpack size to {self.config.backpack}')
