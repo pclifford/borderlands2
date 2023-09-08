@@ -548,6 +548,26 @@ class BaseApp:
         if self.config.print_unexplored_levels:
             self.report_explorer_achievements_progress(player)
 
+    def _set_level(self, player: PlayerDict) -> None:
+        if self.config.level is None:
+            return
+
+        if self.config.level < 1 or self.config.level > len(self.required_xp):
+            self.error(f'Invalid character level specified: {self.config.level}')
+        else:
+            self.debug(f' - Updating to level {self.config.level}')
+            lower = self.required_xp[self.config.level - 1]
+            if self.config.level == len(self.required_xp):
+                if player[3][0][1] != lower:
+                    player[3][0][1] = lower
+                    self.debug(f'   - Also updating XP to {lower}')
+            else:
+                upper = self.required_xp[self.config.level]
+                if player[3][0][1] < lower or player[3][0][1] >= upper:
+                    player[3][0][1] = lower
+                    self.debug(f'   - Also updating XP to {lower}')
+            player[2] = [[0, self.config.level]]
+
     def modify_save(self, data: bytes) -> bytes:
         """
         Performs a set of modifications on file data, based on our
@@ -560,22 +580,8 @@ class BaseApp:
         """
 
         player = read_protobuf(self.unwrap_player_data(data))
-        if self.config.level is not None:
-            if self.config.level < 1 or self.config.level > len(self.required_xp):
-                self.error(f'Invalid character level specified: {self.config.level}')
-            else:
-                self.debug(f' - Updating to level {self.config.level}')
-                lower = self.required_xp[self.config.level - 1]
-                if self.config.level == len(self.required_xp):
-                    if player[3][0][1] != lower:
-                        player[3][0][1] = lower
-                        self.debug(f'   - Also updating XP to {lower}')
-                else:
-                    upper = self.required_xp[self.config.level]
-                    if player[3][0][1] < lower or player[3][0][1] >= upper:
-                        player[3][0][1] = lower
-                        self.debug(f'   - Also updating XP to {lower}')
-                player[2] = [[0, self.config.level]]
+
+        self._set_level(player)
 
         if any(
             [
