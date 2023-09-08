@@ -201,17 +201,17 @@ class BaseApp:
     ]
 
     def __init__(
-        self,
-        *,
-        args: List[str],
-        item_struct_version: int,
-        game_name: str,
-        item_prefix: str,
-        max_level: int,  # Max char level
-        black_market_keys: Tuple[str, ...],
-        black_market_ammo: Dict[str, List[int]],
-        unlock_choices: List[str],  # Available choices for --unlock option
-        challenges: Dict[int, Challenge],
+            self,
+            *,
+            args: List[str],
+            item_struct_version: int,
+            game_name: str,
+            item_prefix: str,
+            max_level: int,  # Max char level
+            black_market_keys: Tuple[str, ...],
+            black_market_ammo: Dict[str, List[int]],
+            unlock_choices: List[str],  # Available choices for --unlock option
+            challenges: Dict[int, Challenge],
     ) -> None:
         # B2 version is 7, TPS version is 10
         # "version" taken from what Gibbed calls it, not sure if that's
@@ -302,7 +302,7 @@ class BaseApp:
                 result.append(None)
                 continue
             value = 0
-            for b in data[j >> 3 : (i >> 3) - 1 : -1]:
+            for b in data[j >> 3: (i >> 3) - 1: -1]:
                 value = (value << 8) | b
             result.append((value >> (i & 7)) & ~(0xFF << size))
             i = j
@@ -385,7 +385,7 @@ class BaseApp:
             challenge_dict = dict(
                 zip(
                     ['id', 'first_one', 'total_value', 'second_one', 'previous_value'],
-                    struct.unpack(self.config.endian + 'HBIBI', data[idx : idx + 12]),
+                    struct.unpack(self.config.endian + 'HBIBI', data[idx: idx + 12]),
                 )
             )
             challenges_result.append(challenge_dict)
@@ -568,6 +568,41 @@ class BaseApp:
                     self.debug(f'   - Also updating XP to {lower}')
             player[2] = [[0, self.config.level]]
 
+    def _set_money(self, player: PlayerDict) -> None:
+        if all(
+                x is None
+                for x in [
+                    self.config.money,
+                    self.config.eridium,
+                    self.config.moonstone,
+                    self.config.seraph,
+                    self.config.torgue,
+                ]
+        ):
+            return
+
+        raw = player[6][0][1]
+        b = io.BytesIO(raw)
+        values = []
+        while b.tell() < len(raw):
+            values.append(read_protobuf_value(b, 0))
+        if self.config.money is not None:
+            self.debug(f' - Setting available money to {self.config.money}')
+            values[0] = self.config.money
+        if self.config.eridium is not None:
+            self.debug(f' - Setting available eridium to {self.config.eridium}')
+            values[1] = self.config.eridium
+        if self.config.moonstone is not None:
+            self.debug(f' - Setting available moonstone to {self.config.moonstone}')
+            values[1] = self.config.moonstone
+        if self.config.seraph is not None:
+            self.debug(f' - Setting available Seraph Crystals to {self.config.seraph}')
+            values[2] = self.config.seraph
+        if self.config.torgue is not None:
+            self.debug(f' - Setting available Torgue Tokens to {self.config.torgue}')
+            values[4] = self.config.torgue
+        player[6][0] = [0, values]
+
     def modify_save(self, data: bytes) -> bytes:
         """
         Performs a set of modifications on file data, based on our
@@ -582,40 +617,7 @@ class BaseApp:
         player = read_protobuf(self.unwrap_player_data(data))
 
         self._set_level(player)
-
-        if any(
-            [
-                x is not None
-                for x in [
-                    self.config.money,
-                    self.config.eridium,
-                    self.config.moonstone,
-                    self.config.seraph,
-                    self.config.torgue,
-                ]
-            ]
-        ):
-            raw = player[6][0][1]
-            b = io.BytesIO(raw)
-            values = []
-            while b.tell() < len(raw):
-                values.append(read_protobuf_value(b, 0))
-            if self.config.money is not None:
-                self.debug(f' - Setting available money to {self.config.money}')
-                values[0] = self.config.money
-            if self.config.eridium is not None:
-                self.debug(f' - Setting available eridium to {self.config.eridium}')
-                values[1] = self.config.eridium
-            if self.config.moonstone is not None:
-                self.debug(f' - Setting available moonstone to {self.config.moonstone}')
-                values[1] = self.config.moonstone
-            if self.config.seraph is not None:
-                self.debug(f' - Setting available Seraph Crystals to {self.config.seraph}')
-                values[2] = self.config.seraph
-            if self.config.torgue is not None:
-                self.debug(f' - Setting available Torgue Tokens to {self.config.torgue}')
-                values[4] = self.config.torgue
-            player[6][0] = [0, values]
+        self._set_money(player)
 
         # Note that this block should always come *after* the block which sets
         # character level, in case we've been instructed to set items to the
@@ -686,11 +688,11 @@ class BaseApp:
                 self.debug('   - Creating new OP Level "virtual" item')
                 # More magic from Gibbed code
                 base_data = (
-                    b"\x07\x00\x00\x00\x00\x39\x2a\xff"
-                    + b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                    + b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                    + b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                    + b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                        b"\x07\x00\x00\x00\x00\x39\x2a\xff"
+                        + b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                        + b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                        + b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                        + b"\x00\x00\x00\x00\x00\x00\x00\x00"
                 )
                 # noinspection PyDictCreation
                 entry = {}
@@ -884,11 +886,11 @@ class BaseApp:
                         save_challenge['total_value'] = save_challenge['previous_value']
                     if do_max:
                         save_challenge['total_value'] = (
-                            save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_max()
+                                save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_max()
                         )
                     if do_bonus and self.challenges[save_challenge['id']].bonus:
                         bonus_value = (
-                            save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_bonus()
+                                save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_bonus()
                         )
                         if do_max or do_zero or save_challenge['total_value'] < bonus_value:
                             save_challenge['total_value'] = bonus_value
