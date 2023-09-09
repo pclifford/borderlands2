@@ -680,6 +680,269 @@ class BaseApp:
                 entry[4] = [[0, 0]]
                 player[53].append([2, write_protobuf(entry)])
 
+    def _set_backpack(self, player: PlayerDict) -> None:
+        if self.config.backpack is None:
+            return
+
+        self.debug(f' - Setting backpack size to {self.config.backpack}')
+        size = self.config.backpack
+        sdu_size = int(math.ceil((size - self.min_backpack_size) / 3.0))
+        self.debug(f'   - Setting SDU size to {sdu_size}')
+        new_size = self.min_backpack_size + (sdu_size * 3)
+        if size != new_size:
+            self.debug(f'   - Resetting backpack size to {new_size} to match SDU count')
+        slots = read_protobuf(player[13][0][1])
+        slots[1][0][1] = new_size
+        player[13][0][1] = write_protobuf(slots)
+        s = read_repeated_protobuf_value(player[36][0][1], 0)
+        player[36][0][1] = write_repeated_protobuf_value(s[:7] + [sdu_size] + s[8:], 0)
+
+    def _set_bank(self, player: PlayerDict) -> None:
+        if self.config.bank is None:
+            return
+
+        self.debug(f' - Setting bank size to {self.config.bank}')
+        size = self.config.bank
+        sdu_size = int(min(255, math.ceil((size - self.min_bank_size) / 2.0)))
+        self.debug(f'   - Setting SDU size to {sdu_size}')
+        new_size = self.min_bank_size + (sdu_size * 2)
+        if size != new_size:
+            self.debug(f'   - Resetting bank size to {new_size} to match SDU count')
+        if 56 in player:
+            player[56][0][1] = new_size
+        else:
+            player[56] = [[0, new_size]]
+        s = read_repeated_protobuf_value(player[36][0][1], 0)
+        if len(s) < 9:
+            s = s + (9 - len(s)) * [0]
+        player[36][0][1] = write_repeated_protobuf_value(s[:8] + [sdu_size] + s[9:], 0)
+
+    def _set_gun_slots(self, player: PlayerDict) -> None:
+        if self.config.gun_slots is None:
+            return
+
+        self.debug(f' - Setting available gun slots to {self.config.gun_slots}')
+        n = self.config.gun_slots
+        slots = read_protobuf(player[13][0][1])
+        slots[2][0][1] = n
+        if slots[3][0][1] > n - 2:
+            slots[3][0][1] = n - 2
+        player[13][0][1] = write_protobuf(slots)
+
+    def _copy_nvhm_missions(self, player: PlayerDict) -> None:
+        if not self.config.copy_nvhm_missions:
+            return
+
+        self.debug(' - Copying NVHM mission status to TVHM+UVHM')
+        if 'uvhm' not in self.config.unlock:
+            self.config.unlock['uvhm'] = True
+            self.debug('   - Also unlocking UVHM mode')
+        player[18][1][1] = player[18][0][1]
+        player[18][2][1] = player[18][0][1]
+
+    def _unlock_slaughterdome(self, player: PlayerDict) -> None:
+        if 'slaughterdome' not in self.config.unlock:
+            return
+
+        unlocked, notifications = b'', b''
+        if 23 in player:
+            unlocked = player[23][0][1]
+        if 24 in player:
+            notifications = player[24][0][1]
+        self.debug(' - Unlocking Creature Slaughterdome')
+        if 1 not in unlocked:
+            unlocked += b"\x01"
+        if 1 not in notifications:
+            notifications += b"\x01"
+        player[23] = [[2, unlocked]]
+        player[24] = [[2, notifications]]
+
+    def _unlock_tvhm_uvhm(self, player: PlayerDict) -> None:
+        if 'uvhm' in self.config.unlock:
+            self.debug(' - Unlocking UVHM (and TVHM)')
+            if player[7][0][1] < 2:
+                player[7][0][1] = 2
+        elif 'tvhm' in self.config.unlock:
+            self.debug(' - Unlocking TVHM')
+            if player[7][0][1] < 1:
+                player[7][0][1] = 1
+
+    def _unlock_base_challenges(self, player: PlayerDict) -> None:
+        if 'challenges' not in self.config.unlock:
+            return
+
+        self.debug(' - Unlocking all non-level-specific challenges')
+        challenge_unlocks = [
+            apply_structure(read_protobuf(d[1]), self.save_structure[38][2]) for d in player[38]
+        ]
+        inverted_structure = invert_structure(self.save_structure[38][2])
+        seen_challenges = {}
+        for unlock in challenge_unlocks:
+            seen_challenges[unlock['name'].decode('latin1')] = True
+        for challenge in sorted(self.challenges.values()):
+            if challenge.id_text in seen_challenges:
+                continue
+            player[38].append(
+                [
+                    2,
+                    write_protobuf(
+                        remove_structure(
+                            {
+                                'dlc_id': challenge.category.dlc,
+                                'is_from_dlc': challenge.category.is_from_dlc,
+                                'name': challenge.id_text,
+                            },
+                            inverted_structure,
+                        )
+                    ),
+                ]
+            )
+
+    def _unlock_features(self, player: PlayerDict) -> None:
+        if not self.config.unlock:
+            return
+
+        self._unlock_slaughterdome(player)
+        self._unlock_tvhm_uvhm(player)
+        self._unlock_base_challenges(player)
+
+        if 'ammo' in self.config.unlock:
+            self.debug(' - Unlocking ammo capacity')
+            s = read_repeated_protobuf_value(player[36][0][1], 0)
+            for idx2, (key2, _value) in enumerate(zip(self.black_market_keys, s)):
+                if key2 in self.black_market_ammo:
+                    s[idx2] = 7
+            player[36][0][1] = write_repeated_protobuf_value(s, 0)
+
+    def _set_max_ammo(self, player: PlayerDict) -> None:
+        if self.config.max_ammo is None:
+            return
+
+        self.debug(' - Setting ammo pools to maximum')
+
+        # First we got a figure out our black market levels
+        s = read_repeated_protobuf_value(player[36][0][1], 0)
+        assert len(self.black_market_keys) == len(s)
+        bm_levels = dict(zip(self.black_market_keys, s))
+
+        # Make a dict of what our max ammo is for each of our black market
+        # ammo pools
+        max_ammo = {}
+        for ammo_type, ammo_level in bm_levels.items():
+            if ammo_type not in self.black_market_ammo:
+                continue
+
+            ammo_values = self.black_market_ammo[ammo_type]
+            if len(ammo_values) - 1 < ammo_level:
+                max_ammo[ammo_type] = (len(ammo_values) - 1, ammo_values[-1])
+            else:
+                max_ammo[ammo_type] = (ammo_level, ammo_values[ammo_level])
+
+        # Now loop through our 'resources' structure and modify to
+        # suit, updating 'amount' and 'level' as we go.
+        inverted_structure = invert_structure(self.save_structure[11][2])
+        seen_ammo = {}
+        for idx, protobuf in enumerate(player[11]):
+            data2 = apply_structure(read_protobuf(protobuf[1]), self.save_structure[11][2])
+            resource = data2['resource'].decode('latin1')
+            if resource in self.ammo_resource_lookup:
+                ammo_type = self.ammo_resource_lookup[resource]
+                seen_ammo[ammo_type] = True
+                if ammo_type in max_ammo:
+                    # Set the data in the structure
+                    data2['level'] = max_ammo[ammo_type][0]
+                    data2['amount'] = float(max_ammo[ammo_type][1])
+
+                    # And now convert back into a protobuf
+                    player[11][idx][1] = write_protobuf(remove_structure(data2, inverted_structure))
+
+                else:
+                    self.error(f'Ammo type "{ammo_type}" / pool "{data2["pool"]}" not found!')
+            else:
+                self.error(f'Ammo pool "{resource}" not found!')
+
+        # Also, early in the game there isn't an entry in here for, for instance,
+        # rocket launchers.  So let's make sure that all our known ammo exists.
+        for ammo_type in bm_levels.keys():
+            if ammo_type in self.ammo_resources.keys() and ammo_type not in seen_ammo:
+                new_struct = {
+                    'resource': self.ammo_resources[ammo_type][0],
+                    'pool': self.ammo_resources[ammo_type][1],
+                    'level': max_ammo[ammo_type][0],
+                    'amount': float(max_ammo[ammo_type][1]),
+                }
+                player[11].append([2, write_protobuf(remove_structure(new_struct, inverted_structure))])
+
+    def _handle_challenges(self, player: PlayerDict) -> None:
+        if not self.config.challenges:
+            return
+
+        data2 = self.unwrap_challenges(player[15][0][1])
+        # You can specify multiple options at once.  Specifying "max" and
+        # "bonus" at the same time, for instance, will put everything at its
+        # max value, and then potentially lower the ones which have bonuses.
+        do_zero = 'zero' in self.config.challenges
+        do_max = 'max' in self.config.challenges
+        do_bonus = 'bonus' in self.config.challenges
+
+        self.debug(' - Working with challenge data:')
+        if do_zero:
+            self.debug('   - Setting challenges to 0')
+        if do_max:
+            self.debug('   - Setting challenges to max-1')
+        if do_bonus:
+            self.debug('   - Setting bonus challenges')
+
+        for save_challenge in data2['challenges']:
+            if save_challenge['id'] not in self.challenges:
+                continue
+
+            if do_zero:
+                save_challenge['total_value'] = save_challenge['previous_value']
+            if do_max:
+                save_challenge['total_value'] = (
+                        save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_max()
+                )
+            if do_bonus and self.challenges[save_challenge['id']].bonus:
+                bonus_value = (
+                        save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_bonus()
+                )
+                if do_max or do_zero or save_challenge['total_value'] < bonus_value:
+                    save_challenge['total_value'] = bonus_value
+
+        player[15][0][1] = self.wrap_challenges(data2)
+
+    def _fix_challenge_overflow(self, player: PlayerDict) -> None:
+        if not self.config.fix_challenge_overflow:
+            return
+
+        self.notice('Fix challenge overflow')
+        data2 = self.unwrap_challenges(player[15][0][1])
+
+        for save_challenge in data2['challenges']:
+            if save_challenge['id'] in self.challenges:
+                if save_challenge['total_value'] >= 2000000000:
+                    self.notice(f'fix overflow in: {save_challenge["_name"]}')
+                    save_challenge['total_value'] = self.challenges[save_challenge['id']].get_max() + 1
+
+        player[15][0][1] = self.wrap_challenges(data2)
+
+    def _set_character_name(self, player: PlayerDict) -> None:
+        if self.config.name is None:
+            return
+
+        self.debug(f' - Setting character name to {self.config.name!r}')
+        data2 = apply_structure(read_protobuf(player[19][0][1]), self.save_structure[19][2])
+        data2['name'] = self.config.name
+        player[19][0][1] = write_protobuf(remove_structure(data2, invert_structure(self.save_structure[19][2])))
+
+    def _set_save_game_id(self, player: PlayerDict) -> None:
+        if self.config.save_game_id is None:
+            return
+
+        self.debug(f' - Setting save slot ID to {self.config.save_game_id}')
+        player[20][0][1] = self.config.save_game_id
+
     def modify_save(self, data: bytes) -> bytes:
         """
         Performs a set of modifications on file data, based on our
@@ -708,222 +971,20 @@ class BaseApp:
         # it may trigger an unlock of UVHM if that wasn't already specified.
         self._set_overpowered_level(player)
 
-        if self.config.backpack is not None:
-            self.debug(f' - Setting backpack size to {self.config.backpack}')
-            size = self.config.backpack
-            sdu_size = int(math.ceil((size - self.min_backpack_size) / 3.0))
-            self.debug(f'   - Setting SDU size to {sdu_size}')
-            new_size = self.min_backpack_size + (sdu_size * 3)
-            if size != new_size:
-                self.debug(f'   - Resetting backpack size to {new_size} to match SDU count')
-            slots = read_protobuf(player[13][0][1])
-            slots[1][0][1] = new_size
-            player[13][0][1] = write_protobuf(slots)
-            s = read_repeated_protobuf_value(player[36][0][1], 0)
-            player[36][0][1] = write_repeated_protobuf_value(s[:7] + [sdu_size] + s[8:], 0)
-
-        if self.config.bank is not None:
-            self.debug(f' - Setting bank size to {self.config.bank}')
-            size = self.config.bank
-            sdu_size = int(min(255, math.ceil((size - self.min_bank_size) / 2.0)))
-            self.debug(f'   - Setting SDU size to {sdu_size}')
-            new_size = self.min_bank_size + (sdu_size * 2)
-            if size != new_size:
-                self.debug(f'   - Resetting bank size to {new_size} to match SDU count')
-            if 56 in player:
-                player[56][0][1] = new_size
-            else:
-                player[56] = [[0, new_size]]
-            s = read_repeated_protobuf_value(player[36][0][1], 0)
-            if len(s) < 9:
-                s = s + (9 - len(s)) * [0]
-            player[36][0][1] = write_repeated_protobuf_value(s[:8] + [sdu_size] + s[9:], 0)
-
-        if self.config.gun_slots is not None:
-            self.debug(f' - Setting available gun slots to {self.config.gun_slots}')
-            n = self.config.gun_slots
-            slots = read_protobuf(player[13][0][1])
-            slots[2][0][1] = n
-            if slots[3][0][1] > n - 2:
-                slots[3][0][1] = n - 2
-            player[13][0][1] = write_protobuf(slots)
-
-        if self.config.copy_nvhm_missions:
-            self.debug(' - Copying NVHM mission status to TVHM+UVHM')
-            if 'uvhm' not in self.config.unlock:
-                self.config.unlock['uvhm'] = True
-                self.debug('   - Also unlocking UVHM mode')
-            player[18][1][1] = player[18][0][1]
-            player[18][2][1] = player[18][0][1]
-
-        if self.config.unlock:
-            if 'slaughterdome' in self.config.unlock:
-                unlocked, notifications = b'', b''
-                if 23 in player:
-                    unlocked = player[23][0][1]
-                if 24 in player:
-                    notifications = player[24][0][1]
-                self.debug(' - Unlocking Creature Slaughterdome')
-                if 1 not in unlocked:
-                    unlocked += b"\x01"
-                if 1 not in notifications:
-                    notifications += b"\x01"
-                player[23] = [[2, unlocked]]
-                player[24] = [[2, notifications]]
-            if 'uvhm' in self.config.unlock:
-                self.debug(' - Unlocking UVHM (and TVHM)')
-                if player[7][0][1] < 2:
-                    player[7][0][1] = 2
-            elif 'tvhm' in self.config.unlock:
-                self.debug(' - Unlocking TVHM')
-                if player[7][0][1] < 1:
-                    player[7][0][1] = 1
-            if 'challenges' in self.config.unlock:
-                self.debug(' - Unlocking all non-level-specific challenges')
-                challenge_unlocks = [
-                    apply_structure(read_protobuf(d[1]), self.save_structure[38][2]) for d in player[38]
-                ]
-                inverted_structure = invert_structure(self.save_structure[38][2])
-                seen_challenges = {}
-                for unlock in challenge_unlocks:
-                    seen_challenges[unlock['name'].decode('latin1')] = True
-                for challenge in sorted(self.challenges.values()):
-                    if challenge.id_text not in seen_challenges:
-                        player[38].append(
-                            [
-                                2,
-                                write_protobuf(
-                                    remove_structure(
-                                        {
-                                            'dlc_id': challenge.category.dlc,
-                                            'is_from_dlc': challenge.category.is_from_dlc,
-                                            'name': challenge.id_text,
-                                        },
-                                        inverted_structure,
-                                    )
-                                ),
-                            ]
-                        )
-            if 'ammo' in self.config.unlock:
-                self.debug(' - Unlocking ammo capacity')
-                s = read_repeated_protobuf_value(player[36][0][1], 0)
-                for idx2, (key2, _value) in enumerate(zip(self.black_market_keys, s)):
-                    if key2 in self.black_market_ammo:
-                        s[idx2] = 7
-                player[36][0][1] = write_repeated_protobuf_value(s, 0)
+        self._set_backpack(player)
+        self._set_bank(player)
+        self._set_gun_slots(player)
+        self._copy_nvhm_missions(player)
+        self._unlock_features(player)
 
         # This should always come after the ammo-unlock section, since our
         # max ammo will change if more black market SDUs are unlocked.
-        if self.config.max_ammo is not None:
-            self.debug(' - Setting ammo pools to maximum')
+        self._set_max_ammo(player)
 
-            # First we got a figure out our black market levels
-            s = read_repeated_protobuf_value(player[36][0][1], 0)
-            assert len(self.black_market_keys) == len(s)
-            bm_levels = dict(zip(self.black_market_keys, s))
-
-            # Make a dict of what our max ammo is for each of our black market
-            # ammo pools
-            max_ammo = {}
-            for ammo_type, ammo_level in bm_levels.items():
-                if ammo_type in self.black_market_ammo:
-                    ammo_values = self.black_market_ammo[ammo_type]
-                    if len(ammo_values) - 1 < ammo_level:
-                        max_ammo[ammo_type] = (len(ammo_values) - 1, ammo_values[-1])
-                    else:
-                        max_ammo[ammo_type] = (ammo_level, ammo_values[ammo_level])
-
-            # Now loop through our 'resources' structure and modify to
-            # suit, updating 'amount' and 'level' as we go.
-            inverted_structure = invert_structure(self.save_structure[11][2])
-            seen_ammo = {}
-            for idx, protobuf in enumerate(player[11]):
-                data2 = apply_structure(read_protobuf(protobuf[1]), self.save_structure[11][2])
-                resource = data2['resource'].decode('latin1')
-                if resource in self.ammo_resource_lookup:
-                    ammo_type = self.ammo_resource_lookup[resource]
-                    seen_ammo[ammo_type] = True
-                    if ammo_type in max_ammo:
-                        # Set the data in the structure
-                        data2['level'] = max_ammo[ammo_type][0]
-                        data2['amount'] = float(max_ammo[ammo_type][1])
-
-                        # And now convert back into a protobuf
-                        player[11][idx][1] = write_protobuf(remove_structure(data2, inverted_structure))
-
-                    else:
-                        self.error(f'Ammo type "{ammo_type}" / pool "{data2["pool"]}" not found!')
-                else:
-                    self.error(f'Ammo pool "{resource}" not found!')
-
-            # Also, early in the game there isn't an entry in here for, for instance,
-            # rocket launchers.  So let's make sure that all our known ammo exists.
-            for ammo_type in bm_levels.keys():
-                if ammo_type in self.ammo_resources.keys() and ammo_type not in seen_ammo:
-                    new_struct = {
-                        'resource': self.ammo_resources[ammo_type][0],
-                        'pool': self.ammo_resources[ammo_type][1],
-                        'level': max_ammo[ammo_type][0],
-                        'amount': float(max_ammo[ammo_type][1]),
-                    }
-                    player[11].append([2, write_protobuf(remove_structure(new_struct, inverted_structure))])
-
-        if self.config.challenges:
-            data2 = self.unwrap_challenges(player[15][0][1])
-            # You can specify multiple options at once.  Specifying "max" and
-            # "bonus" at the same time, for instance, will put everything at its
-            # max value, and then potentially lower the ones which have bonuses.
-            do_zero = 'zero' in self.config.challenges
-            do_max = 'max' in self.config.challenges
-            do_bonus = 'bonus' in self.config.challenges
-
-            if any([do_zero, do_max, do_bonus]):
-                self.debug(' - Working with challenge data:')
-                if do_zero:
-                    self.debug('   - Setting challenges to 0')
-                if do_max:
-                    self.debug('   - Setting challenges to max-1')
-                if do_bonus:
-                    self.debug('   - Setting bonus challenges')
-
-            for save_challenge in data2['challenges']:
-                if save_challenge['id'] in self.challenges:
-                    if do_zero:
-                        save_challenge['total_value'] = save_challenge['previous_value']
-                    if do_max:
-                        save_challenge['total_value'] = (
-                                save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_max()
-                        )
-                    if do_bonus and self.challenges[save_challenge['id']].bonus:
-                        bonus_value = (
-                                save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_bonus()
-                        )
-                        if do_max or do_zero or save_challenge['total_value'] < bonus_value:
-                            save_challenge['total_value'] = bonus_value
-
-            player[15][0][1] = self.wrap_challenges(data2)
-
-        if self.config.fix_challenge_overflow:
-            self.notice('Fix challenge overflow')
-            data2 = self.unwrap_challenges(player[15][0][1])
-
-            for save_challenge in data2['challenges']:
-                if save_challenge['id'] in self.challenges:
-                    if save_challenge['total_value'] >= 2000000000:
-                        self.notice(f'fix overflow in: {save_challenge["_name"]}')
-                        save_challenge['total_value'] = self.challenges[save_challenge['id']].get_max() + 1
-
-            player[15][0][1] = self.wrap_challenges(data2)
-
-        if self.config.name is not None:
-            self.debug(f' - Setting character name to "{self.config.name}"')
-            data2 = apply_structure(read_protobuf(player[19][0][1]), self.save_structure[19][2])
-            data2['name'] = self.config.name
-            player[19][0][1] = write_protobuf(remove_structure(data2, invert_structure(self.save_structure[19][2])))
-
-        if self.config.save_game_id is not None:
-            self.debug(f' - Setting save slot ID to {self.config.save_game_id}')
-            player[20][0][1] = self.config.save_game_id
+        self._handle_challenges(player)
+        self._fix_challenge_overflow(player)
+        self._set_character_name(player)
+        self._set_save_game_id(player)
 
         return self.wrap_player_data(write_protobuf(player))
 
