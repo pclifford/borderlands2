@@ -42,6 +42,7 @@ def run(*, game_name: str, args: List[str]) -> None:
             raise RuntimeError(f'unknown game: {game_name!r}')
 
         app.run()
+
     except Exception:
         print(ERROR_TEMPLATE.format(repr(args)), file=sys.stderr)
         traceback.print_exc(None, sys.stderr)

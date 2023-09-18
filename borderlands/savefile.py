@@ -1,6 +1,7 @@
 import argparse
 import base64
 import binascii
+import dataclasses
 import hashlib
 import io
 import json
@@ -9,7 +10,7 @@ import os
 import random
 import struct
 import sys
-from typing import List, Tuple, Dict, Any, Optional
+from typing import List, Tuple, Dict, Any, Optional, IO, Union
 
 from borderlands.challenges import Challenge
 from borderlands.config import parse_args
@@ -36,6 +37,13 @@ from borderlands.datautil.protobuf import (
     write_protobuf,
     remove_structure,
 )
+
+
+@dataclasses.dataclass(frozen=True)
+class InputFileData:
+    filename: str
+    filehandle: IO
+    close: bool
 
 
 class BaseApp:
@@ -201,17 +209,17 @@ class BaseApp:
     ]
 
     def __init__(
-            self,
-            *,
-            args: List[str],
-            item_struct_version: int,
-            game_name: str,
-            item_prefix: str,
-            max_level: int,  # Max char level
-            black_market_keys: Tuple[str, ...],
-            black_market_ammo: Dict[str, List[int]],
-            unlock_choices: List[str],  # Available choices for --unlock option
-            challenges: Dict[int, Challenge],
+        self,
+        *,
+        args: List[str],
+        item_struct_version: int,
+        game_name: str,
+        item_prefix: str,
+        max_level: int,  # Max char level
+        black_market_keys: Tuple[str, ...],
+        black_market_ammo: Dict[str, List[int]],
+        unlock_choices: List[str],  # Available choices for --unlock option
+        challenges: Dict[int, Challenge],
     ) -> None:
         # B2 version is 7, TPS version is 10
         # "version" taken from what Gibbed calls it, not sure if that's
@@ -302,7 +310,7 @@ class BaseApp:
                 result.append(None)
                 continue
             value = 0
-            for b in data[j >> 3: (i >> 3) - 1: -1]:
+            for b in data[j >> 3 : (i >> 3) - 1 : -1]:
                 value = (value << 8) | b
             result.append((value >> (i & 7)) & ~(0xFF << size))
             i = j
@@ -385,7 +393,7 @@ class BaseApp:
             challenge_dict = dict(
                 zip(
                     ['id', 'first_one', 'total_value', 'second_one', 'previous_value'],
-                    struct.unpack(self.config.endian + 'HBIBI', data[idx: idx + 12]),
+                    struct.unpack(self.config.endian + 'HBIBI', data[idx : idx + 12]),
                 )
             )
             challenges_result.append(challenge_dict)
@@ -570,14 +578,14 @@ class BaseApp:
 
     def _set_money(self, player: PlayerDict) -> None:
         if all(
-                x is None
-                for x in [
-                    self.config.money,
-                    self.config.eridium,
-                    self.config.moonstone,
-                    self.config.seraph,
-                    self.config.torgue,
-                ]
+            x is None
+            for x in [
+                self.config.money,
+                self.config.eridium,
+                self.config.moonstone,
+                self.config.seraph,
+                self.config.torgue,
+            ]
         ):
             return
 
@@ -666,11 +674,11 @@ class BaseApp:
                 self.debug('   - Creating new OP Level "virtual" item')
                 # More magic from Gibbed code
                 base_data = (
-                        b"\x07\x00\x00\x00\x00\x39\x2a\xff"
-                        + b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                        + b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                        + b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                        + b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                    b"\x07\x00\x00\x00\x00\x39\x2a\xff"
+                    + b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                    + b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                    + b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                    + b"\x00\x00\x00\x00\x00\x00\x00\x00"
                 )
                 # noinspection PyDictCreation
                 entry = {}
@@ -772,9 +780,7 @@ class BaseApp:
             return
 
         self.debug(' - Unlocking all non-level-specific challenges')
-        challenge_unlocks = [
-            apply_structure(read_protobuf(d[1]), self.save_structure[38][2]) for d in player[38]
-        ]
+        challenge_unlocks = [apply_structure(read_protobuf(d[1]), self.save_structure[38][2]) for d in player[38]]
         inverted_structure = invert_structure(self.save_structure[38][2])
         seen_challenges = {}
         for unlock in challenge_unlocks:
@@ -901,12 +907,10 @@ class BaseApp:
                 save_challenge['total_value'] = save_challenge['previous_value']
             if do_max:
                 save_challenge['total_value'] = (
-                        save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_max()
+                    save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_max()
                 )
             if do_bonus and self.challenges[save_challenge['id']].bonus:
-                bonus_value = (
-                        save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_bonus()
-                )
+                bonus_value = save_challenge['previous_value'] + self.challenges[save_challenge['id']].get_bonus()
                 if do_max or do_zero or save_challenge['total_value'] < bonus_value:
                     save_challenge['total_value'] = bonus_value
 
@@ -1031,61 +1035,6 @@ class BaseApp:
         # know what they're actually used for.
         # self.debug(f' - Empty items skipped: {skipped_count}')
 
-    def import_items(self, data, codelist):
-        """
-        Imports items into savegame data "data" based on the passed-in
-        item list in "codelist"
-        """
-        player = read_protobuf(self.unwrap_player_data(data))
-
-        prefix_length = len(self.item_prefix) + 1
-
-        bank_count = 0
-        weapon_count = 0
-        item_count = 0
-
-        to_bank = False
-        for line in codelist.splitlines():
-            line = line.strip()
-            if line.startswith(";"):
-                name = line[1:].strip().lower()
-                if name == "bank":
-                    to_bank = True
-                elif name in ("items", "weapons"):
-                    to_bank = False
-                continue
-            elif not (line.startswith(self.item_prefix + '(') and line.endswith(')')):
-                continue
-
-            code = line[prefix_length:-1]
-            try:
-                raw = base64.b64decode(code)
-            except binascii.Error:
-                continue
-
-            key = random.randrange(0x100000000) - 0x80000000
-            raw = replace_raw_item_key(raw, key)
-            if to_bank:
-                bank_count += 1
-                field = 41
-                entry = {1: [[2, raw]]}
-            elif (raw[0] & 0x80) == 0:
-                item_count += 1
-                field = 53
-                entry = {1: [[2, raw]], 2: [[0, 1]], 3: [[0, 0]], 4: [[0, 1]]}
-            else:
-                weapon_count += 1
-                field = 54
-                entry = {1: [[2, raw]], 2: [[0, 0]], 3: [[0, 1]]}
-
-            player.setdefault(field, []).append([2, write_protobuf(entry)])
-
-        self.debug(f' - Bank imported: {bank_count}')
-        self.debug(f' - Items imported: {item_count}')
-        self.debug(f' - Weapons imported: {weapon_count}')
-
-        return self.wrap_player_data(write_protobuf(player))
-
     def get_fully_explored_areas(self, player: PlayerDict) -> list[str]:
         """
         Reuse converting full player data to json
@@ -1120,42 +1069,144 @@ class BaseApp:
         if self.config.verbose:
             self.notice(message)
 
+    def _read_input_file(self) -> Union[str, bytes]:
+        if self.config.input_filename == '-':
+            self.debug('Using STDIN for input file')
+            return sys.stdin.read()
+        else:
+            self.debug(f'Opening {self.config.input_filename} for input file')
+            with open(self.config.input_filename, 'rb') as inp:
+                return inp.read()
+
+    def _convert_json(self, save_data: Union[str, bytes]) -> Union[str, bytes]:
+        if not self.config.json:
+            return save_data
+
+        self.debug('Interpreting JSON data')
+        data = json.loads(save_data)
+        if '1' not in data:
+            # This means the file had been output as 'json'
+            data = remove_structure(data, invert_structure(self.save_structure))
+        return self.wrap_player_data(write_protobuf(data))
+
+    def _import_items(self, save_data: bytes) -> Union[str, bytes]:
+        """
+        Imports items into savegame data "data" based on the passed-in
+        item list in "codelist"
+        """
+        if not self.config.import_items:
+            return save_data
+
+        self.debug(f'Importing items from {self.config.import_items}')
+        with open(self.config.import_items) as inp:
+            raw_items_data = inp.read()
+
+        player = read_protobuf(self.unwrap_player_data(save_data))
+
+        prefix_length = len(self.item_prefix) + 1
+
+        bank_count = 0
+        weapon_count = 0
+        item_count = 0
+
+        to_bank = False
+        for line in raw_items_data.splitlines():
+            line = line.strip()
+            if line.startswith(";"):
+                name = line[1:].strip().lower()
+                if name == "bank":
+                    to_bank = True
+                elif name in ("items", "weapons"):
+                    to_bank = False
+                continue
+            elif not (line.startswith(self.item_prefix + '(') and line.endswith(')')):
+                continue
+
+            code = line[prefix_length:-1]
+            try:
+                code_bytes = base64.b64decode(code)
+            except binascii.Error:
+                continue
+
+            key = random.randrange(0x100000000) - 0x80000000
+            code_bytes = replace_raw_item_key(code_bytes, key)
+            if to_bank:
+                bank_count += 1
+                field = 41
+                entry = {1: [[2, code_bytes]]}
+            elif (code_bytes[0] & 0x80) == 0:
+                item_count += 1
+                field = 53
+                entry = {1: [[2, code_bytes]], 2: [[0, 1]], 3: [[0, 0]], 4: [[0, 1]]}
+            else:
+                weapon_count += 1
+                field = 54
+                entry = {1: [[2, code_bytes]], 2: [[0, 0]], 3: [[0, 1]]}
+
+            player.setdefault(field, []).append([2, write_protobuf(entry)])
+
+        self.debug(f' - Bank imported: {bank_count}')
+        self.debug(f' - Items imported: {item_count}')
+        self.debug(f' - Weapons imported: {weapon_count}')
+
+        return self.wrap_player_data(write_protobuf(player))
+
+    def _prepare_output_file(self) -> Optional[Tuple[IO, bool]]:
+        self.debug('')
+        outfile = self.config.output_filename
+
+        if outfile == '-':
+            self.debug('Using STDOUT for output file')
+            return sys.stdout, False
+
+        self.debug(f'Use {outfile!r} for output file')
+        if os.path.isdir(outfile):
+            raise BorderlandsError(f'Output file is an existing directory: {outfile!r}')
+        elif os.path.isfile(outfile):
+            if self.config.force:
+                self.debug(f'Overwriting output file {outfile!r}')
+                os.unlink(outfile)
+            else:
+                # TODO: what is the point of checking input file name?
+                if self.config.input_filename == '-':
+                    raise BorderlandsError(
+                        f'Output filename {outfile!r}' + ' exists and --force not specified, aborting'
+                    )
+                else:
+                    self.notice('')
+                    self.notice(f'Output filename {outfile!r} exists')
+                    sys.stdout.flush()
+                    sys.stderr.write('Continue and overwrite? [y|N] ')
+                    sys.stderr.flush()
+                    answer = sys.stdin.readline()
+                    if answer[0].lower() == 'y':
+                        os.unlink(outfile)
+                    else:
+                        self.notice('')
+                        self.notice('Abort.')
+                        return None
+        if self.config.output in ('savegame', 'decoded'):
+            mode = 'wb'
+        else:
+            mode = 'w'
+
+        output_file = open(outfile, mode)
+        return output_file, True
+
     def run(self):
         """
         Main routine - loads data, does things to it, and then writes
         out a file.
         """
 
-        # Open up our input file
         self.debug('')
-        if self.config.input_filename == '-':
-            self.debug('Using STDIN for input file')
-            input_file = sys.stdin
-        else:
-            self.debug(f'Opening {self.config.input_filename} for input file')
-            input_file = open(self.config.input_filename, 'rb')
-        self.debug('')
-
-        # ... and read it in.
-        save_data = input_file.read()
-        if self.config.input_filename != '-':
-            input_file.close()
+        save_data = self._read_input_file()
 
         # If we're reading from JSON, convert it
-        if self.config.json:
-            self.debug('Interpreting JSON data')
-            data = json.loads(save_data)
-            if '1' not in data:
-                # This means the file had been output as 'json'
-                data = remove_structure(data, invert_structure(self.save_structure))
-            save_data = self.wrap_player_data(write_protobuf(data))
+        save_data = self._convert_json(save_data)
 
         # If we've been told to import items, do so.
-        if self.config.import_items:
-            self.debug(f'Importing items from {self.config.import_items}')
-            itemlist = open(self.config.import_items, 'r')
-            save_data = self.import_items(save_data, itemlist.read())
-            itemlist.close()
+        save_data = self._import_items(save_data)
 
         # Now perform any changes, if requested
         if self.config.changes:
@@ -1166,68 +1217,36 @@ class BaseApp:
 
         # If we have an output file, write to it!
         if self.config.output_filename is None:
-            self.debug('No output file specified.  Exiting!')
+            self.debug('No output file specified. Exiting!')
+            return
 
+        # Open our output file
+        output_file_info = self._prepare_output_file()
+        if output_file_info is None:
+            return
+        output_file, close = output_file_info
+
+        # Now output based on what we've been told to do
+        if self.config.output == 'items':
+            self.debug('Exporting items')
+            self.export_items(save_data, output_file)
+        elif self.config.output == 'savegame':
+            self.debug('Writing savegame file')
+            output_file.write(save_data)
         else:
-            # Open our output file
-            self.debug('')
-            if self.config.output_filename == '-':
-                self.debug('Using STDOUT for output file')
-                output_file = sys.stdout
-            else:
-                self.debug(f'Opening {self.config.output_filename} for output file')
-                if os.path.exists(self.config.output_filename):
-                    if self.config.force:
-                        self.debug(f'Overwriting output file "{self.config.output_filename}"')
-                    else:
-                        if self.config.input_filename == '-':
-                            raise BorderlandsError(
-                                f'Output filename "{self.config.output_filename}"'
-                                + ' exists and --force not specified, aborting'
-                            )
-                        else:
-                            self.notice('')
-                            self.notice(f'Output filename "{self.config.output_filename}" exists')
-                            sys.stderr.write('Continue and overwrite? [y|N] ')
-                            sys.stderr.flush()
-                            answer = sys.stdin.readline()
-                            if answer[0].lower() == 'y':
-                                self.notice('')
-                                self.notice('Continuing!')
-                            else:
-                                self.notice('')
-                                self.notice('Exiting!')
-                                return
-                if self.config.output == 'savegame' or self.config.output == 'decoded':
-                    mode = 'wb'
-                else:
-                    mode = 'w'
-                output_file = open(self.config.output_filename, mode)
+            player = self.unwrap_player_data(save_data)
+            if self.config.output in ('decodedjson', 'json'):
+                self.debug('Converting to JSON for more human-readable output')
+                data = read_protobuf(player)
+                if self.config.output == 'json':
+                    data = apply_structure(data, self.save_structure)
+                player = json.dumps(conv_binary_to_str(data), sort_keys=True, indent=4)
+            output_file.write(player)
 
-            # Now output based on what we've been told to do
-            if self.config.output == 'items':
-                self.debug('Exporting items')
-                self.export_items(save_data, output_file)
-            elif self.config.output == 'savegame':
-                self.debug('Writing savegame file')
-                output_file.write(save_data)
-            else:
-                player = self.unwrap_player_data(save_data)
-                if self.config.output == 'decodedjson' or self.config.output == 'json':
-                    self.debug('Converting to JSON for more human-readable output')
-                    data = read_protobuf(player)
-                    if self.config.output == 'json':
-                        data = apply_structure(data, self.save_structure)
-                    player = json.dumps(conv_binary_to_str(data), sort_keys=True, indent=4)
-                output_file.write(player)
+        if close:
+            output_file.close()
 
-            # Close the output file
-            if self.config.output_filename != '-':
-                output_file.close()
-
-        # ... aaand we're done.
-        self.debug('')
-        self.debug('Done!')
+        self.notice('Done.')
 
     @staticmethod
     def setup_currency_args(parser) -> None:
