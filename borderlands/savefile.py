@@ -12,7 +12,7 @@ import struct
 import sys
 from typing import List, Tuple, Dict, Any, Optional, IO, Union
 
-from borderlands.challenges import Challenge
+from borderlands.challenges import Challenge, unwrap_challenges, wrap_challenges
 from borderlands.config import parse_args
 from borderlands.datautil.bitstreams import ReadBitstream, WriteBitstream
 from borderlands.datautil.common import conv_binary_to_str, rotate_data_right, xor_data, create_body
@@ -336,109 +336,10 @@ class BaseApp:
         return write_repeated_protobuf_value(sdu_list, 0)
 
     def unwrap_challenges(self, data: bytes) -> dict:
-        """
-        Unwraps our challenge data.  The first ten bytes are a header:
-
-            int32: Unknown, is always "4" on my savegames, though.
-            int32: Size in bytes of all the challenges, plus two more bytes
-                   for the next short
-            short: Number of challenges
-
-        Each challenge takes up a total of 12 bytes, so num_challenges*12
-        should always equal size_in_bytes-2.
-
-        The structure of each challenge is:
-
-            byte: unknown, possibly at least part of an ID, but not unique
-                  on its own
-            byte: unknown, but is always (on my saves, anyway) 6 or 7.
-            byte: unknown, but is always 1.
-            int32: total value of the challenge, across all resets
-            byte: unknown, but is always 1
-            int32: previous, pre-challenge-reset value.  Will always be 0
-                   until challenges have been reset at least once.
-
-        The first two bytes of each challenge can be taken together, and if so, can
-        serve as a unique identifier for the challenge.  I decided to read them in
-        that way, as a short value.  I wasn't able to glean any pattern to whether
-        a 6 or a 7 shows up in the second byte.
-
-        Once your challenges have been reset in-game, the previous value is copied
-        into that second int32, but the total value itself remains unchanged, so at
-        that point you need to subtract previous_value from total_value to find the
-        actual current state of the challenge (that procedure is obviously true
-        prior to any resets, too, since previous_value is just zero in that case).
-
-        It's also worth mentioning that challenge data keeps accumulating even
-        after the challenge itself is completed, so the number displayed in-game
-        for completed challenges is no longer accurate.
-
-        """
-
-        challenges = self.challenges
-
-        unknown, size_in_bytes, num_challenges = struct.unpack(self.config.endian + 'IIH', data[:10])
-        # Sanity check on size reported
-        if (size_in_bytes + 8) != len(data):
-            raise BorderlandsError(f'Challenge data reported as {size_in_bytes} bytes, but {len(data) - 8} bytes found')
-
-        # Sanity check on number of challenges reported
-        if (num_challenges * 12) != (size_in_bytes - 2):
-            raise BorderlandsError(f'{num_challenges} challenges reported, but {size_in_bytes - 2} bytes of data found')
-
-        # Now read them in
-        challenges_result = []
-        for challenge in range(num_challenges):
-            idx = 10 + (challenge * 12)
-            challenge_dict = dict(
-                zip(
-                    ['id', 'first_one', 'total_value', 'second_one', 'previous_value'],
-                    struct.unpack(self.config.endian + 'HBIBI', data[idx : idx + 12]),
-                )
-            )
-            challenges_result.append(challenge_dict)
-
-            if challenge_dict['id'] in challenges:
-                info = challenges[challenge_dict['id']]
-                challenge_dict['_id_text'] = info.id_text
-                challenge_dict['_category'] = info.category.name
-                challenge_dict['_name'] = info.name
-                challenge_dict['_description'] = info.description
-
-        return {'unknown': unknown, 'challenges': challenges_result}
+        return unwrap_challenges(data=data, challenges=self.challenges, endian=self.config.endian)
 
     def wrap_challenges(self, data: dict) -> bytes:
-        """
-        Re-wrap our challenge data.  See the notes above in unwrap_challenges for
-        details on the structure.
-
-        Note that we are trusting that the correct number of challenges are present
-        in our data structure and setting size_in_bytes and num_challenges to match.
-        Change the number of challenges at your own risk!
-        """
-
-        b = io.BytesIO()
-        b.write(
-            struct.pack(
-                self.config.endian + 'IIH',
-                data['unknown'],
-                (len(data['challenges']) * 12) + 2,
-                len(data['challenges']),
-            )
-        )
-        save_challenges = data['challenges']
-        for challenge in save_challenges:
-            b.write(
-                struct.pack(
-                    self.config.endian + 'HBIBI',
-                    challenge['id'],
-                    challenge['first_one'],
-                    challenge['total_value'],
-                    challenge['second_one'],
-                    challenge['previous_value'],
-                )
-            )
-        return b.getvalue()
+        return wrap_challenges(data=data, endian=self.config.endian)
 
     def unwrap_item_info(self, value: bytes) -> dict:
         is_weapon, item, key = self.unwrap_item(value)
@@ -917,6 +818,7 @@ class BaseApp:
         player[15][0][1] = self.wrap_challenges(data2)
 
     def _fix_challenge_overflow(self, player: PlayerDict) -> None:
+        # TODO: rewrite as standalone function and move to bl2_routines.py
         if not self.config.fix_challenge_overflow:
             return
 
@@ -989,6 +891,8 @@ class BaseApp:
         self._fix_challenge_overflow(player)
         self._set_character_name(player)
         self._set_save_game_id(player)
+
+        self._reset_challenge_or_mission(player)
 
         return self.wrap_player_data(write_protobuf(player))
 
@@ -1176,6 +1080,7 @@ class BaseApp:
                     self.notice('')
                     self.notice(f'Output filename {outfile!r} exists')
                     sys.stdout.flush()
+                    sys.stderr.flush()
                     sys.stderr.write('Continue and overwrite? [y|N] ')
                     sys.stderr.flush()
                     answer = sys.stdin.readline()
@@ -1193,6 +1098,9 @@ class BaseApp:
         output_file = open(outfile, mode)
         return output_file, True
 
+    def _reset_challenge_or_mission(self, player: PlayerDict) -> None:
+        pass
+
     def run(self):
         """
         Main routine - loads data, does things to it, and then writes
@@ -1208,19 +1116,21 @@ class BaseApp:
         # If we've been told to import items, do so.
         save_data = self._import_items(save_data)
 
-        # Now perform any changes, if requested
-        if self.config.changes:
-            self.debug('Performing requested changes')
-            save_data = self.modify_save(save_data)
+        # Now perform any changes
+        self.debug('Performing requested changes')
+        new_data = self.modify_save(save_data)
 
-        self.show_save_info(save_data)
+        self.show_save_info(new_data)
 
         # If we have an output file, write to it!
         if self.config.output_filename is None:
+            if new_data != save_data:
+                sys.exit('Changes were made but no output file specified')
+
             self.debug('No output file specified. Exiting!')
             return
 
-        # Open our output file
+        # Open output file
         output_file_info = self._prepare_output_file()
         if output_file_info is None:
             return
@@ -1229,12 +1139,12 @@ class BaseApp:
         # Now output based on what we've been told to do
         if self.config.output == 'items':
             self.debug('Exporting items')
-            self.export_items(save_data, output_file)
+            self.export_items(new_data, output_file)
         elif self.config.output == 'savegame':
             self.debug('Writing savegame file')
-            output_file.write(save_data)
+            output_file.write(new_data)
         else:
-            player = self.unwrap_player_data(save_data)
+            player = self.unwrap_player_data(new_data)
             if self.config.output in ('decodedjson', 'json'):
                 self.debug('Converting to JSON for more human-readable output')
                 data = read_protobuf(player)

@@ -95,37 +95,6 @@ class Config(argparse.Namespace):
         if 'ammo' in self.unlock:
             self.max_ammo = True
 
-        # Set our "changes" boolean -- first, args which take a value
-        if any(
-            bool(x)
-            for x in [
-                self.backpack,
-                self.bank,
-                self.eridium,
-                self.fix_challenge_overflow,
-                self.gun_slots,
-                self.item_levels,
-                self.level,
-                self.max_ammo,
-                self.money,
-                self.moonstone,
-                self.name,
-                self.op_level,
-                self.save_game_id,
-                self.seraph,
-                self.torgue,
-            ]
-        ):
-            self.changes = True
-
-        # Next, boolean args which are set to True
-        if self.copy_nvhm_missions:
-            self.changes = True
-
-        # Finally, any unlocks/challenges we mean to set
-        if any(bool(var) for var in (self.unlock, self.challenges)):
-            self.changes = True
-
         # Can't read/write to the same file
         if (
             self.output_filename is not None
@@ -406,9 +375,7 @@ def parse_args(
 
     # Some sanity checking with output type and output_filename
     if config.output_filename is None:
-        # If we requested any changes, the only sensible course is to write them out
-        if config.changes:
-            parser.error("No output_filename was specified, but changes were requested")
+        # NOTE: no more config.changes support: check at the end if data changed
 
         # If we manually specified an output type, we'll also need an output filename.
         # It's possible in this case that the user explicitly set `savegame` as the
