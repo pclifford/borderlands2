@@ -62,6 +62,9 @@ two.
     * [Challenge Levels](#challenge-levels)
     * [Fixing Negative-Number Challenges](#fixing-negative-number-challenges)
     * [Copying mission data from NVHM to TVHM+UVHM](#copying-mission-data-from-nvhm-to-tvhmuvhm)
+    * [Resetting features](#resetting-features)
+        * [Bad Touch](#bad-touch)   
+        * [Doctor's Orders](#doctors-orders)
 * [Getting Savegame Information](#getting-savegame-information)
     * [Printing out not-fully-explored levels](#printing-out-not-fully-explored-levels)
     * [Challenge Accepted achievement progress](#challenge-accepted-achievement-progress)
@@ -396,6 +399,28 @@ playthroughs, so they'll appear to be at the exact same state. This will
 also unlock TVHM/UVHM if need be.
 
     python bl2_save_edit.py --copy-nvhm-missions old.sav new.sav
+
+## Resetting features
+
+Option `--reset` helps to reset some game features.
+
+### Bad Touch
+
+[Bad Touch](https://borderlands.fandom.com/wiki/Bad_Touch) is Moxxi's SMG given to player one per character. 
+There is some workaround for obtaining Bad Touch many times 
+but it could be spoiled by teammate who takes it right from the Moxxi's hands.
+
+Use `--reset bad-touch` option to restore Bad Touch availability.
+
+### Doctor's Orders
+
+Player or teammates could suddenly get one of four items for this mission and it will influence the midgets farming.
+
+Use `--reset doctors-orders` option to reset Doctor's Orders mission.
+
+Mission will be reset for first active playthrough in this order: UVHM -> TVHM -> Normal mode.
+
+If you want reset both spoiled TVHM and UVHM missions then run script twice with same option. 
 
 # Getting Savegame Information
 
