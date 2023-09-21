@@ -1,8 +1,10 @@
 import argparse
+import sys
 from typing import List, Dict, Any, Optional
 
 from borderlands import bl2_data
 from borderlands.bl2_explorer_achievements import create_explorer_achievements_report
+from borderlands.bl2_routines import get_reset_proc, get_valid_reset_option_values
 from borderlands.datautil.common import unwrap_float, wrap_float, unwrap_bytes, wrap_bytes
 from borderlands.datautil.data_types import PlayerDict
 from borderlands.savefile import BaseApp
@@ -218,6 +220,13 @@ class AppBL2(BaseApp):
             action='store_true',
             help='print challenges that have to be completed up to level 1 in order to finish Challenge Accepted',
         )
+        parser.add_argument(
+            '--reset',
+            dest='reset_key',
+            type=str,
+            help='reset specific mission or challenge. Valid options are: %r'
+            % (sorted(get_valid_reset_option_values()),),
+        )
 
     def report_explorer_achievements_progress(self, player: PlayerDict) -> None:
         fully_explored_maps = self.get_fully_explored_areas(player)
@@ -275,3 +284,14 @@ class AppBL2(BaseApp):
             self.notice('Challenge Accepted: no problems found. It looks like Challenge Accepted already achieved.')
 
         self.notice('')
+
+    def _reset_challenge_or_mission(self, player: PlayerDict) -> None:
+        reset_key = self.config.reset_key
+        if reset_key is None:
+            return
+        patch_proc = get_reset_proc(reset_key)
+        if patch_proc is None:
+            sys.exit(f'--reset: unknown key: {reset_key!r}')
+
+        self.notice('Reset: ' + reset_key)
+        patch_proc(player, self.config.endian)
